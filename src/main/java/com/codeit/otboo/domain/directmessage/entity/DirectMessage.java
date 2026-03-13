@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "direct")
+@Table(name = "direct_messages")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DirectMessage extends BaseEntity {
     @Column(name="content", nullable = false, length = 255)
