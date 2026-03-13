@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public record NotificationResponse(
         UUID id,
-        LocalDateTime createAt,
+        LocalDateTime createdAt,
         UUID receiverId,
         String title,
         String content,
