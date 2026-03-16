@@ -1,14 +1,15 @@
 package com.codeit.otboo.domain.profile.dto.request;
 
+import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Location;
 
 import java.time.LocalDate;
 
 public record ProfileUpdateRequest(
         String name,
-        String gender,
+        Gender gender,
         LocalDate birthDate,
-        Location location,
+        LocationRequest location,
         int temperatureSensitivity
 ) {
 }
