@@ -27,6 +27,6 @@ public class ClothesAttributeValue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "definition_id", nullable = false)
-    private ClothesAttributeDef AttributeDef;
+    private ClothesAttributeDef attributeDef;
 
 }
