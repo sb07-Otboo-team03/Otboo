@@ -38,7 +38,7 @@ public class Feed extends BaseUpdatableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id")
-    private User author; // name + profileUrl 은 profile 에 있어!!
+    private User author;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "weather_id")
