@@ -55,7 +55,16 @@ CREATE TABLE feeds (
                          like_count	integer	DEFAULT 0	NOT NULL,
                          comment_count	integer	DEFAULT 0	NOT NULL,
                          author_id	uuid		NULL,
-                         weather_id	uuid		NULL
+
+                         feed_weather_id  uuid      NOT NULL,
+                         feed_sky_status  varchar(30)    NOT NULL,
+                         feed_precipitation_type  varchar(30)   NOT NULL,
+                         feed_precipitation_amount  double precision     NOT NULL,
+                         feed_precipitation_probability  double precision    NOT NULL,
+                         feed_temperature_current  double precision      NOT NULL,
+                         feed_temperature_compared_to_day_before  double precision   NOT NULL,
+                         feed_temperature_max  double precision      NULL,
+                         feed_temperature_min  double precision      NULL
 );
 
 
@@ -235,7 +244,8 @@ ALTER TABLE comments ADD CONSTRAINT fk_comments_feeds FOREIGN KEY (feed_id) REFE
 ALTER TABLE comments ADD CONSTRAINT fk_comments_authors FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL;
 
 ALTER TABLE feeds ADD CONSTRAINT fk_feeds_authors FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL;
-ALTER TABLE feeds ADD CONSTRAINT fk_feeds_weathers FOREIGN KEY (weather_id) REFERENCES weathers (id) ON DELETE SET NULL;
+ALTER TABLE feeds ADD CONSTRAINT chk_feeds_precipitation_type CHECK (feed_precipitation_type IN ('NONE', 'RAIN', 'RAIN_SNOW', 'SNOW', 'SHOWER'));
+ALTER TABLE feeds ADD CONSTRAINT chk_feeds_sky_status CHECK (feed_sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY'));
 
 ALTER TABLE clothes_attribute_values ADD CONSTRAINT fk_clothes_attribute_values_clothes_attribute_defs FOREIGN KEY (definition_id) REFERENCES clothes_attribute_defs (id) ON DELETE CASCADE;
 
@@ -337,5 +347,5 @@ ALTER TABLE profiles ADD COLUMN profile_image_id uuid;
 ALTER TABLE profiles ADD CONSTRAINT fk_profiles_profile_image FOREIGN KEY (profile_image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
 
 -- clothes 테이블에 칼럼 추가 및 참조 연결
-ALTER TABLE profiles ADD COLUMN image_id uuid;
-ALTER TABLE profiles ADD CONSTRAINT fk_clothes_image FOREIGN KEY (image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
+ALTER TABLE clothes ADD COLUMN image_id uuid;
+ALTER TABLE clothes ADD CONSTRAINT fk_clothes_image FOREIGN KEY (image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
