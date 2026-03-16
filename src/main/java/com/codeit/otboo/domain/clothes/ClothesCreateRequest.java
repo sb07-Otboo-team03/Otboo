@@ -1,11 +1,13 @@
 package com.codeit.otboo.domain.clothes;
 
+import com.codeit.otboo.domain.clothes.entity.ClothesType;
+
 import java.util.ArrayList;
 import java.util.UUID;
 
 public record ClothesCreateRequest (
     UUID ownerId,
     String name,
-    String type, // TOP, BOTTOM, DRESS, OUTER, UNDERWEAR, ACCESSORY, SHOES, SOCKS, HAT, BAG, SCARF, ETC
+    ClothesType type,
     ArrayList<ClothesAttributeResponse> attributes
 ){}
