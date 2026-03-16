@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes.entity;
+package com.codeit.otboo.domain.clothes.management.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.user.entity.User;
