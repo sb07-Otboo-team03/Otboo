@@ -10,10 +10,10 @@ import java.util.Map;
 public class OtbooException extends RuntimeException {
     private final LocalDateTime timestamp;
     private final ErrorCode errorCode;
-    private final Map<String, Object> details;
+    private final Map<String, String> details;
     private final HttpStatus status;
 
-    public OtbooException(ErrorCode errorCode, Map<String, Object> map, HttpStatus status) {
+    public OtbooException(ErrorCode errorCode, Map<String, String> map, HttpStatus status) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
         this.timestamp = LocalDateTime.now();
