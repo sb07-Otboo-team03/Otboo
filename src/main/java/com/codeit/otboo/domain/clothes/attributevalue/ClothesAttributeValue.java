@@ -22,6 +22,7 @@ public class ClothesAttributeValue {
     private String selectableValue;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)

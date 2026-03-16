@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes;
+package com.codeit.otboo.domain.clothes.dto.response;
 
 import com.codeit.otboo.domain.clothes.entity.ClothesType;
 

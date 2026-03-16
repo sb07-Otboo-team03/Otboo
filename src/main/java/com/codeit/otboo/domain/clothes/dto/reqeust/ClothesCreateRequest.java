@@ -1,5 +1,6 @@
-package com.codeit.otboo.domain.clothes;
+package com.codeit.otboo.domain.clothes.dto.reqeust;
 
+import com.codeit.otboo.domain.clothes.dto.response.ClothesAttributeResponse;
 import com.codeit.otboo.domain.clothes.entity.ClothesType;
 
 import java.util.ArrayList;

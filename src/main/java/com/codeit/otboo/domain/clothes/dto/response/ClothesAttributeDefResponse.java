@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes;
+package com.codeit.otboo.domain.clothes.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
