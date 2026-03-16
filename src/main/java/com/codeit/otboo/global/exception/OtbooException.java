@@ -22,6 +22,7 @@ public class OtbooException extends RuntimeException {
     }
 
     public OtbooException(ErrorCode errorCode, HttpStatus status) {
+        super(errorCode.getMessage());
         this.errorCode = errorCode;
         this.status = status;
         this.timestamp = LocalDateTime.now();
