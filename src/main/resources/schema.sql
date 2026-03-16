@@ -339,5 +339,3 @@ ALTER TABLE profiles ADD CONSTRAINT fk_profiles_profile_image FOREIGN KEY (profi
 -- clothes 테이블에 칼럼 추가 및 참조 연결
 ALTER TABLE profiles ADD COLUMN image_id uuid;
 ALTER TABLE profiles ADD CONSTRAINT fk_clothes_image FOREIGN KEY (image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
-
--- 옷 테이블에 binaryContent와 연결
