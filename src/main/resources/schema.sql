@@ -154,7 +154,7 @@ CREATE TABLE profiles (
                             birth_date	date		NULL,
                             latitude	double precision		NULL,
                             longitude	double precision		NULL,
-                            location_names varchar(30)          NULL,
+                            location_names varchar(100)          NULL,
                             x	integer		NULL,
                             y	integer		NULL,
                             temperature_sensitivity	integer		NOT NULL,
