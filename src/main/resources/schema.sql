@@ -94,7 +94,6 @@ CREATE TABLE clothes (
 );
 
 
-
 CREATE TABLE clothes_feeds (
                                  clothes_id	uuid		NOT NULL,
                                  feed_id	uuid		NOT NULL
@@ -160,9 +159,6 @@ CREATE TABLE profiles (
                             temperature_sensitivity	integer		NOT NULL,
                             profile_image_url	varchar(255)		NULL
 );
-
-
-
 
 ALTER TABLE clothes_attribute_mappings ADD CONSTRAINT PK_CLOTHES_ATTRIBUTE_MAPPINGS PRIMARY KEY (
                                                                                                      clothes_id,
@@ -326,3 +322,22 @@ CREATE TRIGGER trg_cleanup_direct_message
     AFTER UPDATE ON direct_messages
     FOR EACH ROW
     EXECUTE FUNCTION cleanup_direct_message_row();
+
+-- binaryContent 테이블 변경
+CREATE TABLE binary_contents (
+    id uuid NOT NULL,
+    created_at	timestamp	default NOW()	NOT NULL,
+    name varchar(255) NOT NULL,
+    size integer NULL,
+    type varchar(255) NULL
+);
+
+-- profiles 테이블에 칼럼 추가 및 참조 연결
+ALTER TABLE profiles ADD COLUMN profile_image_id uuid;
+ALTER TABLE profiles ADD CONSTRAINT fk_profiles_profile_image FOREIGN KEY (profile_image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
+
+-- clothes 테이블에 칼럼 추가 및 참조 연결
+ALTER TABLE profiles ADD COLUMN image_id uuid;
+ALTER TABLE profiles ADD CONSTRAINT fk_clothes_image FOREIGN KEY (image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
+
+-- 옷 테이블에 binaryContent와 연결
