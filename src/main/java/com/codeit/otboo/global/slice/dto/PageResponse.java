@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record PageResponse<T>(
     List<T> data,
-    Object nextCursor,
+    String nextCursor,
     UUID nextIdAfter,
     Boolean hasNext,
     Long totalCount,

@@ -57,15 +57,11 @@ public class Feed extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes = new ArrayList<>();
 
-//    @ManyToMany(mappedBy = "feeds")
-//    private List<Clothes> clothesList = new ArrayList<>();
-
     public Feed(String content, int likeCount, int commentCount, User author, Weather weather) {
         this.content = content;
         this.likeCount = likeCount;
         this.commentCount = commentCount;
         this.author = author;
         this.weather = weather;
-//        this.clothesList = clothesList;
     }
 }
