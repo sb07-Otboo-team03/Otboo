@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes;
+package com.codeit.otboo.domain.clothes.dto.reqeust;
 
 import com.codeit.otboo.domain.clothes.entity.ClothesType;
 
@@ -9,5 +9,5 @@ public record ClothesCreateRequest (
     UUID ownerId,
     String name,
     ClothesType type,
-    ArrayList<ClothesAttributeResponse> attributes
+    ArrayList<ClothesAttributeRequest> attributes
 ){}
