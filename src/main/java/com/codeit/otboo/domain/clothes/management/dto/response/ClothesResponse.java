@@ -1,6 +1,7 @@
-package com.codeit.otboo.domain.clothes.dto.response;
+package com.codeit.otboo.domain.clothes.management.dto.response;
 
-import com.codeit.otboo.domain.clothes.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.dto.response.ClothesAttributeWithDefResponse;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 
 import java.util.ArrayList;
 import java.util.UUID;

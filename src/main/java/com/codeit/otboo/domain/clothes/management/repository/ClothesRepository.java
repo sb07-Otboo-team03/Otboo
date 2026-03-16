@@ -1,6 +1,6 @@
-package com.codeit.otboo.domain.clothes.repository;
+package com.codeit.otboo.domain.clothes.management.repository;
 
-import com.codeit.otboo.domain.clothes.entity.Clothes;
+import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
