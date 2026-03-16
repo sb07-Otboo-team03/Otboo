@@ -9,7 +9,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "clothes_attribute_values")
 @Getter
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class ClothesAttributeValue {
