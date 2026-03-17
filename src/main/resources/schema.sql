@@ -96,6 +96,7 @@ CREATE TABLE users (
 CREATE TABLE clothes (
                            id	uuid		NOT NULL,
                            created_at	timestamp		NOT NULL,
+                           updated_at   timestamp   NULL,
                            name	varchar(30)		NOT NULL,
                            type	varchar(30)		NOT NULL,
                            owner_id	uuid		NULL
@@ -164,7 +165,7 @@ CREATE TABLE profiles (
                             location_names varchar(30)          NULL,
                             x	integer		NULL,
                             y	integer		NULL,
-                            temperature_sensitivity	integer		NOT NULL,
+                            temperature_sensitivity	integer		NOT NULL
 );
 
 ALTER TABLE clothes_attribute_mappings ADD CONSTRAINT PK_CLOTHES_ATTRIBUTE_MAPPINGS PRIMARY KEY (
