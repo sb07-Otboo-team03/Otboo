@@ -1,15 +1,15 @@
 package com.codeit.otboo.domain.websocketNSse.event;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.Getter;
 
 @Getter
 public abstract class CreatedEvent<T> {
 
     private final T data;
-    private final Instant createdAt;
+    private final LocalDateTime createdAt;
 
-    protected CreatedEvent(final T data, final Instant createdAt) {
+    protected CreatedEvent(final T data, final LocalDateTime createdAt) {
         this.data = data;
         this.createdAt = createdAt;
     }
