@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes.attributedef;
+package com.codeit.otboo.domain.clothes.attribute.attributedef.entity;
 
 import com.codeit.otboo.domain.BaseEntity;
 import jakarta.persistence.*;
