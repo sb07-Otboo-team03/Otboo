@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Clothes extends BaseEntity {
+public class Clothes extends BaseUpdatableEntity {
 
     @Column(nullable = false, length = 30)
     private String name;
