@@ -2,10 +2,25 @@ spring:
   application:
     name: otboo
 
+  profiles:
+    active: dev
+
   sql:
     init:
       mode: never
 
-notification:
-  timeout: 3600000 # 1시간
-  heartbeat-interval: 30000 # 30초
+
+  jpa:
+    database: postgresql
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+info:
+  app:
+    name: OtBoo
+    version: 1.0.0

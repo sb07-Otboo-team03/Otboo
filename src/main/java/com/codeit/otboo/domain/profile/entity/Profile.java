@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.profile.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
+import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -38,8 +39,10 @@ public class Profile extends BaseUpdatableEntity {
     @Column(name = "temperature_sensitivity", nullable = false)
     private int temperatureSensitivity = 3;
 
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="profile_image_id")
+    BinaryContent binaryContent;
+
 
     @Builder
     public Profile(User user, String name) {
