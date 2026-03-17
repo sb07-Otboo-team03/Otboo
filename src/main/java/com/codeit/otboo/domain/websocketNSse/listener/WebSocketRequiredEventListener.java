@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.websocketNSse.listener;
 
-import com.codeit.otboo.domain.directmessage.dto.DirectMessageCursorResponse;
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.websocketNSse.event.DirectMessageCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ public class WebSocketRequiredEventListener {
     @Async("eventTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(DirectMessageCreatedEvent event) {
-        DirectMessageCursorResponse directMessageResponse = event.getData();
+        DirectMessageResponse directMessageResponse = event.getData();
 
         String senderId = directMessageResponse.sender().userId().toString();
         String receiverId = directMessageResponse.receiver().userId().toString();
