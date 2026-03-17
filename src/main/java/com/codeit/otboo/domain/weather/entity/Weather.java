@@ -51,12 +51,15 @@ public class Weather {
     @Column(nullable = false)
     private Double windSpeed;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private WindAsWord windAsWord;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private SkyStatus SkyStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PrecipitationType precipitationType;
 
