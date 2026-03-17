@@ -2,6 +2,24 @@ spring:
   application:
     name: otboo
 
+  profiles:
+    active: dev
+
   sql:
     init:
       mode: never
+
+  jpa:
+    database: postgresql
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+info:
+  app:
+    name: OtBoo
+    version: 1.0.0

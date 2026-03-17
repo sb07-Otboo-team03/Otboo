@@ -1,6 +1,8 @@
 package com.codeit.otboo.domain.clothes.management.entity;
 
+import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.BaseUpdatableEntity;
+import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,9 +18,6 @@ public class Clothes extends BaseUpdatableEntity {
     @Column(nullable = false, length = 30)
     private String name;
 
-    @Column
-    private String imageUrl;
-
     @Column(nullable = false, length = 30)
     @Enumerated(EnumType.STRING)
     private ClothesType type;
@@ -28,4 +27,7 @@ public class Clothes extends BaseUpdatableEntity {
     private User owner;
 
     // JoinTable
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="image_id")
+    BinaryContent binaryContent;
 }
