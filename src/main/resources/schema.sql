@@ -97,7 +97,6 @@ CREATE TABLE clothes (
                            id	uuid		NOT NULL,
                            created_at	timestamp		NOT NULL,
                            name	varchar(30)		NOT NULL,
-                           image_url	varchar(255)		NULL,
                            type	varchar(30)		NOT NULL,
                            owner_id	uuid		NULL
 );
@@ -166,7 +165,6 @@ CREATE TABLE profiles (
                             x	integer		NULL,
                             y	integer		NULL,
                             temperature_sensitivity	integer		NOT NULL,
-                            profile_image_url	varchar(255)		NULL
 );
 
 ALTER TABLE clothes_attribute_mappings ADD CONSTRAINT PK_CLOTHES_ATTRIBUTE_MAPPINGS PRIMARY KEY (
@@ -341,6 +339,10 @@ CREATE TABLE binary_contents (
     size integer NULL,
     type varchar(255) NULL
 );
+
+ALTER TABLE binary_contents ADD CONSTRAINT PK_BINARY PRIMARY KEY (
+                                                                  id
+    );
 
 -- profiles 테이블에 칼럼 추가 및 참조 연결
 ALTER TABLE profiles ADD COLUMN profile_image_id uuid;
