@@ -12,7 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequiredArgsConstructor
 @Slf4j
 public class SseServiceImpl implements SseService {
-    @Value("${notification.timeout}")
+    @Value("${sse.timeout}")
     private Long timeout;
 
     @Override

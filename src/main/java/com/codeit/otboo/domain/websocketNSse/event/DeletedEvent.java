@@ -1,15 +1,15 @@
 package com.codeit.otboo.domain.websocketNSse.event;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.Getter;
 
 @Getter
 public abstract class DeletedEvent<T> {
 
     private final T data;
-    private final Instant deletedAt;
+    private final LocalDateTime deletedAt;
 
-    protected DeletedEvent(final T data, final Instant deletedAt) {
+    protected DeletedEvent(final T data, final LocalDateTime deletedAt) {
         this.data = data;
         this.deletedAt = deletedAt;
     }

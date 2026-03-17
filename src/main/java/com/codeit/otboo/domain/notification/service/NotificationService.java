@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    PageResponse<NotificationResponse> getNotifications(@Valid CursorRequest cursorRequest);
+    PageResponse<NotificationResponse> getNotifications(CursorRequest cursorRequest);
 
     void deleteNotification(UUID notificationId);
 }

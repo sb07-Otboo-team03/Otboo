@@ -81,7 +81,6 @@ public class FollowController {
 
     // 팔로우 취소
     @DeleteMapping("/{followId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Void> cancelFollow(@PathVariable UUID followId) {
 
         followService.cancelFollow(followId);
