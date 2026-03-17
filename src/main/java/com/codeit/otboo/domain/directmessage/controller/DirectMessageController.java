@@ -7,9 +7,11 @@ import com.codeit.otboo.global.slice.dto.PageResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,7 +27,7 @@ public class DirectMessageController {
     @GetMapping
     public ResponseEntity<PageResponse<DirectMessageCursorResponse>> getDirectMessages(
         @RequestParam UUID userId,
-        @Valid CursorRequest cursorRequest
+        @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
 
         PageResponse<DirectMessageCursorResponse> response =

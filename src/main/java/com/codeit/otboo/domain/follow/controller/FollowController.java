@@ -9,10 +9,12 @@ import com.codeit.otboo.global.slice.dto.PageResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,7 +56,7 @@ public class FollowController {
     public ResponseEntity<PageResponse<FollowResponse>> getFollowings(
         @RequestParam UUID followerId,
         @RequestParam(required = false) String nameLike,
-        @Valid CursorRequest cursorRequest
+        @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
 
         PageResponse<FollowResponse> response = followService.getFollowings(followerId, nameLike, cursorRequest);
@@ -69,7 +71,7 @@ public class FollowController {
     public ResponseEntity<PageResponse<FollowResponse>> getFollowers(
         @RequestParam UUID followeeId,
         @RequestParam(required = false) String nameLike,
-        @Valid CursorRequest cursorRequest
+        @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
 
         PageResponse<FollowResponse> response = followService.getFollowers(followeeId, nameLike, cursorRequest);
