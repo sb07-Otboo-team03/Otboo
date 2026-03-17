@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.feed.dto;
+package com.codeit.otboo.domain.feed.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

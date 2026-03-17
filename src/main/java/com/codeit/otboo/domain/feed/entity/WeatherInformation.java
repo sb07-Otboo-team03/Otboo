@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Embeddable
 @Getter
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class WeatherInformation {

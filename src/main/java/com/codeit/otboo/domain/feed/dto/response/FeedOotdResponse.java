@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.feed.dto;
+package com.codeit.otboo.domain.feed.dto.response;
 
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeWithDefResponse;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
