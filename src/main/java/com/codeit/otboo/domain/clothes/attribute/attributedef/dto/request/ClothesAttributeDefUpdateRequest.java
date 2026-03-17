@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes.dto.reqeust;
+package com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request;
 
 import java.util.List;
 

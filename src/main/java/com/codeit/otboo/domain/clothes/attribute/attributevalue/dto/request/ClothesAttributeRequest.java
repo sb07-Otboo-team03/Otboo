@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes.dto.reqeust;
+package com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request;
 
 import java.util.UUID;
 

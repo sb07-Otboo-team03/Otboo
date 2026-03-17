@@ -1,6 +1,6 @@
-package com.codeit.otboo.domain.clothes.attributevalue;
+package com.codeit.otboo.domain.clothes.attribute.attributevalue.entity;
 
-import com.codeit.otboo.domain.clothes.attributedef.ClothesAttributeDef;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import jakarta.persistence.*;
 import lombok.*;
 
