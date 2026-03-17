@@ -52,7 +52,7 @@ CREATE TABLE feeds (
                          created_at	timestamp		NOT NULL,
                          updated_at	timestamp		NULL,
                          content	varchar(500)		NOT NULL,
-                         like_count	integer	DEFAULT 0	NOT NULL,
+                         like_count	bigint	DEFAULT 0	NOT NULL,
                          comment_count	integer	DEFAULT 0	NOT NULL,
                          author_id	uuid		NULL,
 

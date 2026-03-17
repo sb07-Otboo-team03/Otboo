@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.feed.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
+import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.user.entity.User;
@@ -11,9 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "feeds")
@@ -24,7 +23,7 @@ public class Feed extends BaseUpdatableEntity {
     private String content;
 
     @Column(name = "like_count", nullable = false)
-    private int likeCount = 0;
+    private long likeCount = 0;
 
     @Column(name = "comment_count", nullable = false)
     private int commentCount = 0;
@@ -42,11 +41,20 @@ public class Feed extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes = new ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "clothes_feeds",
+            joinColumns = @JoinColumn(name = "feed_id"),
+            inverseJoinColumns = @JoinColumn(name = "clothes_id")
+    )
+    private List<Clothes> clothesList = new ArrayList<>();
+
     @Builder
-    public Feed(String content, User author, WeatherInformation weather) {
+    public Feed(String content, User author, WeatherInformation weather, List<Clothes> clothesList) {
         this.content = content;
         this.author = author;
         this.weather = weather;
+        this.clothesList = clothesList;
     }
 
     public Comment addComment(String content, User author) {
