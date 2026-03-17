@@ -1,26 +1,19 @@
 package com.codeit.otboo.domain.feed.entity;
 
-
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.weather.entity.Weather;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "feeds")
@@ -40,25 +33,46 @@ public class Feed extends BaseUpdatableEntity {
     @JoinColumn(name = "author_id")
     private User author;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "weather_id")
-    private Weather weather;
+    @Embedded
+    private WeatherInformation weather;
 
-    @JsonManagedReference
-    @Setter(AccessLevel.PROTECTED)
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
-    @JsonManagedReference
-    @Setter(AccessLevel.PROTECTED)
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes = new ArrayList<>();
 
-    public Feed(String content, int likeCount, int commentCount, User author, Weather weather) {
+    @Builder
+    public Feed(String content, User author, WeatherInformation weather) {
         this.content = content;
-        this.likeCount = likeCount;
-        this.commentCount = commentCount;
         this.author = author;
         this.weather = weather;
+    }
+
+    public Comment addComment(String content, User author) {
+        Comment comment = new Comment(content, this, author);
+        this.comments.add(comment);
+        this.commentCount++;
+
+        return comment;
+    }
+
+    public Like addLike(User user) {
+        Like like = new Like(user, this);
+        this.likes.add(like);
+        this.likeCount++;
+
+        return like;
+    }
+
+    public void removeLike(Like like) {
+        if (likes.remove(like))
+            likeCount = Math.max(0, likeCount - 1);
+    }
+
+    // Protype X
+    public void removeComment(Comment comment) {
+        if (comments.remove(comment))
+            commentCount = Math.max(0, commentCount - 1);
     }
 }
