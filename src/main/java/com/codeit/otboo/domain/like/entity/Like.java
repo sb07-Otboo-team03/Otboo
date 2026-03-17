@@ -35,11 +35,7 @@ public class Like {
     @Builder
     public Like(User user, Feed feed) {
         this.user = user;
-        setFeed(feed);
+        this.feed = feed;
     }
 
-    protected void setFeed(Feed feed) {
-        this.feed = feed;
-        feed.addLike(this);
-    }
 }

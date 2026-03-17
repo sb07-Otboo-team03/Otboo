@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "comments")
 @Getter
@@ -30,11 +32,6 @@ public class Comment extends BaseEntity {
     public Comment(String content, Feed feed, User author) {
         this.content = content;
         this.author = author;
-        setFeed(feed);
-    }
-
-    protected void setFeed(Feed feed) {
         this.feed = feed;
-        feed.addComment(this);
     }
 }

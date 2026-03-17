@@ -11,7 +11,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "feeds")
@@ -47,22 +49,30 @@ public class Feed extends BaseUpdatableEntity {
         this.weather = weather;
     }
 
-    public void addComment(Comment comment) {
+    public Comment addComment(String content, User author) {
+        Comment comment = new Comment(content, this, author);
         this.comments.add(comment);
         this.commentCount++;
+
+        return comment;
     }
-    public void addLike(Like like) {
+
+    public Like addLike(User user) {
+        Like like = new Like(user, this);
         this.likes.add(like);
         this.likeCount++;
+
+        return like;
     }
+
     public void removeLike(Like like) {
-        this.likes.remove(like);
-        this.likeCount--;
+        if (likes.remove(like))
+            likeCount = Math.max(0, likeCount - 1);
     }
 
     // Protype X
     public void removeComment(Comment comment) {
-        this.comments.remove(comment);
-        this.commentCount--;
+        if (comments.remove(comment))
+            commentCount = Math.max(0, commentCount - 1);
     }
 }
