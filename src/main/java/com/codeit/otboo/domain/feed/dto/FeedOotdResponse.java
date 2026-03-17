@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.feed.dto;
 
 import com.codeit.otboo.domain.clothes.dto.response.ClothesAttributeWithDefResponse;
-import com.codeit.otboo.domain.clothes.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import java.util.List;
 import java.util.UUID;
 
