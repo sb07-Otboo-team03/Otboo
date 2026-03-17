@@ -1,11 +1,11 @@
-package com.codeit.otboo.domain.directmessage.dto.response;
+package com.codeit.otboo.domain.directmessage.dto;
 
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record DirectMessageResponse(
+public record DirectMessageCursorResponse(
         UUID id,
         LocalDateTime createdAt,
         UserSummaryResponse sender,

@@ -5,3 +5,7 @@ spring:
   sql:
     init:
       mode: never
+
+notification:
+  timeout: 3600000 # 1시간
+  heartbeat-interval: 30000 # 30초

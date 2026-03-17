@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "follows")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Getter
 public class Follow extends BaseEntity {
 
@@ -36,4 +35,9 @@ public class Follow extends BaseEntity {
             )
     )
     private User followee;
+
+    public Follow(User follower, User followee) {
+        this.follower = follower;
+        this.followee = followee;
+    }
 }
