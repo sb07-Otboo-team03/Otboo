@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.management.entity;
 
+import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -11,7 +12,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class Clothes extends BaseUpdatableEntity {
+public class Clothes extends BaseEntity {
 
     @Column(nullable = false, length = 30)
     private String name;
