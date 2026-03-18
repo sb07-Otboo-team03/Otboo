@@ -22,7 +22,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public JwtResponse signIn(String email, String password) {
-        System.out.println("HASH: " + new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("password123!"));
         Authentication authRequest = new UsernamePasswordAuthenticationToken(email, password);
         Authentication authentication = authenticationManager.authenticate(authRequest);
         SecurityContextHolder.getContext().setAuthentication(authentication);
