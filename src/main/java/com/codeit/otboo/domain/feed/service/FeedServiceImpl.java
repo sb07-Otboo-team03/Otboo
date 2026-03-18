@@ -35,6 +35,7 @@ public class FeedServiceImpl implements FeedService{
     private final UserRepository userRepository;
     private final WeatherRepository weatherRepository;
     private final ClothesRepository clothesRepository;
+    private final FeedMapper feedMapper;
 
     @Override
     @Transactional
@@ -52,15 +53,15 @@ public class FeedServiceImpl implements FeedService{
         feedRepository.save(feed);
         log.debug("Feed 생성 완료 - feedId={}", feed.getId());
 
-        return FeedMapper.toDto(feed);
+        return feedMapper.toDto(feed);
     }
 
     @Override
     public CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
         log.debug("Feed 목록 조회");
 
-        User author = userRepository.findById(authorIdEqual)
-                .orElseThrow(() -> new IllegalArgumentException("authorId is invalid"));
+        if (!userRepository.existsById(authorIdEqual))
+            throw new IllegalArgumentException("authorId is invalid");
 
         FeedSearchCondition condition = FeedSearchCondition.from(request);
 
@@ -69,9 +70,9 @@ public class FeedServiceImpl implements FeedService{
 
         List<FeedResponse> data = feedPage.stream()
                 .map(feed -> {
-                    boolean likedByMe = feed.getLikes().stream()
+                    boolean likedByMe = feed.getLikes().stream()    // N+1 문제
                             .anyMatch(like -> like.getUser().getId().equals(authorIdEqual));
-                    return FeedMapper.toDto(feed, likedByMe);
+                    return feedMapper.toDto(feed, likedByMe);
                 }).toList();
 
         String nextCursor = null;
@@ -99,16 +100,10 @@ public class FeedServiceImpl implements FeedService{
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
 
-        if (request.content() == null || request.content().isBlank()) {
-            throw new IllegalArgumentException("content is required");
-        }
-
         feed.updateContent(request.content());
-        feedRepository.save(feed);
-
         log.debug("Feed 수정 완료");
 
-        return FeedMapper.toDto(feed);
+        return feedMapper.toDto(feed);
     }
 
     @Override
