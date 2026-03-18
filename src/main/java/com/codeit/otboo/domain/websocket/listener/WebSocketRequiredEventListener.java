@@ -1,7 +1,7 @@
-package com.codeit.otboo.domain.websocketNSse.listener;
+package com.codeit.otboo.domain.websocket.listener;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
-import com.codeit.otboo.domain.websocketNSse.event.DirectMessageCreatedEvent;
+import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

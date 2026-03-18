@@ -4,7 +4,6 @@ import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class Follow extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(
             name = "follower_id",
             nullable = false,
@@ -25,7 +24,7 @@ public class Follow extends BaseEntity {
     )
     private User follower;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(
             name = "followee_id",
             nullable = false,

@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.entity;
 
-import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.user.entity.User;

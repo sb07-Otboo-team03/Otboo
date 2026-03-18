@@ -15,11 +15,11 @@ public class DirectMessage extends BaseEntity {
     @Column(name="content", nullable = false, length = 255)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "sender_id")
     private User sender;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "receiver_id")
     private User receiver;
 

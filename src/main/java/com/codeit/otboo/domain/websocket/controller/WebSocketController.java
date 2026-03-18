@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocketNSse.controller;
+package com.codeit.otboo.domain.websocket.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

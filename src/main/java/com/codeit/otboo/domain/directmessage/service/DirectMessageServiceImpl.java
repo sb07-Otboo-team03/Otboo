@@ -3,10 +3,17 @@ package com.codeit.otboo.domain.directmessage.service;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
-import com.codeit.otboo.global.slice.dto.PageResponse;
+import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +24,46 @@ import org.springframework.transaction.annotation.Transactional;
 public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageRepository directMessageRepository;
 
-    @Override
-    public PageResponse<DirectMessageResponse> getDirectMessages(UUID userId, CursorRequest cursorRequest) {
+    private LocalDateTime decodeCursor(String cursor) {
+        if (cursor == null) return null;
+        return LocalDateTime.parse(cursor);
+    }
 
-        throw new UnsupportedOperationException("🚨for Test");
+    public CursorResponse<DirectMessageResponse> getDirectMessages(UUID userId, CursorRequest cursorRequest){
+        LocalDateTime cursor = decodeCursor(cursorRequest.cursor());
+
+        Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
+
+        Slice<DirectMessageResponse> slice = directMessageRepository.findDirectMessages(
+                userId,
+                cursor,
+                cursorRequest.idAfter(),
+                pageable
+            )
+            .map(directMessage -> {
+                UserSummaryResponse sender = UserSummaryResponse.from(directMessage.getSender());
+                UserSummaryResponse receiver = UserSummaryResponse.from(directMessage.getReceiver());
+
+                return DirectMessageResponse.toDto(directMessage, sender, receiver);
+            });
+
+        List<DirectMessageResponse> content = slice.getContent();
+
+        LocalDateTime nextCursor= null;
+        UUID nextIdAfter = null;
+
+        if (!content.isEmpty()) {
+            DirectMessageResponse last = content.get(content.size() - 1);
+            nextCursor = last.createdAt();
+            nextIdAfter = last.id();
+        }
+
+        return CursorResponse.fromSlice(
+            slice,
+            nextCursor != null ? nextCursor.toString() : null,
+            nextIdAfter,
+            "createdAt",
+            SortDirection.DESCENDING);
     }
 }
+

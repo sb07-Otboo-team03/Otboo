@@ -5,7 +5,7 @@ import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
-import com.codeit.otboo.global.slice.dto.PageResponse;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,13 +33,13 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public PageResponse<FollowResponse> getFollowings(UUID followerId, String nameLike, CursorRequest cursorRequest) {
+    public CursorResponse<FollowResponse> getFollowings(UUID followerId, String nameLike, CursorRequest cursorRequest) {
 
         throw new UnsupportedOperationException("🚨for Test");
     }
 
     @Override
-    public PageResponse<FollowResponse> getFollowers(UUID followeeId, String nameLike, CursorRequest cursorRequest) {
+    public CursorResponse<FollowResponse> getFollowers(UUID followeeId, String nameLike, CursorRequest cursorRequest) {
 
         throw new UnsupportedOperationException("🚨for Test");
     }
