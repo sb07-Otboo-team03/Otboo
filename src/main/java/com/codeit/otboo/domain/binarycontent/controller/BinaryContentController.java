@@ -21,12 +21,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BinaryContentController implements BinaryContentControllerDocs {
     private final BinaryContentService binaryContentService;
+    private final BinaryContentMapper binaryContentMapper;
 
     // 파일 업로드
     @PostMapping
     public ResponseEntity<BinaryContentInfoResponse> upload(@RequestPart MultipartFile file) {
-        BinaryContentCreateRequest req = BinaryContentMapper.toRequestDto(file);
-        BinaryContentInfoResponse binaryContent = BinaryContentMapper.toResponseDto(binaryContentService.upload(req));
+        BinaryContentCreateRequest req = binaryContentMapper.toRequestDto(file);
+        BinaryContentInfoResponse binaryContent = binaryContentMapper.toResponseDto(binaryContentService.upload(req));
         return ResponseEntity.created(URI.create("/api/binary-contents/" + binaryContent.id()))
                 .body(binaryContent);
     }
@@ -35,7 +36,7 @@ public class BinaryContentController implements BinaryContentControllerDocs {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> download(@PathVariable UUID id) {
         Resource file = binaryContentService.download(id);
-        BinaryContentInfoResponse metadata = BinaryContentMapper.toResponseDto(binaryContentService.getInfo(id));
+        BinaryContentInfoResponse metadata = binaryContentMapper.toResponseDto(binaryContentService.getInfo(id));
 
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (metadata.type() != null && !metadata.type().isBlank()) {
