@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.clothes.management.mapper;
 
-import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeWithDefResponse;
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import org.springframework.stereotype.Component;
@@ -9,10 +9,10 @@ import java.util.ArrayList;
 
 @Component
 public class ClothesMapper {
-    public static ClothesResponse toDto(
+    public ClothesResponse toDto(
             Clothes clothes,
             String imgUrl,
-            ArrayList<ClothesAttributeWithDefResponse> clothesAttributes){
+            ArrayList<ClothesAttributeValue> clothesAttributes){
         if (clothes == null) return null;
 
         return new ClothesResponse(
@@ -21,7 +21,7 @@ public class ClothesMapper {
                 clothes.getName(),
                 imgUrl,
                 clothes.getType(),
-                clothesAttributes
+                new ArrayList<>()//todo: 관련 Mapper 작성 이후 내용 변경
         );
     }
 }
