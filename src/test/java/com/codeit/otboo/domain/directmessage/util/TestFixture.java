@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.util;
+package com.codeit.otboo.domain.directmessage.util;
 
 
 import com.codeit.otboo.domain.BaseEntity;

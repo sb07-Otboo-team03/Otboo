@@ -4,7 +4,7 @@ import com.codeit.otboo.domain.directmessage.controller.DirectMessageController;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageService;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
-import com.codeit.otboo.domain.util.TestFixture;
+import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -46,7 +46,7 @@ class DirectMessageControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/direct-messages - 정상 조회")
+    @DisplayName("🎯 GET /api/direct-messages - ⭕️ 정상 조회")
     void getDirectMessages_success() throws Exception {
         // given
         UUID userId = UUID.randomUUID();
@@ -110,5 +110,11 @@ class DirectMessageControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data").isArray())
             .andExpect(jsonPath("$.data.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("🎯 GET /api/direct-messages - ❌ DM 목록 조회 실패")
+    void getDirectMessages_fail() {
+
     }
 }

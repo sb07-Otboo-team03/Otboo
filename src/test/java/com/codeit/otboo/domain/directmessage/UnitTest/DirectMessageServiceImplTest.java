@@ -10,7 +10,7 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageServiceImpl;
-import com.codeit.otboo.domain.util.TestFixture;
+import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.time.LocalDateTime;
@@ -59,8 +59,8 @@ class DirectMessageServiceImplTest {
     }
 
     @Test
-    @DisplayName("🎯 getDirectMessages - 정상 조회")
-    void getDirectMessages_case_I() {
+    @DisplayName("🎯 getDirectMessages - ⭕️ 정상 조회")
+    void getDirectMessages_OK() {
         // given
         UUID userId = fixture.getRandomID();
 
@@ -92,5 +92,11 @@ class DirectMessageServiceImplTest {
         // then
         assertThat(result.data()).hasSize(2);
         assertThat(result.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("🎯 getDirectMessages - ❌ 실패")
+    void getDirectMessates_Fail() {
+
     }
 }

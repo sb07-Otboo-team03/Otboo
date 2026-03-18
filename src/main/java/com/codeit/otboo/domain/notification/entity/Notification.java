@@ -23,7 +23,7 @@ public class Notification extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Level level;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "receiver_id",
             nullable = false,
