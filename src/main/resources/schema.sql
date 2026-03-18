@@ -341,9 +341,8 @@ CREATE TABLE binary_contents (
     type varchar(255) NULL
 );
 
-ALTER TABLE binary_contents ADD CONSTRAINT PK_BINARY PRIMARY KEY (
-                                                                  id
-    );
+ALTER TABLE binary_contents ADD CONSTRAINT PK_BINARY PRIMARY KEY (id);
+ALTER TABLE binary_contents ALTER COLUMN size TYPE BIGINT;
 
 -- profiles 테이블에 칼럼 추가 및 참조 연결
 ALTER TABLE profiles ADD COLUMN profile_image_id uuid;
