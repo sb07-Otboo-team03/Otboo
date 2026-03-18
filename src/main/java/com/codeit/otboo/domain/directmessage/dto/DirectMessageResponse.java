@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.dto.response;
+package com.codeit.otboo.domain.directmessage.dto;
 
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 
