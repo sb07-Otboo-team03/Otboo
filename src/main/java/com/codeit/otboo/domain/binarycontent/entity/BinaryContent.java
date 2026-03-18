@@ -19,9 +19,9 @@ public class BinaryContent extends BaseEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "size")
-    private Integer size;
-
     @Column(name = "type")
     private String type;
+
+    @Column(name = "size")
+    private Long size;
 }
