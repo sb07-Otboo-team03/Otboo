@@ -15,7 +15,7 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
-import com.codeit.otboo.global.slice.dto.PageResponse;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
@@ -56,7 +56,7 @@ public class FeedServiceImpl implements FeedService{
     }
 
     @Override
-    public PageResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
+    public CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
         log.debug("Feed 목록 조회");
 
         User author = userRepository.findById(authorIdEqual)
@@ -88,7 +88,7 @@ public class FeedServiceImpl implements FeedService{
         }
 
 
-        return new PageResponse<>(data, nextCursor, nextIdAfter,
+        return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 feedPage.hasNext(), totalCount, request.sortBy(), request.sortDirection());
     }
 

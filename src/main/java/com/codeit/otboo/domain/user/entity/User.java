@@ -1,15 +1,20 @@
 package com.codeit.otboo.domain.user.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
+import com.codeit.otboo.domain.profile.entity.Profile;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class User extends BaseUpdatableEntity {
 
     @Column(name = "email", nullable = false, unique = true)
@@ -24,6 +29,12 @@ public class User extends BaseUpdatableEntity {
 
     @Column(name = "locked", nullable = false)
     private boolean locked = false;
+
+    @JsonManagedReference
+    @Setter(AccessLevel.PUBLIC) // must be PROTECTED
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Profile profile;
+
 
     @Builder
     public User(String email, String password) {

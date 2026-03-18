@@ -4,15 +4,15 @@ import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
-import com.codeit.otboo.global.slice.dto.PageResponse;
 
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.util.UUID;
 
 public interface FeedService {
 
     FeedResponse createFeed(FeedCreateRequest request);
 
-    PageResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual);
+    CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual);
 
     FeedResponse updateFeed(UUID id, FeedUpdateRequest request);
 

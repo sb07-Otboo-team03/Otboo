@@ -3,7 +3,7 @@ package com.codeit.otboo.domain.notification.controller;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.service.NotificationService;
-import com.codeit.otboo.global.slice.dto.PageResponse;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +25,11 @@ public class NotificationController {
 
     // 알림 목록 조회
     @GetMapping
-    public ResponseEntity<PageResponse<NotificationResponse>> getNotifications(
+    public ResponseEntity<CursorResponse<NotificationResponse>> getNotifications(
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
 
-        PageResponse<NotificationResponse> response =
+        CursorResponse<NotificationResponse> response =
             notificationService.getNotifications(cursorRequest);
 
         return ResponseEntity
