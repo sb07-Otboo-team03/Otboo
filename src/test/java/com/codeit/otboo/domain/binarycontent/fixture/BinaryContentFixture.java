@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.binarycontent.fixture;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateReq;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -23,7 +23,7 @@ public class BinaryContentFixture {
         return newBinaryContent;
     }
 
-    public static BinaryContent create(BinaryContentCreateReq req) {
+    public static BinaryContent create(BinaryContentCreateRequest req) {
         BinaryContent newBinaryContent = new BinaryContent(
                 req.name(), req.type(), req.size());
         ReflectionTestUtils.setField(newBinaryContent, "id", UUID.randomUUID());

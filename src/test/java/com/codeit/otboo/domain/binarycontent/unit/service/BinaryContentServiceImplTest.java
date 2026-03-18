@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.binarycontent.unit.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateReq;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
@@ -46,7 +46,7 @@ public class BinaryContentServiceImplTest {
         void success_upload() {
             // given
             byte[] data = "test".getBytes();
-            BinaryContentCreateReq req = new BinaryContentCreateReq(
+            BinaryContentCreateRequest req = new BinaryContentCreateRequest(
                     data, "test_file", "image/png", 30L);
             BinaryContent binaryContent = BinaryContentFixture.create(req);
             given(binaryContentRepository.save(any(BinaryContent.class))).willReturn(binaryContent);

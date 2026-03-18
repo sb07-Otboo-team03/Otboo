@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.binarycontent.mapper;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateReq;
-import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoRes;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
+import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoResponse;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.FileConversionFail;
 import com.codeit.otboo.global.exception.ErrorCode;
@@ -15,12 +15,12 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class BinaryContentMapper {
 
-    public static BinaryContentCreateReq toReqDto(MultipartFile file) {
+    public static BinaryContentCreateRequest toReqDto(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
         }
         try {
-            return new BinaryContentCreateReq(
+            return new BinaryContentCreateRequest(
                     file.getBytes(),
                     file.getOriginalFilename(),
                     file.getContentType(),
@@ -31,11 +31,11 @@ public class BinaryContentMapper {
         }
     }
 
-    public static BinaryContentInfoRes toResDto(BinaryContent binaryContent) {
+    public static BinaryContentInfoResponse toResDto(BinaryContent binaryContent) {
         if (binaryContent == null) {
             return null;
         } else {
-            return new BinaryContentInfoRes(
+            return new BinaryContentInfoResponse(
                     binaryContent.getId(),
                     binaryContent.getName(),
                     binaryContent.getType(),

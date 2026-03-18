@@ -1,8 +1,8 @@
 package com.codeit.otboo.domain.binarycontent.controller;
 
 import com.codeit.otboo.domain.binarycontent.controller.docs.BinaryContentControllerDocs;
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateReq;
-import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoRes;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
+import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoResponse;
 import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +24,9 @@ public class BinaryContentController implements BinaryContentControllerDocs {
 
     // 파일 업로드
     @PostMapping
-    public ResponseEntity<BinaryContentInfoRes> upload(@RequestPart MultipartFile file) {
-        BinaryContentCreateReq req = BinaryContentMapper.toReqDto(file);
-        BinaryContentInfoRes binaryContent = BinaryContentMapper.toResDto(binaryContentService.upload(req));
+    public ResponseEntity<BinaryContentInfoResponse> upload(@RequestPart MultipartFile file) {
+        BinaryContentCreateRequest req = BinaryContentMapper.toReqDto(file);
+        BinaryContentInfoResponse binaryContent = BinaryContentMapper.toResDto(binaryContentService.upload(req));
         return ResponseEntity.created(URI.create("/api/binary-contents/" + binaryContent.id()))
                 .body(binaryContent);
     }
@@ -35,7 +35,7 @@ public class BinaryContentController implements BinaryContentControllerDocs {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> download(@PathVariable UUID id) {
         Resource file = binaryContentService.download(id);
-        BinaryContentInfoRes metadata = BinaryContentMapper.toResDto(binaryContentService.getInfo(id));
+        BinaryContentInfoResponse metadata = BinaryContentMapper.toResDto(binaryContentService.getInfo(id));
 
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (metadata.type() != null && !metadata.type().isBlank()) {

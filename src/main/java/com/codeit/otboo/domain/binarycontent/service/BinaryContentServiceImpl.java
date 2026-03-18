@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.binarycontent.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateReq;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
@@ -22,7 +22,7 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     @Override
     @Transactional
-    public BinaryContent upload(BinaryContentCreateReq req) {
+    public BinaryContent upload(BinaryContentCreateRequest req) {
         BinaryContent binaryContent = new BinaryContent(req.name(), req.type(), req.size());
         BinaryContent infoSaved = binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(infoSaved.getId(), req.data());
