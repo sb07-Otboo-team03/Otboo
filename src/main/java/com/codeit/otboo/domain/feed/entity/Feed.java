@@ -83,4 +83,8 @@ public class Feed extends BaseUpdatableEntity {
         if (comments.remove(comment))
             commentCount = Math.max(0, commentCount - 1);
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }
