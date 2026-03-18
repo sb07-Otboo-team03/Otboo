@@ -2,6 +2,7 @@ package com.codeit.otboo.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
@@ -26,6 +27,11 @@ public enum ErrorCode {
     // Weather
 
     // Profile
+
+    // BinaryContent
+    BINARY_CONTENT_NOT_FOUNT("해당 UUID를 가진 바이너리 컨텐츠가 존재하지 않습니다."),
+    FILE_CONVERSION_FAILED("파일 변환 중 오류가 발생했습니다."),
+    INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
 
     // JWT
 

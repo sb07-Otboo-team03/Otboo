@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.feed.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
+import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.user.entity.User;
@@ -22,7 +23,7 @@ public class Feed extends BaseUpdatableEntity {
     private String content;
 
     @Column(name = "like_count", nullable = false)
-    private int likeCount = 0;
+    private long likeCount = 0;
 
     @Column(name = "comment_count", nullable = false)
     private int commentCount = 0;
@@ -32,7 +33,7 @@ public class Feed extends BaseUpdatableEntity {
     private User author;
 
     @Embedded
-    private WeatherInformation weather;
+    private FeedWeather weather;
 
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
@@ -40,11 +41,20 @@ public class Feed extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes = new ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "clothes_feeds",
+            joinColumns = @JoinColumn(name = "feed_id"),
+            inverseJoinColumns = @JoinColumn(name = "clothes_id")
+    )
+    private List<Clothes> clothesList = new ArrayList<>();
+
     @Builder
-    public Feed(String content, User author, WeatherInformation weather) {
+    public Feed(String content, User author, FeedWeather weather, List<Clothes> clothesList) {
         this.content = content;
         this.author = author;
         this.weather = weather;
+        this.clothesList = clothesList;
     }
 
     public Comment addComment(String content, User author) {
@@ -72,5 +82,9 @@ public class Feed extends BaseUpdatableEntity {
     public void removeComment(Comment comment) {
         if (comments.remove(comment))
             commentCount = Math.max(0, commentCount - 1);
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
     }
 }
