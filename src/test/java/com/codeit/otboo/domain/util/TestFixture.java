@@ -73,7 +73,7 @@ public class TestFixture {
     }
 
     public BinaryContent mockBinaryContent(LocalDateTime createdAt) {
-        BinaryContent binaryContent = new BinaryContent("myFile.png", 500, "image/png");
+        BinaryContent binaryContent = new BinaryContent("test", "image/png", 64L);
 
         return (BinaryContent) setReflection(binaryContent,  createdAt);
     }
