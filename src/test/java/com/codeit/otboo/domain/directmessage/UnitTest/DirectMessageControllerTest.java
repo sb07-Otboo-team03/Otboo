@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.directmessage.controller.DirectMessageController;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageService;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.domain.util.TestFixture;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -37,6 +38,8 @@ class DirectMessageControllerTest {
 
     @MockitoBean
     DirectMessageService directMessageService;
+
+    private final TestFixture fixture = new TestFixture();
 
     @BeforeEach
     void setUp() {
