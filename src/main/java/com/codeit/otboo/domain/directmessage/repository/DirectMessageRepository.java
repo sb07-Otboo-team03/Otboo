@@ -17,19 +17,18 @@ import org.springframework.data.repository.query.Param;
 public interface DirectMessageRepository extends JpaRepository<DirectMessage, UUID> {
 
     @Query("""
-        SELECT d FROM DirectMessage d
-        JOIN FETCH d.sender s
-        JOIN FETCH d.receiver r
-        JOIN FETCH s.profile
-        JOIN FETCH r.profile
-        WHERE d.receiver.id = :userId
-        AND (
-            :cursor IS NULL
-            OR d.createdAt < :cursor
-            OR (d.createdAt = :cursor AND d.id < :idAfter)
+    SELECT d FROM DirectMessage d
+    WHERE d.receiver.id = :userId
+    AND (
+        :cursor IS NULL
+        OR d.createdAt < :cursor
+        OR (
+            d.createdAt = :cursor
+            AND (:idAfter IS NULL OR d.id < :idAfter)
         )
-        ORDER BY d.createdAt DESC, d.id DESC
-    """)
+    )
+    ORDER BY d.createdAt DESC, d.id DESC
+""")
     Slice<DirectMessage> findDirectMessages(
         @Param("userId") UUID userId,
         @Param("cursor") LocalDateTime cursor,
