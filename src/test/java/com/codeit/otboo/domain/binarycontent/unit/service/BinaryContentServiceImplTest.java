@@ -46,13 +46,13 @@ public class BinaryContentServiceImplTest {
         void success_upload() {
             // given
             byte[] data = "test".getBytes();
-            BinaryContentCreateRequest req = new BinaryContentCreateRequest(
+            BinaryContentCreateRequest request = new BinaryContentCreateRequest(
                     data, "test_file", "image/png", 30L);
-            BinaryContent binaryContent = BinaryContentFixture.create(req);
+            BinaryContent binaryContent = BinaryContentFixture.create(request);
             given(binaryContentRepository.save(any(BinaryContent.class))).willReturn(binaryContent);
 
             // when
-            BinaryContent result = binaryContentService.upload(req);
+            BinaryContent result = binaryContentService.upload(request);
 
             // then
             assertThat(result).isEqualTo(binaryContent);

@@ -5,17 +5,14 @@ import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoRespo
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.FileConversionFail;
 import com.codeit.otboo.global.exception.ErrorCode;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class BinaryContentMapper {
-
-    public static BinaryContentCreateRequest toReqDto(MultipartFile file) {
+    public BinaryContentCreateRequest toRequestDto(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
         }
@@ -31,7 +28,7 @@ public class BinaryContentMapper {
         }
     }
 
-    public static BinaryContentInfoResponse toResDto(BinaryContent binaryContent) {
+    public BinaryContentInfoResponse toResponseDto(BinaryContent binaryContent) {
         if (binaryContent == null) {
             return null;
         } else {
