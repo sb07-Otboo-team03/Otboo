@@ -7,5 +7,4 @@ import java.util.UUID;
 
 public interface ProfileRepository extends JpaRepository<Profile, UUID> {
 
-    Profile findByUserId(UUID userId); //??
 }

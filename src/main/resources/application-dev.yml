@@ -18,7 +18,12 @@ spring:
 
 logging:
   level:
+    org.springframework.retry: debug
+    org.springframework.web.socket: debug
+    org.springframework.web.messaging: debug
     org.springframework.security: debug
+    org.hibernate.sql: debug
+    org.hibernate.type.descriptor.sql.basic: trace
     com.codeit.otboo: debug
 
 management:
