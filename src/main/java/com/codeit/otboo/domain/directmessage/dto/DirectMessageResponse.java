@@ -22,4 +22,19 @@ public record DirectMessageResponse(
             receiver,
             directMessage.getContent());
     }
+
+    public static DirectMessageResponse from(DirectMessageDto directMessageDto) {
+        String senderProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.senderProfileImageId(); //??
+        UserSummaryResponse senderSummary = new UserSummaryResponse(directMessageDto.senderId(), directMessageDto.senderName(), senderProfileImageUrl);
+
+        String receiverProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.receiverProfileImageId(); //??
+        UserSummaryResponse receiverSummary = new UserSummaryResponse(directMessageDto.receiverId(), directMessageDto.receiverName(), receiverProfileImageUrl);
+
+        return new DirectMessageResponse(
+            directMessageDto.id(),
+            directMessageDto.createdAt(),
+            senderSummary,
+            receiverSummary,
+            directMessageDto.content());
+    }
 }

@@ -3,7 +3,6 @@ package com.codeit.otboo.domain.directmessage.service;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
-import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,36 +32,39 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
-        Slice<DirectMessageResponse> slice = directMessageRepository.findDirectMessages(
+        List<DirectMessageResponse> list = directMessageRepository.findDirectMessageDtos(
                 userId,
                 cursor,
                 cursorRequest.idAfter(),
                 pageable
             )
-            .map(directMessage -> {
-                UserSummaryResponse sender = UserSummaryResponse.from(directMessage.getSender());
-                UserSummaryResponse receiver = UserSummaryResponse.from(directMessage.getReceiver());
+            .stream()
+            .map(DirectMessageResponse::from)
+            .toList();
 
-                return DirectMessageResponse.toDto(directMessage, sender, receiver);
-            });
+        boolean hasNext = list.size() > cursorRequest.limit();
 
-        List<DirectMessageResponse> content = slice.getContent();
+        if (hasNext) {
+            list = list.subList(0, cursorRequest.limit());
+        }
 
-        LocalDateTime nextCursor= null;
+        LocalDateTime nextCursor = null;
         UUID nextIdAfter = null;
 
-        if (!content.isEmpty()) {
-            DirectMessageResponse last = content.get(content.size() - 1);
+        if (!list.isEmpty()) {
+            DirectMessageResponse last = list.get(list.size() - 1);
             nextCursor = last.createdAt();
             nextIdAfter = last.id();
         }
 
-        return CursorResponse.fromSlice(
-            slice,
+        return CursorResponse.fromList(
+            list,
             nextCursor != null ? nextCursor.toString() : null,
             nextIdAfter,
+            hasNext,
             "createdAt",
-            SortDirection.DESCENDING);
+            SortDirection.DESCENDING
+        );
     }
 }
 

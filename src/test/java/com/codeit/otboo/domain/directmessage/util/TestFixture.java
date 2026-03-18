@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.directmessage.util;
 
 import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.follow.entity.Follow;
@@ -63,27 +64,57 @@ public class TestFixture {
         User receiver,
         String content,
         LocalDateTime createdAt) {
+
         DirectMessage directMessage = new DirectMessage(sender, receiver, content);
 
         return (DirectMessage) setReflection(directMessage, createdAt);
     }
+
+    public DirectMessageDto mockDirectMessageDto(
+        DirectMessage directMessage,
+        User sender,
+        User receiver,
+        LocalDateTime createdAt) {
+
+        UserSummaryResponse senderSummary = mockUserSummaryResponse(sender);
+        UserSummaryResponse receiverSummary = mockUserSummaryResponse(receiver);
+
+        DirectMessageDto directMessageDto = new DirectMessageDto(
+            directMessage.getId(),
+            createdAt,
+            sender.getId(),
+            senderSummary.name(),
+            sender.getProfile().getBinaryContent().getId(),
+            receiver.getId(),
+            receiverSummary.name(),
+            receiver.getProfile().getBinaryContent().getId(),
+            "content..content..content.."
+            );
+
+        return directMessageDto;
+    }
+
+    public UserSummaryResponse mockUserSummaryResponse(User user) {
+
+        String senderProfileImageUrl = "/images/" + user.getProfile().getBinaryContent().getId().toString();
+
+        UserSummaryResponse userSummaryResponse = new UserSummaryResponse(
+            user.getId(),
+            user.getProfile().getName(),
+            senderProfileImageUrl
+        );
+
+        return userSummaryResponse;
+    }
+
 
     public DirectMessageResponse mockDirectMessageResponse(
         DirectMessage directMessage,
         User sender,
         User receiver
     ) {
-        UserSummaryResponse senderSummary = new UserSummaryResponse(
-            sender.getId(),
-            sender.getProfile().getName(),
-            "/images/" + sender.getProfile().getBinaryContent().getId()
-        );
-
-        UserSummaryResponse receiverSummary = new UserSummaryResponse(
-            receiver.getId(),
-            receiver.getProfile().getName(),
-            "/images/" + receiver.getProfile().getBinaryContent().getId()
-        );
+        UserSummaryResponse senderSummary = mockUserSummaryResponse(sender);
+        UserSummaryResponse receiverSummary = mockUserSummaryResponse(receiver);
 
         return new DirectMessageResponse(
             directMessage.getId(),

@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.dto.response;
 
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.user.entity.User;
 import java.util.UUID;
 
