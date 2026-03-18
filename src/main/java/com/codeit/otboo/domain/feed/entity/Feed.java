@@ -33,7 +33,7 @@ public class Feed extends BaseUpdatableEntity {
     private User author;
 
     @Embedded
-    private WeatherInformation weather;
+    private FeedWeather weather;
 
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
@@ -50,7 +50,7 @@ public class Feed extends BaseUpdatableEntity {
     private List<Clothes> clothesList = new ArrayList<>();
 
     @Builder
-    public Feed(String content, User author, WeatherInformation weather, List<Clothes> clothesList) {
+    public Feed(String content, User author, FeedWeather weather, List<Clothes> clothesList) {
         this.content = content;
         this.author = author;
         this.weather = weather;

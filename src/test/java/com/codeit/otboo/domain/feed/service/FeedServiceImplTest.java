@@ -8,7 +8,7 @@ import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
-import com.codeit.otboo.domain.feed.entity.WeatherInformation;
+import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -96,7 +95,7 @@ class FeedServiceImplTest {
         void searchFeedList() {
             // given
             UUID feedId = UUID.randomUUID();
-            WeatherInformation weatherInformation = WeatherInformation.builder().build();
+            FeedWeather weatherInformation = FeedWeather.builder().build();
             Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation).build();
 
             given(feedRepository.findById(any(UUID.class))).willReturn(Optional.of(feed));

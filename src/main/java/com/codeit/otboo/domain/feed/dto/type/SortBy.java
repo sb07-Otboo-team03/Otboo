@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum SortBy {
-    CREATE_AT("createAt"),
+    CREATED_AT("createdAt"),
     LIKE_COUNT("likeCount");
 
     private final String description;

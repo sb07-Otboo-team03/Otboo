@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class WeatherInformation {
+public class FeedWeather {
 
     @Column(name = "feed_weather_id", nullable = false)
     private UUID weatherId;

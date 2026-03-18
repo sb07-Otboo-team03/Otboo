@@ -4,7 +4,7 @@ import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.feed.dto.response.FeedOotdResponse;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
-import com.codeit.otboo.domain.feed.entity.WeatherInformation;
+import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.weather.dto.response.PrecipitationResponse;
 import com.codeit.otboo.domain.weather.dto.response.TemperatureResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherSummaryResponse;
@@ -32,7 +32,7 @@ public class FeedMapper {
                 .build();
     }
 
-    private static WeatherSummaryResponse toWeatherSummaryDto(WeatherInformation weather) {
+    private static WeatherSummaryResponse toWeatherSummaryDto(FeedWeather weather) {
         PrecipitationResponse precipitationResponse = new PrecipitationResponse(
                 weather.getPrecipitationType(),
                 weather.getPrecipitationAmount(),
@@ -46,13 +46,12 @@ public class FeedMapper {
                 weather.getTemperatureMax()
         );
 
-        return
-                new WeatherSummaryResponse(
-                        weather.getWeatherId(),
-                        weather.getSkyStatus(),
-                        precipitationResponse,
-                        temperatureResponse
-                );
+        return new WeatherSummaryResponse(
+                weather.getWeatherId(),
+                weather.getSkyStatus(),
+                precipitationResponse,
+                temperatureResponse
+        );
     }
 
     private static List<FeedOotdResponse> toOotdDto(List<Clothes> clothes) {

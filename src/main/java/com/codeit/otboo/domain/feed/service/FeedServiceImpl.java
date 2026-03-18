@@ -9,7 +9,7 @@ import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
-import com.codeit.otboo.domain.feed.entity.WeatherInformation;
+import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -39,25 +39,25 @@ public class FeedServiceImpl implements FeedService{
     @Override
     @Transactional
     public FeedResponse createFeed(FeedCreateRequest request) {
-        log.info("Feed 생성 요청 - userId={}", request.authorId());
+        log.debug("Feed 생성 요청 - userId={}", request.authorId());
 
         User author = userRepository.findById(request.authorId())
                 .orElseThrow(() -> new IllegalArgumentException("authorId is invalid"));
 
-        WeatherInformation weather = getWeatherInformation(request.weatherId());
+        FeedWeather weather = getWeatherInformation(request.weatherId());
 
         List<Clothes> clothesList = clothesRepository.findAllById(request.clothesIds());
 
         Feed feed = new Feed(request.content(), author, weather, clothesList);
         feedRepository.save(feed);
-        log.info("Feed 생성 완료 - feedId={}", feed.getId());
+        log.debug("Feed 생성 완료 - feedId={}", feed.getId());
 
         return FeedMapper.toDto(feed);
     }
 
     @Override
     public PageResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
-        log.info("Feed 목록 조회");
+        log.debug("Feed 목록 조회");
 
         User author = userRepository.findById(authorIdEqual)
                 .orElseThrow(() -> new IllegalArgumentException("authorId is invalid"));
@@ -96,7 +96,7 @@ public class FeedServiceImpl implements FeedService{
     @Override
     @Transactional
     public FeedResponse updateFeed(UUID id, FeedUpdateRequest request) {
-        log.info("Feed 수정 요청 - id={}", id);
+        log.debug("Feed 수정 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
 
@@ -107,7 +107,7 @@ public class FeedServiceImpl implements FeedService{
         feed.updateContent(request.content());
         feedRepository.save(feed);
 
-        log.info("Feed 수정 완료");
+        log.debug("Feed 수정 완료");
 
         return FeedMapper.toDto(feed);
     }
@@ -115,18 +115,18 @@ public class FeedServiceImpl implements FeedService{
     @Override
     @Transactional
     public void deleteFeed(UUID id) {
-        log.info("Feed 삭제 요청 - id={}", id);
+        log.debug("Feed 삭제 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
         feedRepository.delete(feed);
-        log.info("Feed 삭제 완료");
+        log.debug("Feed 삭제 완료");
     }
 
-    private WeatherInformation getWeatherInformation(UUID weatherId) {
+    private FeedWeather getWeatherInformation(UUID weatherId) {
         Weather weather = weatherRepository.findById(weatherId)
                 .orElseThrow(() -> new IllegalArgumentException("weatherId is invalid"));
 
-        return WeatherInformation.builder()
+        return FeedWeather.builder()
                 .weatherId(weather.getId())
                 .skyStatus(weather.getSkyStatus())
                 .precipitationType(weather.getPrecipitationType())
