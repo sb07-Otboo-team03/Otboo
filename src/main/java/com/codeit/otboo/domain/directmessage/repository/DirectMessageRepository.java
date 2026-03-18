@@ -51,4 +51,23 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
         @Param("idAfter") UUID idAfter,
         Pageable pageable
     );
+
+//    @Query("""
+//        SELECT d FROM DirectMessage d
+//        JOIN FETCH d.sender s
+//        JOIN FETCH d.receiver r
+//        JOIN FETCH s.profile sp
+//        JOIN FETCH r.profile rp
+//        WHERE (d.sender.id = :userId OR d.receiver.id = :userId)
+//          AND (:cursor IS NULL
+//               OR d.createdAt < :cursor
+//               OR (d.createdAt = :cursor AND d.id < :idAfter))
+//        ORDER BY d.createdAt DESC, d.id DESC
+//    """)
+//    List<DirectMessage> findDirectMessages(
+//        @Param("userId") UUID userId,
+//        @Param("cursor") LocalDateTime cursor,
+//        @Param("idAfter") UUID idAfter,
+//        Pageable pageable
+//    );
 }
