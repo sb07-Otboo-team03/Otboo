@@ -3,13 +3,19 @@ package com.codeit.otboo.domain.directmessage.util;
 
 import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.notification.entity.Level;
 import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -37,13 +43,64 @@ public class TestFixture {
         return user;
     }
 
-    public DirectMessage mockDirectMessage(User sender, User receiver, String content, LocalDateTime createdAt) {
-        DirectMessage dm = new DirectMessage(sender, receiver, content);
+    public UserResponse mockUserResponse(
+        User user,
+        Profile profile,
+        LocalDateTime createdAt) {
 
-        return (DirectMessage) setReflection(dm, createdAt);
+        return new UserResponse(
+            user.getId(),
+            createdAt,
+            user.getEmail(),
+            profile.getName(),
+            Role.USER,
+            false
+        );
     }
 
-    public Notification mockNotification(String title, String content, Level level, User receiver, LocalDateTime createdAt) {
+    public DirectMessage mockDirectMessage(
+        User sender,
+        User receiver,
+        String content,
+        LocalDateTime createdAt) {
+        DirectMessage directMessage = new DirectMessage(sender, receiver, content);
+
+        return (DirectMessage) setReflection(directMessage, createdAt);
+    }
+
+    public DirectMessageResponse mockDirectMessageResponse(
+        DirectMessage directMessage,
+        User sender,
+        User receiver
+    ) {
+        UserSummaryResponse senderSummary = new UserSummaryResponse(
+            sender.getId(),
+            sender.getProfile().getName(),
+            "/images/" + sender.getProfile().getBinaryContent().getId()
+        );
+
+        UserSummaryResponse receiverSummary = new UserSummaryResponse(
+            receiver.getId(),
+            receiver.getProfile().getName(),
+            "/images/" + receiver.getProfile().getBinaryContent().getId()
+        );
+
+        return new DirectMessageResponse(
+            directMessage.getId(),
+            directMessage.getCreatedAt(),
+            senderSummary,
+            receiverSummary,
+            directMessage.getContent()
+        );
+    }
+
+    public Notification mockNotification(
+        String title,
+        String content,
+        Level level,
+        User receiver,
+        LocalDateTime createdAt) {
+
         Notification notification = new Notification(title, content, level, receiver);
 
         return (Notification) setReflection(notification, createdAt);
@@ -63,7 +120,7 @@ public class TestFixture {
 
         Profile profile = Profile.builder()
             .user(user)
-            .name("testName")
+            .name("BOOM")
             .build();
 
         ReflectionTestUtils.setField(profile, "gender", Gender.FEMALE);
@@ -72,8 +129,22 @@ public class TestFixture {
         return (Profile) setReflection(profile,  profileTime);
     }
 
+    public ProfileResponse mockProfileResponse(Profile profile, User user, LocalDateTime createdAt) {
+        UserResponse userResponse = mockUserResponse(user, profile, createdAt);
+
+        return new ProfileResponse(
+            userResponse.id(),
+            profile.getName(),
+            Gender.FEMALE,
+            LocalDate.now(),
+            null,
+            0,
+            "/imageUrl/Gasp.png"
+        );
+    }
+
     public BinaryContent mockBinaryContent(LocalDateTime createdAt) {
-        BinaryContent binaryContent = new BinaryContent("test", "image/png", 64L);
+        BinaryContent binaryContent = new BinaryContent("BOOM", "Oh/png", 64L);
 
         return (BinaryContent) setReflection(binaryContent,  createdAt);
     }

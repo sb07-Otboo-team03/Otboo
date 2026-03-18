@@ -11,6 +11,8 @@ import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageServiceImpl;
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
+import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.time.LocalDateTime;
@@ -45,8 +47,14 @@ class DirectMessageServiceImplTest {
     private final TestFixture fixture = new TestFixture();
     private User user_I;
     private User user_II;
+//    private User user_III;
     private DirectMessage directMessage_I;
     private DirectMessage directMessage_II;
+//    private DirectMessageResponse directMessageResponse_I;
+//    private DirectMessageResponse directMessageResponse_II;
+
+//    private UserResponse userResponse;
+//    private ProfileResponse profileResponse;
 
     @BeforeEach
     void setUp() {
@@ -56,6 +64,11 @@ class DirectMessageServiceImplTest {
         user_II = fixture.mockUserWithProfile(now.minusSeconds(1));
         directMessage_I = fixture.mockDirectMessage(user_I, user_II, "msg1", now.minusSeconds(2));
         directMessage_II = fixture.mockDirectMessage(user_I, user_II, "msg2", now.minusSeconds(3));
+
+//        userResponse = fixture.mockUserResponse(user_I, user_I.getProfile(), now);
+//        profileResponse = fixture.mockProfileResponse(user_I.getProfile(), user_I, now);
+//        directMessageResponse_I = fixture.mockDirectMessageResponse(directMessage_I, user_I, user_II);
+//        directMessageResponse_II = fixture.mockDirectMessageResponse(directMessage_I, user_III, user_II);
     }
 
     @Test
@@ -77,6 +90,12 @@ class DirectMessageServiceImplTest {
             pageable,
             false // hasNext
         );
+
+//        Slice<DirectMessageResponse> slice = new SliceImpl<>(
+//            List.of(directMessageResponse_I, directMessageResponse_II),
+//            pageable,
+//            false // hasNext
+//        );
 
         given(directMessageRepository.findDirectMessages(
             eq(userId),
