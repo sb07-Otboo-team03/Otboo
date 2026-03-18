@@ -9,10 +9,10 @@ import java.util.UUID;
 
 @Embeddable
 @Getter
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class WeatherInformation {
+public class FeedWeather {
 
     @Column(name = "feed_weather_id", nullable = false)
     private UUID weatherId;
