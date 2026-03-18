@@ -25,8 +25,8 @@ public class BinaryContentController implements BinaryContentControllerDocs {
     // 파일 업로드
     @PostMapping
     public ResponseEntity<BinaryContentInfoResponse> upload(@RequestPart MultipartFile file) {
-        BinaryContentCreateRequest req = BinaryContentMapper.toReqDto(file);
-        BinaryContentInfoResponse binaryContent = BinaryContentMapper.toResDto(binaryContentService.upload(req));
+        BinaryContentCreateRequest req = BinaryContentMapper.toRequestDto(file);
+        BinaryContentInfoResponse binaryContent = BinaryContentMapper.toResponseDto(binaryContentService.upload(req));
         return ResponseEntity.created(URI.create("/api/binary-contents/" + binaryContent.id()))
                 .body(binaryContent);
     }
@@ -35,7 +35,7 @@ public class BinaryContentController implements BinaryContentControllerDocs {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> download(@PathVariable UUID id) {
         Resource file = binaryContentService.download(id);
-        BinaryContentInfoResponse metadata = BinaryContentMapper.toResDto(binaryContentService.getInfo(id));
+        BinaryContentInfoResponse metadata = BinaryContentMapper.toResponseDto(binaryContentService.getInfo(id));
 
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (metadata.type() != null && !metadata.type().isBlank()) {

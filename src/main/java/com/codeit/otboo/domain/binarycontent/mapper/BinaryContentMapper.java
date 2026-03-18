@@ -15,7 +15,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class BinaryContentMapper {
 
-    public static BinaryContentCreateRequest toReqDto(MultipartFile file) {
+    public static BinaryContentCreateRequest toRequestDto(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
         }
@@ -31,7 +31,7 @@ public class BinaryContentMapper {
         }
     }
 
-    public static BinaryContentInfoResponse toResDto(BinaryContent binaryContent) {
+    public static BinaryContentInfoResponse toResponseDto(BinaryContent binaryContent) {
         if (binaryContent == null) {
             return null;
         } else {
