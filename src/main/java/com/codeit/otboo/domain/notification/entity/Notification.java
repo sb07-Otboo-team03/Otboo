@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "notifications")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Getter
 public class Notification extends BaseEntity {
 
@@ -35,4 +34,11 @@ public class Notification extends BaseEntity {
             )
     )
     private User receiver;
+
+    public Notification(String title, String content, Level level, User receiver) {
+        this.title = title;
+        this.content = content;
+        this.level = level;
+        this.receiver = receiver;
+    }
 }

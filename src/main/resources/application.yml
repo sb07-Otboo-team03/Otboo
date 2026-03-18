@@ -23,3 +23,6 @@ info:
   app:
     name: OtBoo
     version: 1.0.0
+
+sse:
+  timeout: 300_000

@@ -9,4 +9,4 @@ public record FollowSummaryResponse(
         boolean followedByMe,
         UUID followedByMeId,
         boolean followingMe
-) { }
+) {}

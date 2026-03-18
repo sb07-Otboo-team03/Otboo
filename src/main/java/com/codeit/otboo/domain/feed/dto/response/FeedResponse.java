@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.feed.dto;
+package com.codeit.otboo.domain.feed.dto.response;
 import com.codeit.otboo.domain.comment.dto.AuthorResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherSummaryResponse;
 import java.time.LocalDateTime;

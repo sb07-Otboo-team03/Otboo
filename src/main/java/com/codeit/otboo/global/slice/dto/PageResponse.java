@@ -12,5 +12,4 @@ public record PageResponse<T>(
     String sortBy,
     SortDirection sortDirection
 ) {
-
 }
