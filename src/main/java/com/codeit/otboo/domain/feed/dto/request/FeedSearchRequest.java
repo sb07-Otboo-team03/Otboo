@@ -19,7 +19,7 @@ public record FeedSearchRequest(
 ) {
     public FeedSearchRequest {
         if (limit == null) limit = 10;
-        if (sortBy == null) sortBy = SortBy.CREATE_AT.getDescription();
+        if (sortBy == null) sortBy = SortBy.CREATED_AT.getDescription();
         if (sortDirection == null) sortDirection = SortDirection.DESCENDING;
     }
 }

@@ -81,10 +81,9 @@ public class FeedServiceImpl implements FeedService{
             List<Feed> content = feedPage.getContent();
             Feed lastFeed = content.get(data.size() - 1);
 
-            nextCursor = switch (request.sortBy()) {
-                case "createdAt" -> String.valueOf(lastFeed.getCreatedAt());
-                default -> String.valueOf(lastFeed.getLikeCount());
-            };
+            nextCursor = request.sortBy().equals("createdAt") ?
+                    String.valueOf(lastFeed.getCreatedAt()) :
+                    String.valueOf(lastFeed.getLikeCount());
             nextIdAfter = lastFeed.getId();
         }
 
