@@ -25,3 +25,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+otboo:
+  storage:
+    type: local
+    local:
+      root-path: ./storage
