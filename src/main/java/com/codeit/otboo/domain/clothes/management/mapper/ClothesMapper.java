@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public class ClothesMapper {
     public ClothesResponse toDto(
             Clothes clothes,
-            String imgUrl,
+            String imageUrl,
             ArrayList<ClothesAttributeValue> clothesAttributes){
         if (clothes == null) return null;
 
@@ -19,7 +19,7 @@ public class ClothesMapper {
             clothes.getId(),
                 clothes.getOwner().getId(),
                 clothes.getName(),
-                imgUrl,
+                imageUrl,
                 clothes.getType(),
                 new ArrayList<>()//todo: 관련 Mapper 작성 이후 내용 변경
         );

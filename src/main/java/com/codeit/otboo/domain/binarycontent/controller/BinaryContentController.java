@@ -26,8 +26,8 @@ public class BinaryContentController implements BinaryContentControllerDocs {
     // 파일 업로드
     @PostMapping
     public ResponseEntity<BinaryContentInfoResponse> upload(@RequestPart MultipartFile file) {
-        BinaryContentCreateRequest req = binaryContentMapper.toRequestDto(file);
-        BinaryContentInfoResponse binaryContent = binaryContentMapper.toResponseDto(binaryContentService.upload(req));
+        BinaryContentCreateRequest request = binaryContentMapper.toRequestDto(file);
+        BinaryContentInfoResponse binaryContent = binaryContentMapper.toResponseDto(binaryContentService.upload(request));
         return ResponseEntity.created(URI.create("/api/binary-contents/" + binaryContent.id()))
                 .body(binaryContent);
     }
