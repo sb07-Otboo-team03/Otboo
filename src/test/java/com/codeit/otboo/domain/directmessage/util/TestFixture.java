@@ -94,6 +94,26 @@ public class TestFixture {
         return directMessageDto;
     }
 
+    public DirectMessageDto mockDirectMessageDtoWithTime(LocalDateTime createdAt) {
+
+        User sender = mockUserWithProfile(createdAt.minusSeconds(1));
+        User receiver = mockUserWithProfile(createdAt.minusSeconds(2));
+
+        DirectMessage directMessage = mockDirectMessage(
+            sender,
+            receiver,
+            "test message",
+            createdAt
+        );
+
+        return mockDirectMessageDto(
+            directMessage,
+            sender,
+            receiver,
+            createdAt
+        );
+    }
+
     public UserSummaryResponse mockUserSummaryResponse(User user) {
 
         String senderProfileImageUrl = "/images/" + user.getProfile().getBinaryContent().getId().toString();
@@ -108,13 +128,19 @@ public class TestFixture {
     }
 
 
-    public DirectMessageResponse mockDirectMessageResponse(
-        DirectMessage directMessage,
-        User sender,
-        User receiver
-    ) {
+    public DirectMessageResponse mockDirectMessageResponse(LocalDateTime createdAt) {
+        User sender = mockUserWithProfile(createdAt.minusSeconds(1));
+        User receiver = mockUserWithProfile(createdAt.minusSeconds(2));
+
         UserSummaryResponse senderSummary = mockUserSummaryResponse(sender);
         UserSummaryResponse receiverSummary = mockUserSummaryResponse(receiver);
+
+        DirectMessage directMessage = mockDirectMessage(
+            sender,
+            receiver,
+            "directMessage.content",
+            createdAt
+        );
 
         return new DirectMessageResponse(
             directMessage.getId(),

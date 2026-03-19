@@ -14,14 +14,4 @@ public record NotificationResponse(
         String content,
         Level level
 ) {
-    public static NotificationResponse toDto(Notification notification) {
-        return new NotificationResponse(
-            notification.getId(),
-            notification.getCreatedAt(),
-            notification.getReceiver().getId(),
-            notification.getTitle(),
-            notification.getContent(),
-            notification.getLevel()
-        );
-    }
 }

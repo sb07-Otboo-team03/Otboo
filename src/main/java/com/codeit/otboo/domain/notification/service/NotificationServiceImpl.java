@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.notification.service;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class NotificationServiceImpl implements NotificationService{
     private final NotificationRepository notificationRepository;
+    private final NotificationMapper notificationMapper;
 
     private LocalDateTime decodeCursor(String cursor) {
         if (cursor == null) return null;
@@ -40,7 +42,7 @@ public class NotificationServiceImpl implements NotificationService{
                 pageable
             )
             .stream()
-            .map(NotificationResponse::toDto)
+            .map(notificationMapper::toDto)
             .toList();
 
         boolean hasNext = notificationList.size() > cursorRequest.limit();
