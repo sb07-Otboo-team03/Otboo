@@ -2,9 +2,8 @@ package com.codeit.otboo.domain.directmessage.service;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
+import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
-import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
-import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageRepository directMessageRepository;
-    private final UserMapper userMapper;
+    private final DirectMessageMapper directMessageMapper;
 
     private LocalDateTime decodeCursor(String cursor) {
         if (cursor == null) return null;
@@ -36,36 +34,39 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
-        Slice<DirectMessageResponse> slice = directMessageRepository.findDirectMessages(
+        List<DirectMessageResponse> directMessageList = directMessageRepository.findDirectMessageDtos(
                 userId,
                 cursor,
                 cursorRequest.idAfter(),
                 pageable
             )
-            .map(directMessage -> {
-                UserSummaryResponse sender = userMapper.toSummaryDto(directMessage.getSender(), null);
-                UserSummaryResponse receiver = userMapper.toSummaryDto(directMessage.getReceiver(), null);
+            .stream()
+            .map(directMessageMapper::from)
+            .toList();
 
-                return DirectMessageResponse.toDto(directMessage, sender, receiver);
-            });
+        boolean hasNext = directMessageList.size() > cursorRequest.limit();
 
-        List<DirectMessageResponse> content = slice.getContent();
+        if (hasNext) {
+            directMessageList = directMessageList.subList(0, cursorRequest.limit());
+        }
 
-        LocalDateTime nextCursor= null;
+        LocalDateTime nextCursor = null;
         UUID nextIdAfter = null;
 
-        if (!content.isEmpty()) {
-            DirectMessageResponse last = content.get(content.size() - 1);
+        if (!directMessageList.isEmpty()) {
+            DirectMessageResponse last = directMessageList.get(directMessageList.size() - 1);
             nextCursor = last.createdAt();
             nextIdAfter = last.id();
         }
 
-        return CursorResponse.fromSlice(
-            slice,
+        return CursorResponse.fromList(
+            directMessageList,
             nextCursor != null ? nextCursor.toString() : null,
             nextIdAfter,
+            hasNext,
             "createdAt",
-            SortDirection.DESCENDING);
+            SortDirection.DESCENDING
+        );
     }
 }
 

@@ -13,13 +13,4 @@ public record DirectMessageResponse(
         UserSummaryResponse receiver,
         String content
 ) {
-    public static DirectMessageResponse toDto(DirectMessage directMessage, UserSummaryResponse sender, UserSummaryResponse receiver) {
-
-        return new DirectMessageResponse(
-            directMessage.getId(),
-            directMessage.getCreatedAt(),
-            sender,
-            receiver,
-            directMessage.getContent());
-    }
 }
