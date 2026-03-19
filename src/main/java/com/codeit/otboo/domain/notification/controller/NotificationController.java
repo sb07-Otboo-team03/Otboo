@@ -28,7 +28,6 @@ public class NotificationController {
     public ResponseEntity<CursorResponse<NotificationResponse>> getNotifications(
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
-
         CursorResponse<NotificationResponse> response =
             notificationService.getNotifications(cursorRequest);
 

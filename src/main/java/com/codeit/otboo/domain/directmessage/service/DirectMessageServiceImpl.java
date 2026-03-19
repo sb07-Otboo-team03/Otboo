@@ -3,7 +3,6 @@ package com.codeit.otboo.domain.directmessage.service;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
-import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -33,7 +32,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
-        List<DirectMessageResponse> list = directMessageRepository.findDirectMessageDtos(
+        List<DirectMessageResponse> directMessageList = directMessageRepository.findDirectMessageDtos(
                 userId,
                 cursor,
                 cursorRequest.idAfter(),
@@ -43,23 +42,23 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             .map(DirectMessageResponse::from)
             .toList();
 
-        boolean hasNext = list.size() > cursorRequest.limit();
+        boolean hasNext = directMessageList.size() > cursorRequest.limit();
 
         if (hasNext) {
-            list = list.subList(0, cursorRequest.limit());
+            directMessageList = directMessageList.subList(0, cursorRequest.limit());
         }
 
         LocalDateTime nextCursor = null;
         UUID nextIdAfter = null;
 
-        if (!list.isEmpty()) {
-            DirectMessageResponse last = list.get(list.size() - 1);
+        if (!directMessageList.isEmpty()) {
+            DirectMessageResponse last = directMessageList.get(directMessageList.size() - 1);
             nextCursor = last.createdAt();
             nextIdAfter = last.id();
         }
 
         return CursorResponse.fromList(
-            list,
+            directMessageList,
             nextCursor != null ? nextCursor.toString() : null,
             nextIdAfter,
             hasNext,
@@ -67,50 +66,5 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             SortDirection.DESCENDING
         );
     }
-
-//    public CursorResponse<DirectMessageResponse> getDirectMessages_caseII(UUID userId, CursorRequest cursorRequest){
-//        LocalDateTime cursor = decodeCursor(cursorRequest.cursor());
-//
-//        Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
-//
-//        List<DirectMessageResponse> list = directMessageRepository.findDirectMessages(
-//                userId,
-//                cursor,
-//                cursorRequest.idAfter(),
-//                pageable
-//            )
-//            .stream()
-//            .map(directMessage -> {
-//                UserSummaryResponse sender = UserSummaryResponse.from(directMessage.getSender());
-//                UserSummaryResponse receiver = UserSummaryResponse.from(directMessage.getReceiver());
-//
-//                return DirectMessageResponse.toDto(directMessage, sender, receiver);
-//            })
-//            .toList();
-//
-//        boolean hasNext = list.size() > cursorRequest.limit();
-//
-//        if (hasNext) {
-//            list = list.subList(0, cursorRequest.limit());
-//        }
-//
-//        LocalDateTime nextCursor = null;
-//        UUID nextIdAfter = null;
-//
-//        if (!list.isEmpty()) {
-//            DirectMessageResponse last = list.get(list.size() - 1);
-//            nextCursor = last.createdAt();
-//            nextIdAfter = last.id();
-//        }
-//
-//        return CursorResponse.fromList(
-//            list,
-//            nextCursor != null ? nextCursor.toString() : null,
-//            nextIdAfter,
-//            hasNext,
-//            "createdAt",
-//            SortDirection.DESCENDING
-//        );
-//    }
 }
 
