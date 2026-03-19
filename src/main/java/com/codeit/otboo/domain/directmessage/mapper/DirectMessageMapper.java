@@ -21,10 +21,10 @@ public class DirectMessageMapper {
 
     public DirectMessageResponse from(DirectMessageDto directMessageDto) {
 
-        String senderProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.senderProfileImageId(); //??
+        String senderProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.senderProfileImageId();
         UserSummaryResponse senderSummary = new UserSummaryResponse(directMessageDto.senderId(), directMessageDto.senderName(), senderProfileImageUrl);
 
-        String receiverProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.receiverProfileImageId(); //??
+        String receiverProfileImageUrl = "yml 명시 경로" + "/" + directMessageDto.receiverProfileImageId();
         UserSummaryResponse receiverSummary = new UserSummaryResponse(directMessageDto.receiverId(), directMessageDto.receiverName(), receiverProfileImageUrl);
 
         return new DirectMessageResponse(
