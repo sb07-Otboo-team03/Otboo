@@ -17,4 +17,6 @@ public interface LikeRepository extends JpaRepository<Like, UUID> {
 
     @Query("SELECT l.feed.id FROM Like l WHERE l.user.id = ?1 AND l.feed.id IN ?2")
     Set<UUID> findFeedIdsByUserIdAndFeedIdIn(UUID userId, List<UUID> feedIds);
+
+    void deleteAllByFeedId(UUID feedId);
 }

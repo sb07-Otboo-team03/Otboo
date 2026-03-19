@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.feed.service;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
 import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchCondition;
@@ -39,6 +40,7 @@ public class FeedServiceImpl implements FeedService{
     private final ClothesRepository clothesRepository;
     private final LikeRepository likeRepository;
     private final FeedMapper feedMapper;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
@@ -69,14 +71,17 @@ public class FeedServiceImpl implements FeedService{
         FeedSearchCondition condition = FeedSearchCondition.from(request);
 
         Slice<Feed> feedPage = feedRepository.findAllByKeywordLike(condition);
-        long totalCount = feedRepository.countTotalElements(condition);
-
         List<Feed> content = feedPage.getContent();
+        if (content.isEmpty())
+            return new CursorResponse<>(List.of(), null, null,
+                    false, 0L, request.sortBy(), request.sortDirection());
+
+        long totalCount = feedRepository.countTotalElements(condition);
 
         List<UUID> feedIds = content.stream().map(Feed::getId).toList();
         Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(authorIdEqual, feedIds);
 
-        List<FeedResponse> data = feedPage.stream()
+        List<FeedResponse> data = content.stream()
                 .map(feed -> {
                     boolean likedByMe = likedFeedIds.contains(feed.getId());
                     return feedMapper.toDto(feed, likedByMe);
@@ -85,7 +90,7 @@ public class FeedServiceImpl implements FeedService{
         String nextCursor = null;
         UUID nextIdAfter = null;
 
-        if (feedPage.hasNext() && !feedPage.isEmpty()) {
+        if (feedPage.hasNext()) {
             Feed lastFeed = content.get(data.size() - 1);
 
             nextCursor = request.sortBy().equals("createdAt") ?
@@ -93,7 +98,6 @@ public class FeedServiceImpl implements FeedService{
                     String.valueOf(lastFeed.getLikeCount());
             nextIdAfter = lastFeed.getId();
         }
-
 
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 feedPage.hasNext(), totalCount, request.sortBy(), request.sortDirection());
@@ -118,7 +122,11 @@ public class FeedServiceImpl implements FeedService{
         log.debug("Feed 삭제 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
+
+        likeRepository.deleteAllByFeedId(id);
+//        commentRepository.deleteAllByFeedId(id); // TODO
         feedRepository.delete(feed);
+
         log.debug("Feed 삭제 완료");
     }
 

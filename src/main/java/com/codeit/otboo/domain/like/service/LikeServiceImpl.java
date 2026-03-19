@@ -32,7 +32,9 @@ public class LikeServiceImpl implements LikeService {
         if (likeRepository.existsByFeedIdAndUserId(feedId, userId))
             throw new IllegalArgumentException("already liked");
 
-        feed.addLike(user);
+        Like like = new Like(user, feed);
+        likeRepository.save(like);
+        feed.increaseLike();
     }
 
     @Override
@@ -42,6 +44,7 @@ public class LikeServiceImpl implements LikeService {
                 .orElseThrow(() -> new IllegalArgumentException("like is invalid"));
 
         Feed feed = like.getFeed();
-        feed.removeLike(like);
+        likeRepository.delete(like);
+        feed.decreaseLike();
     }
 }
