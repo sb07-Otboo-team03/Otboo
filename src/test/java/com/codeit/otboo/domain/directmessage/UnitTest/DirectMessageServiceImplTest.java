@@ -12,6 +12,7 @@ import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageServiceImpl;
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,6 +34,9 @@ import org.springframework.data.domain.SliceImpl;
 class DirectMessageServiceImplTest {
     @Mock
     DirectMessageRepository directMessageRepository;
+
+    @Mock
+    UserMapper userMapper;
 
     @InjectMocks
     DirectMessageServiceImpl directMessageService;

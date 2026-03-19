@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageRepository directMessageRepository;
+    private final UserMapper userMapper;
 
     private LocalDateTime decodeCursor(String cursor) {
         if (cursor == null) return null;
@@ -41,8 +43,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
                 pageable
             )
             .map(directMessage -> {
-                UserSummaryResponse sender = UserSummaryResponse.from(directMessage.getSender());
-                UserSummaryResponse receiver = UserSummaryResponse.from(directMessage.getReceiver());
+                UserSummaryResponse sender = userMapper.toSummaryDto(directMessage.getSender(), null);
+                UserSummaryResponse receiver = userMapper.toSummaryDto(directMessage.getReceiver(), null);
 
                 return DirectMessageResponse.toDto(directMessage, sender, receiver);
             });
