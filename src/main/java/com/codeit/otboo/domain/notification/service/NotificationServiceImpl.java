@@ -74,7 +74,7 @@ public class NotificationServiceImpl implements NotificationService{
     @Transactional
     public void deleteNotification(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> new IllegalArgumentException("🚨Invalid JWT token"));
+            .orElseThrow(() -> new IllegalArgumentException("🚨"));
 
         notificationRepository.delete(notification);
     }
