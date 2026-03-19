@@ -23,9 +23,9 @@ public class BinaryContentFixture {
         return newBinaryContent;
     }
 
-    public static BinaryContent create(BinaryContentCreateRequest req) {
+    public static BinaryContent create(BinaryContentCreateRequest request) {
         BinaryContent newBinaryContent = new BinaryContent(
-                req.name(), req.type(), req.size());
+                request.name(), request.type(), request.size());
         ReflectionTestUtils.setField(newBinaryContent, "id", UUID.randomUUID());
         return newBinaryContent;
     }

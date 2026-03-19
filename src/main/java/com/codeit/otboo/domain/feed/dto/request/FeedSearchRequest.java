@@ -5,6 +5,8 @@ import com.codeit.otboo.global.slice.dto.SortDirection;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.SkyStatus;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.Objects;
 import java.util.UUID;
 
 public record FeedSearchRequest(
@@ -18,8 +20,8 @@ public record FeedSearchRequest(
     PrecipitationType precipitationTypeEqual
 ) {
     public FeedSearchRequest {
-        if (limit == null) limit = 10;
-        if (sortBy == null) sortBy = SortBy.CREATED_AT.getDescription();
-        if (sortDirection == null) sortDirection = SortDirection.DESCENDING;
+        limit = Objects.requireNonNullElse(limit, 10);
+        sortBy = Objects.requireNonNullElse(sortBy, SortBy.CREATED_AT.name());
+        sortDirection = Objects.requireNonNullElse(sortDirection, SortDirection.DESCENDING);
     }
 }

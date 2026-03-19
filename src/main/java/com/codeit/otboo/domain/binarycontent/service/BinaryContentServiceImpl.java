@@ -22,10 +22,10 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     @Override
     @Transactional
-    public BinaryContent upload(BinaryContentCreateRequest req) {
-        BinaryContent binaryContent = new BinaryContent(req.name(), req.type(), req.size());
+    public BinaryContent upload(BinaryContentCreateRequest request) {
+        BinaryContent binaryContent = new BinaryContent(request.name(), request.type(), request.size());
         BinaryContent infoSaved = binaryContentRepository.save(binaryContent);
-        binaryContentStorage.put(infoSaved.getId(), req.data());
+        binaryContentStorage.put(infoSaved.getId(), request.data());
         return infoSaved;
     }
 

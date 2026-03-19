@@ -45,7 +45,7 @@ public class Profile extends BaseUpdatableEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="profile_image_id")
-    BinaryContent binaryContent;
+    private BinaryContent binaryContent;
 
     @Builder
     public Profile(User user, String name) {
@@ -53,7 +53,7 @@ public class Profile extends BaseUpdatableEntity {
         this.name = name;
     }
 
-    protected void setUser(User user) {
+    private void setUser(User user) {
         this.user = user;
         user.setProfile(this);
     }
