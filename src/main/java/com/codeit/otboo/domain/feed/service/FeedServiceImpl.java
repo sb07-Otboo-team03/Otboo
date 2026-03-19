@@ -11,6 +11,7 @@ import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -35,6 +37,7 @@ public class FeedServiceImpl implements FeedService{
     private final UserRepository userRepository;
     private final WeatherRepository weatherRepository;
     private final ClothesRepository clothesRepository;
+    private final LikeRepository likeRepository;
     private final FeedMapper feedMapper;
 
     @Override
@@ -68,10 +71,14 @@ public class FeedServiceImpl implements FeedService{
         Slice<Feed> feedPage = feedRepository.findAllByKeywordLike(condition);
         long totalCount = feedRepository.countTotalElements(condition);
 
+        List<Feed> content = feedPage.getContent();
+
+        List<UUID> feedIds = content.stream().map(Feed::getId).toList();
+        Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(authorIdEqual, feedIds);
+
         List<FeedResponse> data = feedPage.stream()
                 .map(feed -> {
-                    boolean likedByMe = feed.getLikes().stream()    // N+1 문제
-                            .anyMatch(like -> like.getUser().getId().equals(authorIdEqual));
+                    boolean likedByMe = likedFeedIds.contains(feed.getId());
                     return feedMapper.toDto(feed, likedByMe);
                 }).toList();
 
@@ -79,7 +86,6 @@ public class FeedServiceImpl implements FeedService{
         UUID nextIdAfter = null;
 
         if (feedPage.hasNext() && !feedPage.isEmpty()) {
-            List<Feed> content = feedPage.getContent();
             Feed lastFeed = content.get(data.size() - 1);
 
             nextCursor = request.sortBy().equals("createdAt") ?
