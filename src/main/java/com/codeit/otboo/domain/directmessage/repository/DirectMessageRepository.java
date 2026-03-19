@@ -2,13 +2,9 @@ package com.codeit.otboo.domain.directmessage.repository;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.antlr.v4.runtime.atn.SemanticContext.AND;
-import org.antlr.v4.runtime.atn.SemanticContext.OR;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
