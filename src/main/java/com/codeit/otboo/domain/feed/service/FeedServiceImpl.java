@@ -15,6 +15,7 @@ import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
@@ -53,11 +54,7 @@ public class FeedServiceImpl implements FeedService{
         log.debug("Feed 생성 요청 - userId={}", request.authorId());
 
         User author = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new OtbooException(
-                        ErrorCode.USER_NOT_FOUND,
-                        Map.of("authorId", request.authorId().toString()),
-                        HttpStatus.NOT_FOUND
-                ));
+                .orElseThrow(() -> new UserNotFoundException(request.authorId()));
 
         FeedWeather weather = getWeatherInformation(request.weatherId());
 
@@ -75,11 +72,7 @@ public class FeedServiceImpl implements FeedService{
         log.debug("Feed 목록 조회");
 
         if (!userRepository.existsById(authorIdEqual))
-            throw new OtbooException(
-                    ErrorCode.USER_NOT_FOUND,
-                    Map.of("authorId", authorIdEqual.toString()),
-                    HttpStatus.NOT_FOUND
-            );
+            throw new UserNotFoundException(authorIdEqual);
 
         FeedSearchCondition condition = FeedSearchCondition.from(request);
 

@@ -8,6 +8,7 @@ import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.exception.OtbooException;
@@ -34,11 +35,7 @@ public class LikeServiceImpl implements LikeService {
                 .orElseThrow(() -> new FeedNotFoundException(feedId));
 
         User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new OtbooException(
-                                ErrorCode.USER_NOT_FOUND,
-                                Map.of("authorId", userId.toString()),
-                                HttpStatus.NOT_FOUND
-                        ));
+                        .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (likeRepository.existsByFeedIdAndUserId(feedId, userId))
             throw new LikeAlreadyExistsException(feedId, userId);
