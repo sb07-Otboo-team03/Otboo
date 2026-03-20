@@ -16,6 +16,7 @@ import java.util.List;
 public class FeedMapper {
 
     private final UserMapper userMapper;
+    private final WeatherMapper weatherMapper;
 
     public FeedResponse toDto(Feed feed) {
         return toDto(feed, false); // Feed 생성 시 기본 false
@@ -27,7 +28,7 @@ public class FeedMapper {
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
 //                .authorResponse(UserMapper.toDto(feed.getAuthor()))
-                .weatherResponse(WeatherMapper.toSummaryDto(feed.getWeather()))
+                .weatherResponse(weatherMapper.toSummaryDto(feed.getWeather()))
                 .ootds(toOotdDto(feed.getClothesList()))
                 .content(feed.getContent())
                 .likeCount(feed.getLikeCount())

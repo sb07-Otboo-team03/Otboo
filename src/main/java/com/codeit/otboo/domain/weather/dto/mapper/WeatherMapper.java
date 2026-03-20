@@ -13,7 +13,7 @@ import java.util.List;
 @Component
 public class WeatherMapper {
 
-    public static WeatherSummaryResponse toSummaryDto(FeedWeather weather) {
+    public WeatherSummaryResponse toSummaryDto(FeedWeather weather) {
         PrecipitationResponse precipitationResponse = new PrecipitationResponse(
                 weather.getPrecipitationType(),
                 weather.getPrecipitationAmount(),
