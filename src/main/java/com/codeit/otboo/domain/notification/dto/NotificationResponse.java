@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.notification.dto;
 
 import com.codeit.otboo.domain.notification.entity.Level;
 
+import com.codeit.otboo.domain.notification.entity.Notification;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
