@@ -80,9 +80,6 @@ public class WeatherServiceImpl implements WeatherService{
         int y = location.getY();
 
         if (weathers.isEmpty()) {
-            // TODO: 발표시간 ~ 1시간 사이에 업데이트시 현재 시간 데이터 누락 발생
-            // TODO: ex) 발표시간 1100 데이터는 11시 데이터를 가지고 있지 않음.
-            // TODO: 따라서 11시 ~ 12시 사이 데이터 저장시 12시까지는 올바른 데이터를 전달하지 못함
             insertNewLocationWeather(x, y); // DB에 날씨 데이터 추가
             addWeathers(forecastedAt, forecastAt, location, weathers);
         }
