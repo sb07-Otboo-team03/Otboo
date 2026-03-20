@@ -9,7 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,16 +16,12 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.times;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 public class S3BinaryContentStorageTest {
@@ -35,8 +30,6 @@ public class S3BinaryContentStorageTest {
 
     @InjectMocks
     private S3BinaryContentStorage storage;
-
-    private final String bucket = "test-bucket";
 
     @Nested
     @DisplayName("바이너리 데이터 저장")
