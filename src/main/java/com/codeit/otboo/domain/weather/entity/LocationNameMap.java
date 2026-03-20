@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "location_name_map",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"x", "y"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"latitude", "longitude"}))
 @Getter
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
