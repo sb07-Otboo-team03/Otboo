@@ -68,7 +68,7 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public FollowSummaryResponse getFollowSummary(UUID userId,OtbooUserDetails userDetails) {
+    public FollowSummaryResponse getFollowSummary(UUID userId, OtbooUserDetails userDetails) {
 
         userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("🚨userId err"));
