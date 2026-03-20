@@ -6,13 +6,14 @@ import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class ClothesMapper {
     public ClothesResponse toDto(
             Clothes clothes,
             String imageUrl,
-            ArrayList<ClothesAttributeValue> clothesAttributes){
+            List<ClothesAttributeValue> clothesAttributes){
         if (clothes == null) return null;
 
         return new ClothesResponse(
