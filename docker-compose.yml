@@ -16,6 +16,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KMA_API_KEY=${KMA_API_KEY}
 
   db:
     image: postgres:15

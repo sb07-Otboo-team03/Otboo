@@ -127,16 +127,14 @@ CREATE TABLE likes (
 
 
 
-CREATE TABLE weathers (
+CREATE TABLE weather (
                           id	uuid		NOT NULL,
                           created_at	timestamp		NOT NULL,
+                          updated_at    timestamp,
                           forecasted_at	timestamp		NOT NULL,
                           forecast_at	timestamp		NOT NULL,
-                          latitude	double precision		NOT NULL,
-                          longitude	double precision		NOT NULL,
                           x	integer		NOT NULL,
                           y	integer		NOT NULL,
-                          location_names	varchar(30)		NOT NULL,
                           temperature_current	double precision		NOT NULL,
                           temperature_min	double precision		NULL,
                           temperature_max	double precision		NULL,
@@ -218,7 +216,7 @@ ALTER TABLE likes ADD CONSTRAINT PK_LIKES PRIMARY KEY (
                                                            id
     );
 
-ALTER TABLE weathers ADD CONSTRAINT PK_WEATHERS PRIMARY KEY (
+ALTER TABLE weather ADD CONSTRAINT PK_WEATHER PRIMARY KEY (
                                                                  id
     );
 
@@ -260,9 +258,9 @@ ALTER TABLE clothes_feeds ADD CONSTRAINT fk_clothes_feeds_feeds FOREIGN KEY (fee
 ALTER TABLE likes ADD CONSTRAINT fk_likes_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE likes ADD CONSTRAINT fk_likes_feeds FOREIGN KEY (feed_id) REFERENCES feeds (id) ON DELETE CASCADE;
 
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_precipitation_type CHECK (precipitation_type IN ('NONE', 'RAIN', 'RAIN_SNOW', 'SNOW', 'SHOWER'));
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_wind_as_word CHECK (wind_as_word IN ('WEAK', 'MODERATE', 'STRONG'));
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_sky_status CHECK (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_precipitation_type CHECK (precipitation_type IN ('NONE', 'RAIN', 'RAIN_SNOW', 'SNOW', 'SHOWER'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_wind_as_word CHECK (wind_as_word IN ('WEAK', 'MODERATE', 'STRONG'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_sky_status CHECK (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY'));
 
 ALTER TABLE profiles ADD CONSTRAINT chk_profiles_gender CHECK (gender IN ('MALE', 'FEMALE', 'OTHER'));
 ALTER TABLE profiles ADD CONSTRAINT chk_profiles_temperature_sensitivity CHECK (temperature_sensitivity BETWEEN 1 AND 5);
@@ -351,3 +349,33 @@ ALTER TABLE profiles ADD CONSTRAINT fk_profiles_profile_image FOREIGN KEY (profi
 -- clothes 테이블에 칼럼 추가 및 참조 연결
 ALTER TABLE clothes ADD COLUMN image_id uuid;
 ALTER TABLE clothes ADD CONSTRAINT fk_clothes_image FOREIGN KEY (image_id) REFERENCES binary_contents(id) ON DELETE SET NULL;
+
+CREATE TABLE yesterday_hourly_weather (
+    id          UUID         PRIMARY KEY,
+    x           integer      NOT NULL,
+    y           integer      NOT NULL,
+    date        DATE         NOT NULL,
+    hour        TIME         NOT NULL,
+    temperature double precision     NOT NULL,
+    humidity    double precision       NOT NULL,
+    created_at  TIMESTAMP    NOT NULL,
+
+    -- 같은 격자 + 날짜 + 시간에 중복 삽입 방지
+    UNIQUE (x, y, date, hour)
+);
+
+CREATE TABLE location_name_map (
+    id                  UUID         PRIMARY KEY,
+    x                   integer      NOT NULL,
+    y                   integer      NOT NULL,
+    latitude            DOUBLE PRECISION      NOT NULL,
+    longitude           DOUBLE PRECISION      NOT NULL,
+    region_1depth_name  VARCHAR(50)  DEFAULT NULL,
+    region_2depth_name  VARCHAR(100) DEFAULT NULL,
+    region_3depth_name  VARCHAR(100) DEFAULT NULL,
+    region_4depth_name  VARCHAR(100) DEFAULT NULL,
+    created_at          TIMESTAMP    NOT NULL,
+
+    -- 같은 위도 + 경도 데이터 중복 삽입 방지
+    UNIQUE (latitude, longitude)
+);
