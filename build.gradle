@@ -58,6 +58,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Gson JSON 파싱 라이브러리
+    implementation 'com.google.code.gson:gson:2.13.2'
 }
 
 tasks.named('test') {
