@@ -73,7 +73,9 @@ class FeedServiceImplTest {
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
 
             User user = new User("otboo@a.a", "otboo123");
-            Weather weather = new Weather(null);
+
+            // TODO : 날씨 생성자 관련 변경 필요
+            // Weather weather = new Weather(null);
             Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
