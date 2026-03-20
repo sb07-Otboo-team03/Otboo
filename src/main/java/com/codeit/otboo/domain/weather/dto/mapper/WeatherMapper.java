@@ -80,7 +80,7 @@ public class WeatherMapper {
             );
 
             TemperatureResponse temperatureStatus = new TemperatureResponse(
-                    w.getHumidityCurrent(),
+                    w.getTemperatureCurrent(),
                     w.getTemperatureCurrent() - yesterdayTemperature,
                     w.getTemperatureMin(),
                     w.getTemperatureMax()
