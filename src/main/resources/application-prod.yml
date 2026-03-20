@@ -37,5 +37,5 @@ management:
 otboo:
   storage:
     type: s3
-    local:
-      root-path: ./storage
+    s3:
+      path: binary
