@@ -29,4 +29,8 @@ public class ClothesAttributeValue {
     @JoinColumn(name = "definition_id", nullable = false)
     private ClothesAttributeDef attributeDef;
 
+    public void updateIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
 }

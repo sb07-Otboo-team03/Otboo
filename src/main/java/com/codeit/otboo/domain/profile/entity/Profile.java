@@ -3,11 +3,13 @@ package com.codeit.otboo.domain.profile.entity;
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -15,9 +17,11 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "profiles")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class Profile extends BaseUpdatableEntity {
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @JsonBackReference
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
@@ -41,13 +45,16 @@ public class Profile extends BaseUpdatableEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="profile_image_id")
-    BinaryContent binaryContent;
-
+    private BinaryContent binaryContent;
 
     @Builder
     public Profile(User user, String name) {
-        this.user = user;
+        setUser(user);
         this.name = name;
     }
 
+    private void setUser(User user) {
+        this.user = user;
+        user.setProfile(this);
+    }
 }

@@ -21,8 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -68,6 +70,7 @@ class FeedServiceImplTest {
             String content = "Feed 생성 테스트";
 
             FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
+            FeedResponse dto = FeedResponse.builder().content(request.content()).build();
 
             User user = new User("otboo@a.a", "otboo123");
             Weather weather = new Weather(null);
@@ -76,6 +79,7 @@ class FeedServiceImplTest {
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
             given(clothesRepository.findAllById(List.of(clothesId))).willReturn(List.of(clothes));
+            given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
 
             // when
             FeedResponse response = feedService.createFeed(request);
@@ -95,18 +99,23 @@ class FeedServiceImplTest {
         void searchFeedList() {
             // given
             UUID feedId = UUID.randomUUID();
+            String newContent = "New Feed Content";
+
             FeedWeather weatherInformation = FeedWeather.builder().build();
             Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation).build();
+            FeedResponse dto = FeedResponse.builder().id(feedId).content(newContent).build();
 
-            given(feedRepository.findById(any(UUID.class))).willReturn(Optional.of(feed));
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+            given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
 
-            FeedUpdateRequest request = new FeedUpdateRequest("New Feed Content");
+            FeedUpdateRequest request = new FeedUpdateRequest(newContent);
+
             // when
             FeedResponse response = feedService.updateFeed(feedId, request);
             
             // then
+            verify(feedMapper, times(1)).toDto(any(Feed.class));
             assertThat(response.content()).isEqualTo("New Feed Content");
-            
         }
     }
 

@@ -3,7 +3,7 @@ package com.codeit.otboo.domain.directmessage.controller;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageService;
-import com.codeit.otboo.global.slice.dto.PageResponse;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +25,12 @@ public class DirectMessageController {
 
     // DirectMessage 목록 조회
     @GetMapping
-    public ResponseEntity<PageResponse<DirectMessageResponse>> getDirectMessages(
+    public ResponseEntity<CursorResponse<DirectMessageResponse>> getDirectMessages(
         @RequestParam UUID userId,
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
 
-        PageResponse<DirectMessageResponse> response =
+        CursorResponse<DirectMessageResponse> response =
                 directMessageService.getDirectMessages(userId, cursorRequest);
 
         return ResponseEntity
