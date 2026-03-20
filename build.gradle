@@ -69,6 +69,9 @@ dependencies {
 
     // Gson JSON 파싱 라이브러리
     implementation 'com.google.code.gson:gson:2.13.2'
+    
+    // S3
+    implementation 'software.amazon.awssdk:s3:2.31.7'
 }
 
 tasks.named('test') {
