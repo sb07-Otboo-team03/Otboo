@@ -89,7 +89,7 @@ class FeedServiceImplTest {
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
 
             User user = new User("otboo@a.a", "otboo123");
-            Weather weather = new Weather(null);
+            Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
             Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -150,16 +150,17 @@ class FeedServiceImplTest {
         })
         @DisplayName("""
                 마지막 기사로부터 다음 페이지의 커서를 생성한다.
-                sortBy = createdAt (Default)
+                sortBy = createdAt, likeCount
                 pageSize = 5
                 sortDirection = "DESCENDING" (Default)
                 keywordLike, skyStatus, PrecipitationTypeEqual = null (전체검색)
                 """)
-        void convertFeedCursorByOrderBy() {
+        void convertFeedCursorByOrderBy(String sortBy) {
             // given
             UUID userId = UUID.randomUUID();
-            FeedSearchRequest request = new FeedSearchRequest(null, null, 5, "createdAt", null, null, null, null);
+            FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy, null, null, null, null);
             List<Feed> feedList = FeedFixture.createFeedCursor(6);
+            if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
 
             Slice<Feed> slice = new SliceImpl<>(feedList, PageRequest.of(0, 5), true);
 
@@ -176,7 +177,10 @@ class FeedServiceImplTest {
             assertThat(response.hasNext()).isTrue();
             Feed lastFeed = feedList.get(5);
             assertThat(response.nextIdAfter()).isEqualTo(feedList.get(5).getId());
-            assertThat(response.nextCursor()).isEqualTo(String.valueOf(lastFeed.getCreatedAt()));
+            if ("createdAt".equals(sortBy))
+                assertThat(response.nextCursor()).isEqualTo(String.valueOf(lastFeed.getCreatedAt()));
+            else
+                assertThat(response.nextCursor()).isEqualTo(String.valueOf(lastFeed.getLikeCount()));
         }
 
         @Test
