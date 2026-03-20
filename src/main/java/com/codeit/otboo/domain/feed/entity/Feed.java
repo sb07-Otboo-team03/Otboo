@@ -35,12 +35,6 @@ public class Feed extends BaseUpdatableEntity {
     @Embedded
     private FeedWeather weather;
 
-    @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Like> likes = new ArrayList<>();
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "clothes_feeds",
@@ -57,31 +51,21 @@ public class Feed extends BaseUpdatableEntity {
         this.clothesList = clothesList;
     }
 
-    public Comment addComment(String content, User author) {
-        Comment comment = new Comment(content, this, author);
-        this.comments.add(comment);
+    public void increaseComment() {
         this.commentCount++;
-
-        return comment;
     }
 
-    public Like addLike(User user) {
-        Like like = new Like(user, this);
-        this.likes.add(like);
+    public void increaseLike() {
         this.likeCount++;
-
-        return like;
     }
 
-    public void removeLike(Like like) {
-        if (likes.remove(like))
-            likeCount = Math.max(0, likeCount - 1);
+    public void decreaseLike() {
+        likeCount = Math.max(0, likeCount - 1);
     }
 
     // Protype X
-    public void removeComment(Comment comment) {
-        if (comments.remove(comment))
-            commentCount = Math.max(0, commentCount - 1);
+    public void decreaseComment() {
+        commentCount = Math.max(0, commentCount - 1);
     }
 
     public void updateContent(String content) {

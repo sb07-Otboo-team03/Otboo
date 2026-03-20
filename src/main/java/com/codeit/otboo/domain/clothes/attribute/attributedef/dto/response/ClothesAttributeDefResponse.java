@@ -1,9 +1,12 @@
 package com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response;
 
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Builder
 public record ClothesAttributeDefResponse(
         UUID id,
         String name,
