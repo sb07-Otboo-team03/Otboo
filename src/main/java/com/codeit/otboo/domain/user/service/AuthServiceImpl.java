@@ -42,30 +42,4 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
     }
-
-    public JwtInformation reIssuerAccessToken(String refreshToken) {
-        if (!jwtProvider.validateRefreshToken(refreshToken)
-                || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
-            throw JwtTokenException.byInvalidToken(ErrorCode.INVALID_TOKEN, refreshToken);
-        }
-
-        String username = jwtProvider.extractSubject(refreshToken);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> UserNotFoundException.byUsername(username));
-
-        UserResponseDto userResponseDto = userMapper.toResponseDto(user);
-
-        String newAccessToken = jwtProvider.generateAccessToken(userResponseDto.username());
-        String newRefreshToken = jwtProvider.generateRefreshToken(userResponseDto.username());
-
-
-        JwtInformation jwtInformation = new JwtInformation(
-                userResponseDto,
-                newAccessToken,
-                newRefreshToken
-        );
-        jwtRegistry.rotateJwtInformation(refreshToken, jwtInformation);
-
-        return jwtInformation;
-    }
 }
