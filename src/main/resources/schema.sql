@@ -127,7 +127,7 @@ CREATE TABLE likes (
 
 
 
-CREATE TABLE weathers (
+CREATE TABLE weather (
                           id	uuid		NOT NULL,
                           created_at	timestamp		NOT NULL,
                           updated_at    timestamp,
@@ -216,7 +216,7 @@ ALTER TABLE likes ADD CONSTRAINT PK_LIKES PRIMARY KEY (
                                                            id
     );
 
-ALTER TABLE weathers ADD CONSTRAINT PK_WEATHERS PRIMARY KEY (
+ALTER TABLE weather ADD CONSTRAINT PK_WEATHER PRIMARY KEY (
                                                                  id
     );
 
@@ -258,9 +258,9 @@ ALTER TABLE clothes_feeds ADD CONSTRAINT fk_clothes_feeds_feeds FOREIGN KEY (fee
 ALTER TABLE likes ADD CONSTRAINT fk_likes_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE likes ADD CONSTRAINT fk_likes_feeds FOREIGN KEY (feed_id) REFERENCES feeds (id) ON DELETE CASCADE;
 
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_precipitation_type CHECK (precipitation_type IN ('NONE', 'RAIN', 'RAIN_SNOW', 'SNOW', 'SHOWER'));
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_wind_as_word CHECK (wind_as_word IN ('WEAK', 'MODERATE', 'STRONG'));
-ALTER TABLE weathers ADD CONSTRAINT chk_weathers_sky_status CHECK (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_precipitation_type CHECK (precipitation_type IN ('NONE', 'RAIN', 'RAIN_SNOW', 'SNOW', 'SHOWER'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_wind_as_word CHECK (wind_as_word IN ('WEAK', 'MODERATE', 'STRONG'));
+ALTER TABLE weather ADD CONSTRAINT chk_weather_sky_status CHECK (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY'));
 
 ALTER TABLE profiles ADD CONSTRAINT chk_profiles_gender CHECK (gender IN ('MALE', 'FEMALE', 'OTHER'));
 ALTER TABLE profiles ADD CONSTRAINT chk_profiles_temperature_sensitivity CHECK (temperature_sensitivity BETWEEN 1 AND 5);
