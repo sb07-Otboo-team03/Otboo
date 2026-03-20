@@ -24,7 +24,7 @@ public class FeedMapper {
                 .id(feed.getId())
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
-//                .authorResponse(UserMapper.toDto(feed.getAuthor()))
+//                .authorResponse(UserMapper.toDtotoDto(feed.getAuthor()))
                 .weatherResponse(toWeatherSummaryDto(feed.getWeather()))
                 .ootds(toOotdDto(feed.getClothesList()))
                 .content(feed.getContent())

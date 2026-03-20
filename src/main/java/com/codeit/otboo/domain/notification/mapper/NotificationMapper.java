@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.notification.mapper;
 
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import org.springframework.stereotype.Component;
@@ -7,14 +8,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class NotificationMapper {
 
-    public NotificationResponse toDto(Notification notification) {
+    public NotificationResponse toDto(NotificationDto notification) {
         return new NotificationResponse(
-            notification.getId(),
-            notification.getCreatedAt(),
-            notification.getReceiver().getId(),
-            notification.getTitle(),
-            notification.getContent(),
-            notification.getLevel()
+            notification.id(),
+            notification.createdAt(),
+            notification.receiver().getId(),
+            notification.title(),
+            notification.content(),
+            notification.level()
         );
     }
 }
