@@ -36,3 +36,8 @@ otboo:
     type: local
     local:
       root-path: ./storage
+  jwt:
+    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    access-token-expiration: 900000
+    refresh-token-expiration: 1209600000
+    issuer: codeit
