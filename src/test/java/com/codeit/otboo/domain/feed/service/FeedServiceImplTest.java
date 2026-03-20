@@ -79,7 +79,7 @@ class FeedServiceImplTest {
             Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
-            given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
+            //given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
             given(clothesRepository.findAllById(List.of(clothesId))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
 
