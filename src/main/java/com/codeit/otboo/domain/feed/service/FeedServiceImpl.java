@@ -11,20 +11,26 @@ import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.entity.FeedWeather;
+import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
+import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.exception.OtbooException;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -48,7 +54,7 @@ public class FeedServiceImpl implements FeedService{
         log.debug("Feed 생성 요청 - userId={}", request.authorId());
 
         User author = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new IllegalArgumentException("authorId is invalid"));
+                .orElseThrow(() -> new UserNotFoundException(request.authorId()));
 
         FeedWeather weather = getWeatherInformation(request.weatherId());
 
@@ -66,7 +72,7 @@ public class FeedServiceImpl implements FeedService{
         log.debug("Feed 목록 조회");
 
         if (!userRepository.existsById(authorIdEqual))
-            throw new IllegalArgumentException("authorId is invalid");
+            throw new UserNotFoundException(authorIdEqual);
 
         FeedSearchCondition condition = FeedSearchCondition.from(request);
 
@@ -108,7 +114,7 @@ public class FeedServiceImpl implements FeedService{
     public FeedResponse updateFeed(UUID id, FeedUpdateRequest request) {
         log.debug("Feed 수정 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
+                .orElseThrow(() -> new FeedNotFoundException(id));
 
         feed.updateContent(request.content());
         log.debug("Feed 수정 완료");
@@ -121,7 +127,7 @@ public class FeedServiceImpl implements FeedService{
     public void deleteFeed(UUID id) {
         log.debug("Feed 삭제 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("id is invalid"));
+                .orElseThrow(() -> new FeedNotFoundException(id));
 
         likeRepository.deleteAllByFeedId(id);
 //        commentRepository.deleteAllByFeedId(id); // TODO
