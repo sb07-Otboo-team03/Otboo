@@ -5,7 +5,6 @@ import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
-import com.codeit.otboo.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -51,7 +50,7 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     private BinaryContent find(UUID id) {
         return binaryContentRepository.findById(id).orElseThrow(
-                () -> new BinaryContentNotFoundException(ErrorCode.BINARY_CONTENT_NOT_FOUNT)
+                () -> new BinaryContentNotFoundException(id)
         );
     }
 }
