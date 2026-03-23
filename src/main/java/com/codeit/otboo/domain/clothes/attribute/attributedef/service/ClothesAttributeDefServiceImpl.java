@@ -36,43 +36,20 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
     @Override
     public ClothesAttributeDefResponse createAttributeDef(ClothesAttributeDefCreateRequest request) {
-        if (request.name() == null || request.name().isEmpty()) {
-            log.warn("missing attribute name");
-            throw new ClothesAttributeNameMissingException(
-                    ErrorCode.CLOTHES_ATTRIBUTE_NAME_MISSING,
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-        if (request.selectableValues() == null || request.selectableValues().isEmpty()) {
-            log.warn("missing selectable values");
-            throw new ClothesAttributeSelectableValueMissingException(
-                    ErrorCode.CLOTHES_SELECTABLE_VALUE_MISSING,
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
         ClothesAttributeDef clothesAttributeDef = new ClothesAttributeDef(request.name());
         ClothesAttributeDef saveDef = clothesAttributeDefRepository.save(clothesAttributeDef);
-        log.info("Saved ClothesAttributeDef: {}", saveDef);
 
         List<ClothesAttributeValue> valueList = request.selectableValues().stream()
                 .map(value -> clothesAttributeValueMapper.toClothesAttributeValue(value, saveDef))
                 .toList();
         clothesAttributeValueRepository.saveAll(valueList);
-        log.info("Saved ClothesAttributeValue: {}", valueList);
 
-        ClothesAttributeDefResponse attributeDefResponse = ClothesAttributeDefResponse.builder()
-                .id(saveDef.getId())
-                .name(saveDef.getName())
-                .selectableValues(request.selectableValues())
-                .createdAt(LocalDateTime.now())
-                .build();
-        log.info("Saved ClothesAttributeDefResponse: {}", attributeDefResponse);
-
-        return attributeDefResponse;
+        return clothesAttributeDefMapper
+                .toClothesAttributeDefResponse(saveDef, request.selectableValues());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ClothesAttributeDefResponse> getAllAttributeDef() {
         List<ClothesAttributeDef> attributeDefList = clothesAttributeDefRepository.findAll();
         List<ClothesAttributeDefResponse> list = attributeDefList.stream()
@@ -92,10 +69,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     public ClothesAttributeDefResponse updateAttributeDef(UUID definition_id, ClothesAttributeDefUpdateRequest request) {
         // Def존재확인 및 이름 수정
         ClothesAttributeDef clothesAttributeDef = clothesAttributeDefRepository.findById(definition_id)
-                .orElseThrow(() -> new ClothesAttributeDefNotFoundException(
-                        ErrorCode.CLOTHES_ATTRIBUTE_DEFINITION_NOT_FOUND,
-                        HttpStatus.BAD_REQUEST
-                ));
+                .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
         clothesAttributeDef.updateClothesAttributeDefName(request.name());
 
         // DB에 저장된 기존 Value갖고오기
@@ -125,24 +99,15 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
             }
         }
 
-        ClothesAttributeDefResponse defResponse = ClothesAttributeDefResponse.builder()
-                .id(clothesAttributeDef.getId())
-                .name(clothesAttributeDef.getName())
-                .selectableValues(request.selectableValues())
-                .createdAt(clothesAttributeDef.getCreatedAt())
-                .build();
-
-        return defResponse;
+        return clothesAttributeDefMapper
+                .toClothesAttributeDefResponse(clothesAttributeDef, request.selectableValues());
     }
 
     @Override
     public void deleteAttributeDef(UUID definition_id) {
         // Def Hart Delete
         ClothesAttributeDef attributeDef = clothesAttributeDefRepository.findById(definition_id)
-                .orElseThrow(() -> new ClothesAttributeDefNotFoundException(
-                        ErrorCode.CLOTHES_ATTRIBUTE_DEFINITION_NOT_FOUND,
-                        HttpStatus.BAD_REQUEST
-                ));
+                .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
 
         clothesAttributeDefRepository.delete(attributeDef);
     }
