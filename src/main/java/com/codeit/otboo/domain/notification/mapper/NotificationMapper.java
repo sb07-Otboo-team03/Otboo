@@ -12,7 +12,7 @@ public class NotificationMapper {
         return new NotificationResponse(
             notification.id(),
             notification.createdAt(),
-            notification.receiver().getId(),
+            notification.receiverId(),
             notification.title(),
             notification.content(),
             notification.level()

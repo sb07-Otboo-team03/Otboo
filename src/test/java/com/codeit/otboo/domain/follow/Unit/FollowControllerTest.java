@@ -28,9 +28,7 @@ class FollowControllerTest {
     void setUp() {
     }
 
-    @Test
+//    @Test
     void follow() {
     }
-
-
 }

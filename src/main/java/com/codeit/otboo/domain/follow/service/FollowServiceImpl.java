@@ -46,7 +46,9 @@ public class FollowServiceImpl implements FollowService {
     public FollowResponse createFollow(FollowCreateRequest request) {
 
         followRepository.findByFollowerIdAndFolloweeId(request.followerId(), request.followeeId())
-            .ifPresent(follow -> new DuplicateFollowException(request.followerId(), request.followeeId()));
+            .ifPresent(follow -> {
+                throw new DuplicateFollowException(request.followerId(), request.followeeId());
+            });
 
         User follower = userRepository.findById(request.followerId())
             .orElseThrow(() -> new UserNotFoundException(request.followerId()));

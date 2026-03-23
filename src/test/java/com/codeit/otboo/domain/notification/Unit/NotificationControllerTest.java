@@ -28,22 +28,22 @@ class NotificationControllerTest {
     void setUp() {
     }
 
-    @Test
+//    @Test
     @DisplayName("🎯 GET /api/notifications - ⭕️ 정상 조회")
     void getDirectMessages_OK() {
     }
 
-    @Test
+//    @Test
     @DisplayName("🎯 GET /api/notifications - ❌ 실패")
     void getDirectMessages_Fail() {
     }
 
-    @Test
+//    @Test
     @DisplayName("🎯 GET /api/notifications/{notificationId} - ⭕️ 정상 조회")
     void getDirectMessages_byId_OK() {
     }
 
-    @Test
+//    @Test
     @DisplayName("🎯 GET /api/notifications/{notificationId} - ❌ 실패")
     void getDirectMessages_byId_Fail() {
     }
