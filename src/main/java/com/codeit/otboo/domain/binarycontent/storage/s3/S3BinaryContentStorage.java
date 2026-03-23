@@ -27,7 +27,6 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     private String path;
 
     private String key(UUID binaryId) {
-        System.out.println("뭐임?"+path + "/" + binaryId);
         return path + "/" + binaryId;
     }
 
