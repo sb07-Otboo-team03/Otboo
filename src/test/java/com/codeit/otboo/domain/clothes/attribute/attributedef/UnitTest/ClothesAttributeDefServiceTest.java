@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttr
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeNameMissingException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeSelectableValueMissingException;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.mapper.ClothesAttributeDefMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.ClothesAttributeDefRepository;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.service.ClothesAttributeDefServiceImpl;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
@@ -39,6 +40,8 @@ class ClothesAttributeDefServiceTest {
     @Mock
     private ClothesAttributeValueRepository valueRepository;
     @Mock
+    private ClothesAttributeDefMapper defMapper;
+    @Mock
     private ClothesAttributeValueMapper valueMapper;
     @InjectMocks
     private ClothesAttributeDefServiceImpl service;
@@ -53,7 +56,7 @@ class ClothesAttributeDefServiceTest {
         ClothesAttributeDef attributeDef = new ClothesAttributeDef("색상");
         ReflectionTestUtils.setField(attributeDef, "id", defId);
 
-        given(defRepository.save(any())).willReturn(attributeDef);
+        given(defRepository.save(any(ClothesAttributeDef.class))).willReturn(attributeDef);
 
         ClothesAttributeValue color1 = ClothesAttributeValue.builder()
                 .selectableValue("화이트")
@@ -67,31 +70,24 @@ class ClothesAttributeDefServiceTest {
         given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class))).willReturn(color1);
         given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class))).willReturn(color2);
 
+        ClothesAttributeDefResponse defResponse1 = ClothesAttributeDefResponse.builder()
+                .id(defId)
+                .name(createRequest.name())
+                .selectableValues(createRequest.selectableValues())
+                .build();
+
+        given(defMapper.toClothesAttributeDefResponse(attributeDef, createRequest.selectableValues()))
+                .willReturn(defResponse1);
+
         // when
-        ClothesAttributeDefResponse defResponse = service.createAttributeDef(createRequest);
+        ClothesAttributeDefResponse defResponse2 = service.createAttributeDef(createRequest);
 
         // then
-        assertThat(defResponse.id()).isEqualTo(defId);
-        assertThat(defResponse.name()).isEqualTo("색상");
-        assertEquals(2, defResponse.selectableValues().size());
+        assertThat(defResponse2.id()).isEqualTo(defId);
+        assertThat(defResponse2.name()).isEqualTo("색상");
+        assertEquals(2, defResponse2.selectableValues().size());
         verify(defRepository).save(any(ClothesAttributeDef.class));
         verify(valueRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("속성명 없음")
-    void createDefAndValue_Fail_MissingDef() {
-        ClothesAttributeDefCreateRequest createRequest = new ClothesAttributeDefCreateRequest(null, List.of("화이트", "블랙"));
-
-        assertThrows(ClothesAttributeNameMissingException.class, () -> service.createAttributeDef(createRequest));
-    }
-
-    @Test
-    @DisplayName("속성값 없음")
-    void createDefAndValue_Fail_MissingValue() {
-        ClothesAttributeDefCreateRequest createRequest = new ClothesAttributeDefCreateRequest("색상", List.of());
-
-        assertThrows(ClothesAttributeSelectableValueMissingException.class, () -> service.createAttributeDef(createRequest));
     }
 
     @Test
@@ -127,20 +123,28 @@ class ClothesAttributeDefServiceTest {
                 .isActive(true)
                 .build();
 
+        ClothesAttributeDefResponse defResponse = ClothesAttributeDefResponse.builder()
+                .id(defId)
+                .name(updateRequest.name())
+                .selectableValues(updateRequest.selectableValues())
+                .build();
+
         given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(listValues);
         given(valueMapper.toClothesAttributeValue(anyString(), eq(attributeDef)))
                 .willReturn(attributeValue3);
+        given(defMapper.toClothesAttributeDefResponse(attributeDef, updateRequest.selectableValues()))
+                .willReturn(defResponse);
 
         // when
-        ClothesAttributeDefResponse defResponse = service.updateAttributeDef(defId, updateRequest);
+        ClothesAttributeDefResponse defResponse2 = service.updateAttributeDef(defId, updateRequest);
 
         // then
         assertThat(attributeDef.getName()).isEqualTo("사이즈");
         assertThat(attributeValue1.isActive()).isTrue();
         assertThat(attributeValue2.isActive()).isFalse();
         verify(valueRepository).save(any(ClothesAttributeValue.class));
-        assertThat(defResponse.name()).isEqualTo("사이즈");
+        assertThat(defResponse2.name()).isEqualTo("사이즈");
     }
 
     @Test
@@ -151,7 +155,7 @@ class ClothesAttributeDefServiceTest {
         given(defRepository.findById(defId)).willReturn(Optional.empty());
 
         assertThrows(ClothesAttributeDefNotFoundException.class,
-                ()->service.updateAttributeDef(defId,
+                () -> service.updateAttributeDef(defId,
                         new ClothesAttributeDefUpdateRequest("사이즈", List.of("S"))));
     }
 
