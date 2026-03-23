@@ -71,7 +71,7 @@ public class KmaWeatherClient {
         return response.response().body().items().item();
     }
 
-    public List<List<Weather>> getWeathers(String baseTime, int nx, int ny, List<KmaWeatherItem> items, boolean isScheduling) {
+    public List<Weather> getWeathers(String baseTime, int nx, int ny, List<KmaWeatherItem> items, boolean isScheduling) {
 
         // 각 날짜 별로 TMX, TMN을 최고, 최저 기온에 넣어가지고 전달?
         // 업데이트하는거도 생각해서 해야됨.
@@ -95,11 +95,11 @@ public class KmaWeatherClient {
         List<String> forecastDates = resolveForecastDates(baseTime, isScheduling);
 
         // 날짜 별로 데이터 정제
-        List<List<Weather>> weathers = forecastDates.stream()
-                .map(date -> {
+        List<Weather> weathers = forecastDates.stream()
+                .flatMap(date -> {
                     List<Weather> list = refineWeatherInfo(date, filtered, nx, ny);
-                    list.sort(Comparator.comparing(Weather::getForecastedAt)); // 예보 시간 순으로 정렬
-                    return list;
+                    list.sort(Comparator.comparing(Weather::getForecastedAt)); // 날짜 내부에서 시간순 정렬
+                    return list.stream();
                 })
                 .toList();
 
@@ -148,8 +148,6 @@ public class KmaWeatherClient {
 
         // 시간 별로 날씨 엔티티 생성
         for (String key : grouped.keySet()) {
-            Weather weather = new Weather(nx, ny);
-
             String dateTimeStr = fcstDate + key;
             LocalDateTime forecastAt = LocalDateTime.parse(dateTimeStr, formatter);
 
@@ -194,9 +192,11 @@ public class KmaWeatherClient {
             }
             windAsWord = WindAsWord.from(windSpeed);
 
-            weather.update(
+            Weather weather = new Weather(
                     LocalDate.now().atStartOfDay(),
                     forecastAt,
+                    nx,
+                    ny,
                     temperatureCurrent,
                     temperatureMax,
                     temperatureMin,
