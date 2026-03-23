@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.service.FollowService;
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,9 +43,9 @@ public class FollowController {
 
     // 팔로우 요약 정보 조회
     @GetMapping("/summary")
-    public ResponseEntity<FollowSummaryResponse> getFollowSummary(@RequestParam UUID userId) {
+    public ResponseEntity<FollowSummaryResponse> getFollowSummary(@RequestParam UUID userId, @AuthenticationPrincipal OtbooUserDetails userDetails) {
 
-        FollowSummaryResponse response = followService.getFollowSummary(userId);
+        FollowSummaryResponse response = followService.getFollowSummary(userId, userDetails);
 
         return ResponseEntity
             .status(HttpStatus.OK)

@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.notification.repository;
 
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,7 +22,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             )
         ORDER BY n.createdAt DESC
     """)
-    List<Notification> findAll(
+    List<NotificationDto> findAll(
         @Param("cursor") LocalDateTime cursor,
         @Param("idAfter") UUID idAfter,
         Pageable pageable

@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.UnitTest;
+package com.codeit.otboo.domain.directmessage.Unit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
-import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageServiceImpl;
@@ -46,10 +45,6 @@ class DirectMessageServiceImplTest {
 
     private final TestFixture fixture = new TestFixture();
 
-    private DirectMessage directMessage1;
-    private DirectMessage directMessage2;
-    private DirectMessage directMessage3;
-
     private DirectMessageDto dto1;
     private DirectMessageDto dto2;
     private DirectMessageDto dto3;
@@ -62,18 +57,19 @@ class DirectMessageServiceImplTest {
     void setUp() {
         LocalDateTime now = LocalDateTime.now();
 
-        dto1 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(6));
-        dto2 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(7));
-        dto3 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(8));
+        dto1 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(1));
+        dto2 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(2));
+        dto3 = fixture.mockDirectMessageDtoWithTime(now.minusSeconds(3));
 
-        res1 = fixture.mockDirectMessageResponse(now.minusSeconds(1));
-        res2 = fixture.mockDirectMessageResponse(now.minusSeconds(2));
-        res3 = fixture.mockDirectMessageResponse(now.minusSeconds(3));
+        res1 = fixture.mockDirectMessageResponse(now.minusSeconds(4));
+        res2 = fixture.mockDirectMessageResponse(now.minusSeconds(5));
+        res3 = fixture.mockDirectMessageResponse(now.minusSeconds(6));
     }
 
     @Test
     @DisplayName("⭕️ 정상 조회 - hasNext = false")
     void getDirectMessages_OK_noNext() {
+        // given
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 2);
 
@@ -87,18 +83,27 @@ class DirectMessageServiceImplTest {
         given(directMessageMapper.from(dto1)).willReturn(res1);
         given(directMessageMapper.from(dto2)).willReturn(res2);
 
+        // when
         CursorResponse<DirectMessageResponse> result =
             directMessageService.getDirectMessages(userId, request);
 
+        // then
         assertThat(result.data()).hasSize(2);
+        assertThat(result.data()).containsExactly(res1, res2);
+
         assertThat(result.hasNext()).isFalse();
-        assertThat(result.nextCursor()).isEqualTo(res2.createdAt().toString());
-        assertThat(result.nextIdAfter()).isEqualTo(res2.id());
+
+        assertThat(result.nextCursor())
+            .isEqualTo(dto2.createdAt().toString());
+
+        assertThat(result.nextIdAfter())
+            .isEqualTo(dto2.id());
     }
 
     @Test
     @DisplayName("⭕️ 다음 페이지 존재(잘렸는지 확인) - hasNext = true")
     void getDirectMessages_hasNext() {
+        // given
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 2);
 
@@ -107,19 +112,25 @@ class DirectMessageServiceImplTest {
             isNull(),
             isNull(),
             any(Pageable.class)
-        )).willReturn(List.of(dto1, dto2, dto3));
+        )).willReturn(List.of(dto1, dto2, dto3)); // limit + 1
 
         given(directMessageMapper.from(dto1)).willReturn(res1);
         given(directMessageMapper.from(dto2)).willReturn(res2);
-        given(directMessageMapper.from(dto3)).willReturn(res3);
 
+        // when
         CursorResponse<DirectMessageResponse> result =
             directMessageService.getDirectMessages(userId, request);
 
+        // then
         assertThat(result.data()).hasSize(2);
+        assertThat(result.data()).containsExactly(res1, res2);
+
         assertThat(result.hasNext()).isTrue();
-        assertThat(result.nextCursor()).isEqualTo(res2.createdAt().toString());
-        assertThat(result.nextIdAfter()).isEqualTo(res2.id());
+        assertThat(result.nextCursor())
+            .isEqualTo(dto2.createdAt().toString());
+
+        assertThat(result.nextIdAfter())
+            .isEqualTo(dto2.id());
     }
 
     @Test
@@ -179,7 +190,7 @@ class DirectMessageServiceImplTest {
     }
 
     @Test
-    @DisplayName("⭕️ Pageable limit + 1 검증")
+    @DisplayName("⭕️ Pageable limit + 1 검증 ")
     void getDirectMessages_pageableValidation() {
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 5);

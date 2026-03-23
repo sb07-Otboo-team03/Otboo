@@ -1,12 +1,17 @@
 package com.codeit.otboo.domain.user.mapper;
 
+import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.domain.user.entity.User;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class UserMapper {
+    BinaryContentUrlResolver urlResolver;
 
     public UserResponse toDto(User user) {
         return UserResponse.builder()
@@ -19,11 +24,12 @@ public class UserMapper {
                 .build();
     }
 
-    public UserSummaryResponse toSummaryDto(User user, String imageUrl) {
+    public UserSummaryResponse toSummaryDto(UUID userId, String name, UUID binaryContentId) {
+
         return UserSummaryResponse.builder()
-                .userId(user.getId())
-                .name(user.getProfile().getName())
-                .profileImageUrl(imageUrl) // TODO: S3 코드 작성 시점에 작성할 예정
-                .build();
+            .userId(userId)
+            .name(name)
+            .profileImageUrl(urlResolver.resolve(binaryContentId))
+            .build();
     }
 }

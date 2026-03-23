@@ -14,18 +14,18 @@ public enum ErrorCode {
 
     // Comment
 
-    // DirectMessage
-
     // Feed
     FEED_NOT_FOUND("해당 피드를 찾을 수 없습니다."),
 
     // Follow
+    DUPLICATE_FOLLOW("이미 존재하는 팔로우입니다."),
 
     // Like
     LIKE_NOT_FOUND("좋아요를 찾을 수 없습니다."),
     LIKE_ALREADY_EXISTS("좋아요가 이미 존재합니다."),
 
     // Notification
+    DUPLICATE_NOTIFICATION("이미 존재하는 알림입니다."),
 
     // Weather
 
@@ -47,8 +47,4 @@ public enum ErrorCode {
 
 
     private final String message;
-
-
-
-
 }
