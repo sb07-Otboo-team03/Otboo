@@ -38,7 +38,7 @@ public class FollowServiceImpl implements FollowService {
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
-    
+
     @Override
     @Transactional
     public FollowResponse createFollow(FollowCreateRequest request) {

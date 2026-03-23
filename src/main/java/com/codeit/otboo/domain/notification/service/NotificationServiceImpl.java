@@ -30,8 +30,10 @@ public class NotificationServiceImpl implements NotificationService{
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
+
     @Override
     public CursorResponse<NotificationResponse> getNotifications(CursorRequest cursorRequest) {
+        LocalDateTime cursor = decodeCursor(cursorRequest.cursor());
 
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
