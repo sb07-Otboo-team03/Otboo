@@ -1,9 +1,16 @@
 package com.codeit.otboo.domain.directmessage.service;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
+import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.domain.websocket.dto.DirectMessageCreateRequest;
+import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -11,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,45 +31,73 @@ import org.springframework.transaction.annotation.Transactional;
 public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageRepository directMessageRepository;
     private final DirectMessageMapper directMessageMapper;
+    private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
 
-    private LocalDateTime decodeCursor(String cursor) {
-        if (cursor == null) return null;
-        return LocalDateTime.parse(cursor);
+    private LocalDateTime toLocalDateTime(String cursor) {
+        return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
 
-    public CursorResponse<DirectMessageResponse> getDirectMessages(UUID userId, CursorRequest cursorRequest){
-        LocalDateTime cursor = decodeCursor(cursorRequest.cursor());
+    @Override
+    @Transactional
+    public DirectMessageResponse create(DirectMessageCreateRequest request) {
 
+        User receiver = userRepository.findById(request.receiverId())
+            .orElseThrow(() -> new UserNotFoundException(request.receiverId()));
+
+        User sender = userRepository.findById(request.senderId())
+            .orElseThrow(() -> new UserNotFoundException(request.senderId()));
+
+        DirectMessage directMessage = new DirectMessage(sender, receiver, request.content());
+        DirectMessage saveDirectMessage = directMessageRepository.save(directMessage);
+        DirectMessageResponse response = directMessageMapper.from(saveDirectMessage);
+
+        eventPublisher.publishEvent(
+            new DirectMessageCreatedEvent(
+                response, response.createdAt()
+            )
+        );
+
+        return response;
+    }
+
+    @Override
+    public CursorResponse<DirectMessageResponse> getDirectMessages(
+        UUID userId,
+        CursorRequest cursorRequest
+    ) {
+        LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
-        List<DirectMessageResponse> directMessageList = directMessageRepository.findDirectMessageDtos(
-                userId,
-                cursor,
-                cursorRequest.idAfter(),
-                pageable
-            )
-            .stream()
-            .map(directMessageMapper::from)
-            .toList();
+        List<DirectMessageDto> results = directMessageRepository.findDirectMessageDtos(
+            userId,
+            cursor,
+            cursorRequest.idAfter(),
+            pageable
+        );
 
-        boolean hasNext = directMessageList.size() > cursorRequest.limit();
+        boolean hasNext = results.size() > cursorRequest.limit();
 
-        if (hasNext) {
-            directMessageList = directMessageList.subList(0, cursorRequest.limit());
-        }
+        List<DirectMessageDto> page = hasNext
+            ? results.subList(0, cursorRequest.limit())
+            : results;
 
-        LocalDateTime nextCursor = null;
+        String nextCursor = null;
         UUID nextIdAfter = null;
 
-        if (!directMessageList.isEmpty()) {
-            DirectMessageResponse last = directMessageList.get(directMessageList.size() - 1);
-            nextCursor = last.createdAt();
+        if (!page.isEmpty()) {
+            DirectMessageDto last = page.get(page.size() - 1);
+            nextCursor = last.createdAt().toString();
             nextIdAfter = last.id();
         }
 
+        List<DirectMessageResponse> content = page.stream()
+            .map(directMessageMapper::fromDto)
+            .toList();
+
         return CursorResponse.fromList(
-            directMessageList,
-            nextCursor != null ? nextCursor.toString() : null,
+            content,
+            nextCursor,
             nextIdAfter,
             hasNext,
             "createdAt",

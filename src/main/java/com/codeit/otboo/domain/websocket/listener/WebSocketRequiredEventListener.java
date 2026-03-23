@@ -17,7 +17,7 @@ public class WebSocketRequiredEventListener {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Async("eventTaskExecutor")
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(DirectMessageCreatedEvent event) {
         DirectMessageResponse directMessageResponse = event.getData();
@@ -25,13 +25,11 @@ public class WebSocketRequiredEventListener {
         String senderId = directMessageResponse.sender().userId().toString();
         String receiverId = directMessageResponse.receiver().userId().toString();
 
-        String directMessageKey = senderId + "_" + receiverId;
+        String directMessageKey = (senderId.compareTo(receiverId) > 0) ?
+            senderId + "_" + receiverId :
+            receiverId + "_" + senderId;
 
-        if (senderId.compareTo(receiverId) > 0) {
-            directMessageKey = receiverId + "_" + senderId;
-        }
-
-        String destination = String.format("/sub/direct-messages_{%s}", directMessageKey);
+        String destination = String.format("/sub/direct-messages_%s", directMessageKey);
         messagingTemplate.convertAndSend(destination, directMessageResponse);
     }
 }
