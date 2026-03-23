@@ -14,15 +14,15 @@ public enum ErrorCode {
 
     // Comment
 
-    // DirectMessage
-
     // Feed
 
     // Follow
+    DUPLICATE_FOLLOW("이미 존재하는 팔로우입니다."),
 
     // Like
 
     // Notification
+    DUPLICATE_NOTIFICATION("이미 존재하는 알림입니다."),
 
     // Weather
 
@@ -44,8 +44,4 @@ public enum ErrorCode {
 
 
     private final String message;
-
-
-
-
 }

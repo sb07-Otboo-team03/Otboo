@@ -19,24 +19,21 @@ public class SseServiceImpl implements SseService {
     public SseEmitter connect(UUID lastEventId) {
         SseEmitter emitter = new SseEmitter(timeout);
 
-        throw new UnsupportedOperationException("🚨for Test");
+        return emitter;
     }
 
     @Override
     public void send(Collection<UUID> receiverIds, String eventName, Object data) {
 
-        throw new UnsupportedOperationException("🚨for Test");
     }
 
     @Override
     public void broadcast(String eventName, Object data) {
 
-        throw new UnsupportedOperationException("🚨for Test");
     }
 
     @Override
     public void cleanUp() {
 
-        throw new UnsupportedOperationException("🚨for Test");
     }
 }

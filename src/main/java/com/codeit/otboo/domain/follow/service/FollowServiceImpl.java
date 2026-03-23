@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.follow.service;
 
-import static java.util.Arrays.stream;
-
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowDto;
@@ -13,17 +11,18 @@ import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.exception.follow.DuplicateFollowException;
+import com.codeit.otboo.global.exception.user.UserNotFoundException;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,6 @@ public class FollowServiceImpl implements FollowService {
     private final FollowMapper followMapper;
     private final AuthenticationManager authenticationManager;
 
-
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
@@ -49,17 +47,14 @@ public class FollowServiceImpl implements FollowService {
     @Transactional
     public FollowResponse createFollow(FollowCreateRequest request) {
 
-        followRepository.findByFollowerIdAndFolloweeId(request.followerId(),
-                request.followeeId())
-            .ifPresent(follow -> {
-                throw new IllegalArgumentException("🚨");
-            });
+        followRepository.findByFollowerIdAndFolloweeId(request.followerId(), request.followeeId())
+            .ifPresent(follow -> new DuplicateFollowException(request.followerId(), request.followeeId()));
 
         User follower = userRepository.findById(request.followerId())
-            .orElseThrow(() -> new IllegalArgumentException("🚨follower err"));
+            .orElseThrow(() -> new UserNotFoundException(request.followerId()));
 
         User followee = userRepository.findById(request.followeeId())
-            .orElseThrow(() -> new IllegalArgumentException("🚨followee err"));
+            .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
 
         Follow follow = new Follow(follower, followee);
         Follow saveFollow = followRepository.save(follow);
@@ -71,7 +66,7 @@ public class FollowServiceImpl implements FollowService {
     public FollowSummaryResponse getFollowSummary(UUID userId, OtbooUserDetails userDetails) {
 
         userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("🚨userId err"));
+            .orElseThrow(() -> new UserNotFoundException(userId));
 
         UserResponse userResponse = userDetails.getUserResponse();
 
@@ -105,8 +100,7 @@ public class FollowServiceImpl implements FollowService {
     public void cancelFollow(UUID followId) {
 
         Follow follow = followRepository.findById(followId)
-            .orElseThrow(() -> new IllegalArgumentException("🚨"));
-
+            .orElseThrow(() -> new DuplicateFollowException(followId));
         followRepository.delete(follow);
     }
 
