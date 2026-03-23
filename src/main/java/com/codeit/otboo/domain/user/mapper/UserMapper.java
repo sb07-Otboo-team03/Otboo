@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.user.mapper;
 
-import com.codeit.otboo.domain.binarycontent.resolver.local.LocalBinaryContentUrlResolver;
+import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.domain.user.entity.User;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserMapper {
-    LocalBinaryContentUrlResolver urlResolver;
+    BinaryContentUrlResolver urlResolver;
 
     public UserResponse toDto(User user) {
         return UserResponse.builder()

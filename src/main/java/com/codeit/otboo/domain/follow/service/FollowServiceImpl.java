@@ -84,12 +84,20 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public CursorResponse<FollowResponse> getFollowings(UUID followId, String nameLike, CursorRequest cursorRequest) {
+    public CursorResponse<FollowResponse> getFollowings(
+        UUID followId,
+        String nameLike,
+        CursorRequest cursorRequest
+    ) {
         return getFollows(false, followId, nameLike, cursorRequest);
     }
 
     @Override
-    public CursorResponse<FollowResponse> getFollowers(UUID followId, String nameLike, CursorRequest cursorRequest) {
+    public CursorResponse<FollowResponse> getFollowers(
+        UUID followId,
+        String nameLike,
+        CursorRequest cursorRequest
+    ) {
         return getFollows(true, followId, nameLike, cursorRequest);
     }
 
@@ -102,7 +110,12 @@ public class FollowServiceImpl implements FollowService {
         followRepository.delete(follow);
     }
 
-    public CursorResponse<FollowResponse> getFollows(Boolean isFollower, UUID followId, String nameLike, CursorRequest cursorRequest) {
+    public CursorResponse<FollowResponse> getFollows(
+        Boolean isFollower,
+        UUID followId,
+        String nameLike,
+        CursorRequest cursorRequest
+    ) {
 
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
