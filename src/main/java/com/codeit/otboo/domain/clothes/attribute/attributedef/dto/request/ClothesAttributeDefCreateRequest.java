@@ -1,12 +1,16 @@
 package com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
 public record ClothesAttributeDefCreateRequest(
+        @NotBlank(message = "ClothesAttributeNameMissingException")
         String name,
+
+        @NotBlank(message = "CLOTHES_SELECTABLE_VALUE_MISSING")
         List<String> selectableValues
 ) {
 
