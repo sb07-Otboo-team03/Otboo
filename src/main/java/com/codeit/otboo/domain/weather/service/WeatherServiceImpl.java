@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.dto.mapper.WeatherMapper;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
@@ -26,8 +27,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.codeit.otboo.domain.weather.client.KmaWeatherClient.getWeathers;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,6 +37,8 @@ public class WeatherServiceImpl implements WeatherService{
     private final LocationNameMapRepository locationNameMapRepository;
 
     private final WeatherMapper weatherMapper;
+
+    private final KmaWeatherClient kmaWeatherClient;
 
     @Override
     @Transactional
@@ -115,8 +116,8 @@ public class WeatherServiceImpl implements WeatherService{
         String baseDate = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
 
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<List<Weather>> weathers = getWeathers(baseTime, x, y, json, false);
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
+        List<List<Weather>> weathers = kmaWeatherClient.getWeathers(baseTime, x, y, items, false);
 
         List<Weather> weatherList = new ArrayList<>();
 
@@ -162,8 +163,8 @@ public class WeatherServiceImpl implements WeatherService{
         String baseDate = LocalDate.now().minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
 
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
-        List<YesterdayHourlyWeather> yesterdayWeathers = KmaWeatherClient.getYesterdayWeathers(x, y, json);
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
+        List<YesterdayHourlyWeather> yesterdayWeathers = kmaWeatherClient.getYesterdayWeathers(x, y, items);
 
         yesterdayHourlyWeatherRepository.saveAll(yesterdayWeathers);
     }
@@ -221,8 +222,8 @@ public class WeatherServiceImpl implements WeatherService{
         String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = getBaseTimeForWeather();
 
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<List<Weather>> weathers = getWeathers(baseTime, x, y, json, true);
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
+        List<List<Weather>> weathers = kmaWeatherClient.getWeathers(baseTime, x, y, items, true);
 
         List<Weather> weatherList = new ArrayList<>();
 
