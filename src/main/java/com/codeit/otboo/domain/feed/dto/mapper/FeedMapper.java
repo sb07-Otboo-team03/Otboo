@@ -29,8 +29,9 @@ public class FeedMapper {
                 .id(feed.getId())
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
-                .userResponse(userMapper.toSummaryDto(feed.getAuthor(),
-                        binaryContentUrlResolver.resolve(feed.getAuthor().getProfile().getId())))
+                .userResponse(userMapper.toSummaryDto(feed.getAuthor().getId(),
+                    feed.getAuthor().getProfile().getName(),
+                    feed.getAuthor().getProfile().getId()))
                 .weatherResponse(weatherMapper.toSummaryDto(feed.getWeather()))
                 .ootds(toOotdDto(feed.getClothesList()))
                 .content(feed.getContent())
