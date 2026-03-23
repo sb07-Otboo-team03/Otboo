@@ -1,10 +1,10 @@
 package com.codeit.otboo.domain.weather.client;
 
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherApiResponse;
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -17,55 +17,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-@Getter
-@NoArgsConstructor
-class WeatherApiResponse {
-    private WeatherResponse response;
-}
-
-@Getter
-@NoArgsConstructor
-class WeatherResponse {
-    private Header header;
-    private Body body;
-}
-
-@Getter
-@NoArgsConstructor
-class Header {
-    private String resultCode;
-    private String resultMsg;
-}
-
-@Getter
-@NoArgsConstructor
-class Body {
-    private String dataType;
-    private Items items;
-    private int pageNo;
-    private int numOfRows;
-    private int totalCount;
-}
-
-@Getter
-@NoArgsConstructor
-class Items {
-    private List<WeatherItem> item;
-}
-
-@Getter
-@NoArgsConstructor
-class WeatherItem {
-    private String baseDate;
-    private String baseTime;
-    private String category;
-    private String fcstDate;
-    private String fcstTime;
-    private String fcstValue;
-    private int nx;
-    private int ny;
-}
 
 public class KmaWeatherClient {
 
@@ -118,16 +69,16 @@ public class KmaWeatherClient {
     public static List<List<Weather>> getWeathers(String baseTime, int nx, int ny, String json, boolean isScheduling) {
         try {
             // json 정보 정제
-            WeatherApiResponse result = objectMapper.readValue(json, WeatherApiResponse.class);
-            List<WeatherItem> items = result.getResponse().getBody().getItems().getItem();
+            KmaWeatherApiResponse result = objectMapper.readValue(json, KmaWeatherApiResponse.class);
+            List<KmaWeatherItem> items = result.response().body().items().item();
 
             // 각 날짜 별로 TMX, TMN을 최고, 최저 기온에 넣어가지고 전달?
             // 업데이트하는거도 생각해서 해야됨.
 
             // 필요한 정보만 필터링
-            List<WeatherItem> filtered = items.stream()
+            List<KmaWeatherItem> filtered = items.stream()
                     .filter(i -> {
-                        String c = i.getCategory();
+                        String c = i.category();
                         return "POP".equals(c) || // 강수 확률
                                 "PCP".equals(c) || // 1시간 강수량
                                 "PTY".equals(c) || // 강수 형태
@@ -180,11 +131,11 @@ public class KmaWeatherClient {
         }
     }
 
-    private static List<Weather> refineWeatherInfo(String fcstDate, List<WeatherItem> filtered, int nx, int ny) {
+    private static List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
 
         // fcstDate의 값을 가진 데이터만 필터링
-        List<WeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.getFcstDate()))
+        List<KmaWeatherItem> filteredDate = filtered.stream()
+                .filter(i -> fcstDate.equals(i.fcstDate()))
                 .toList();
 
         // 값이 없는 경우 빈 리스트 반환
@@ -196,10 +147,10 @@ public class KmaWeatherClient {
         // VALUE : 카테고리, 값 (WSD, 20)
         Map<String, Map<String, String>> grouped = new HashMap<>();
 
-        for (WeatherItem item : filteredDate) {
-            String key = item.getFcstTime(); // 예측 시간을 키로 지정
+        for (KmaWeatherItem item : filteredDate) {
+            String key = item.fcstTime(); // 예측 시간을 키로 지정
             Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.getCategory(), item.getFcstValue()); // 카테고리와 값을 value로 지정
+            value.put(item.category(), item.fcstValue()); // 카테고리와 값을 value로 지정
             grouped.put(key, value);
         }
 
@@ -311,13 +262,13 @@ public class KmaWeatherClient {
     public static List<YesterdayHourlyWeather> getYesterdayWeathers(int nx, int ny, String json) {
         try {
             // json 정보 정제
-            WeatherApiResponse result = objectMapper.readValue(json, WeatherApiResponse.class);
-            List<WeatherItem> items = result.getResponse().getBody().getItems().getItem();
+            KmaWeatherApiResponse result = objectMapper.readValue(json, KmaWeatherApiResponse.class);
+            List<KmaWeatherItem> items = result.response().body().items().item();
 
             // 필요한 정보만 필터링
-            List<WeatherItem> filtered = items.stream()
+            List<KmaWeatherItem> filtered = items.stream()
                     .filter(i -> {
-                        String c = i.getCategory();
+                        String c = i.category();
                         return  "REH".equals(c) || // 습도
                                 "TMP".equals(c);   // 1시간 기온
                     })
@@ -336,10 +287,10 @@ public class KmaWeatherClient {
         }
     }
 
-    private static List<YesterdayHourlyWeather> refineYesterdayWeatherInfo(String fcstDate, List<WeatherItem> filtered, int nx, int ny) {
+    private static List<YesterdayHourlyWeather> refineYesterdayWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
         // fcstDate의 값을 가진 데이터만 필터링
-        List<WeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.getFcstDate()))
+        List<KmaWeatherItem> filteredDate = filtered.stream()
+                .filter(i -> fcstDate.equals(i.fcstDate()))
                 .toList();
 
         // 값이 없는 경우 빈 리스트 반환
@@ -349,10 +300,10 @@ public class KmaWeatherClient {
 
         Map<String, Map<String, String>> grouped = new HashMap<>();
 
-        for (WeatherItem item : filteredDate) {
-            String key = item.getFcstTime(); // 예측 시간을 키로 지정
+        for (KmaWeatherItem item : filteredDate) {
+            String key = item.fcstTime(); // 예측 시간을 키로 지정
             Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.getCategory(), item.getFcstValue()); // 카테고리와 값을 value로 지정
+            value.put(item.category(), item.fcstValue()); // 카테고리와 값을 value로 지정
             grouped.put(key, value);
         }
 
