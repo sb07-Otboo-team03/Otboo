@@ -4,34 +4,44 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.domain.user.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class DirectMessageMapper {
+    private final UserMapper userMapper;
 
-    public DirectMessageResponse toDto(DirectMessage directMessage, UserSummaryResponse sender, UserSummaryResponse receiver) {
+    public DirectMessageResponse from(DirectMessage directMessage) {
 
         return new DirectMessageResponse(
             directMessage.getId(),
             directMessage.getCreatedAt(),
-            sender,
-            receiver,
+            userMapper.toSummaryDto(
+                directMessage.getSender().getId(),
+                directMessage.getSender().getProfile().getName(),
+                directMessage.getSender().getProfile().getId()),
+            userMapper.toSummaryDto(
+                directMessage.getReceiver().getId(),
+                directMessage.getReceiver().getProfile().getName(),
+                directMessage.getReceiver().getProfile().getId()),
             directMessage.getContent());
     }
 
-    public DirectMessageResponse from(DirectMessageDto directMessageDto) {
-
-        String senderProfileImageUrl = "🚨yml 명시 경로" + "/" + directMessageDto.senderProfileImageId();
-        UserSummaryResponse senderSummary = new UserSummaryResponse(directMessageDto.senderId(), directMessageDto.senderName(), senderProfileImageUrl);
-
-        String receiverProfileImageUrl = "🚨yml 명시 경로" + "/" + directMessageDto.receiverProfileImageId();
-        UserSummaryResponse receiverSummary = new UserSummaryResponse(directMessageDto.receiverId(), directMessageDto.receiverName(), receiverProfileImageUrl);
+    public DirectMessageResponse fromDto(DirectMessageDto directMessageDto) {
 
         return new DirectMessageResponse(
             directMessageDto.id(),
             directMessageDto.createdAt(),
-            senderSummary,
-            receiverSummary,
+            userMapper.toSummaryDto(
+                directMessageDto.senderId(),
+                directMessageDto.senderName(),
+                directMessageDto.senderProfileImageId()),
+            userMapper.toSummaryDto(
+                directMessageDto.receiverId(),
+                directMessageDto.receiverName(),
+                directMessageDto.receiverProfileImageId()),
             directMessageDto.content());
     }
 }
