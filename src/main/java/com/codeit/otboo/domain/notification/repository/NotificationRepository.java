@@ -14,14 +14,7 @@ import org.springframework.data.repository.query.Param;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
     @Query("""
-        SELECT new  com.codeit.otboo.domain.notification.dto.NotificationDto(
-            n.id,
-            n.createdAt,
-            n.receiver.id,
-            n.title,
-            n.content,
-            n.level
-            )
+        SELECT n
         FROM Notification n
         WHERE :cursor IS NULL
             OR (n.createdAt < :cursor
