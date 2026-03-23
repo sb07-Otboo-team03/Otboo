@@ -7,7 +7,6 @@ import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.util.UUID;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 public interface FollowService {
 

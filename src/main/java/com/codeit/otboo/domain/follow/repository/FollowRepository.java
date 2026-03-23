@@ -1,16 +1,10 @@
 package com.codeit.otboo.domain.follow.repository;
 
 import com.codeit.otboo.domain.follow.dto.FollowDto;
-import com.codeit.otboo.domain.follow.dto.FollowResponse;
-import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
-import com.codeit.otboo.domain.user.entity.User;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import org.antlr.v4.runtime.atn.SemanticContext.AND;
-import org.antlr.v4.runtime.atn.SemanticContext.OR;
-import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
