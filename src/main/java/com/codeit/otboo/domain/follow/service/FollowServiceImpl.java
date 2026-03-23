@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,6 @@ public class FollowServiceImpl implements FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
-    private final AuthenticationManager authenticationManager;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
