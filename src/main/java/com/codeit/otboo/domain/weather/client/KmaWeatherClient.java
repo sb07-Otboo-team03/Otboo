@@ -15,6 +15,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
@@ -91,41 +92,32 @@ public class KmaWeatherClient {
                 })
                 .toList();
 
-        // 날짜 별로 분리
-        String fcstDate1, fcstDate2, fcstDate3, fcstDate4, fcstDate5;
-
-        ZoneId seoul = ZoneId.of("Asia/Seoul");
-
-        if(baseTime.equals("2300") && isScheduling) {
-            fcstDate1 = LocalDate.now(seoul).plusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate2 = LocalDate.now(seoul).plusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate3 = LocalDate.now(seoul).plusDays(3).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate4 = LocalDate.now(seoul).plusDays(4).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate5 = LocalDate.now(seoul).plusDays(5).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        } else {
-            fcstDate1 = LocalDate.now(seoul).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate2 = LocalDate.now(seoul).plusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate3 = LocalDate.now(seoul).plusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate4 = LocalDate.now(seoul).plusDays(3).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fcstDate5 = LocalDate.now(seoul).plusDays(4).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        }
+        List<String> forecastDates = resolveForecastDates(baseTime, isScheduling);
 
         // 날짜 별로 데이터 정제
-        List<Weather> weatherDate1 = refineWeatherInfo(fcstDate1, filtered, nx, ny);
-        List<Weather> weatherDate2 = refineWeatherInfo(fcstDate2, filtered, nx, ny);
-        List<Weather> weatherDate3 = refineWeatherInfo(fcstDate3, filtered, nx, ny);
-        List<Weather> weatherDate4 = refineWeatherInfo(fcstDate4, filtered, nx, ny);
-        List<Weather> weatherDate5 = refineWeatherInfo(fcstDate5, filtered, nx, ny);
-
-        List<List<Weather>> weathers = new ArrayList<>();
-        weathers.add(weatherDate1);
-        weathers.add(weatherDate2);
-        weathers.add(weatherDate3);
-        weathers.add(weatherDate4);
-        weathers.add(weatherDate5);
-        weathers.forEach(list -> list.sort(Comparator.comparing(Weather::getForecastedAt))); // 예보 시간 순으로 정렬
+        List<List<Weather>> weathers = forecastDates.stream()
+                .map(date -> {
+                    List<Weather> list = refineWeatherInfo(date, filtered, nx, ny);
+                    list.sort(Comparator.comparing(Weather::getForecastedAt)); // 예보 시간 순으로 정렬
+                    return list;
+                })
+                .toList();
 
         return weathers;
+    }
+
+    private List<String> resolveForecastDates(String baseTime, boolean isScheduling) {
+        ZoneId seoul = ZoneId.of("Asia/Seoul");
+        LocalDate startDate = ("2300".equals(baseTime) && isScheduling)
+                ? LocalDate.now(seoul).plusDays(1)
+                : LocalDate.now(seoul);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        return IntStream.range(0, 5)
+                .mapToObj(startDate::plusDays)
+                .map(date -> date.format(formatter))
+                .toList();
     }
 
     private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
