@@ -3,6 +3,7 @@ package com.codeit.otboo.global.config;
 import com.codeit.otboo.global.security.Http401AuthenticationEntryPoint;
 import com.codeit.otboo.global.security.Http403ForbiddenAccessDeniedHandler;
 import com.codeit.otboo.global.security.SpaCsrfTokenRequestHandler;
+import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +41,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           ObjectMapper objectMapper) throws Exception {
+                                           ObjectMapper objectMapper,
+                                           JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll() //TODO: JWT 작성 이후 authenticated 활성화
@@ -51,7 +53,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new Http401AuthenticationEntryPoint(objectMapper))
                         .accessDeniedHandler(new Http403ForbiddenAccessDeniedHandler(objectMapper))
-                );
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

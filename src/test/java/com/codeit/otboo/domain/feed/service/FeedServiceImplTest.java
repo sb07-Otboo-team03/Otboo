@@ -5,31 +5,45 @@ import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
 import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.entity.FeedWeather;
+import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
+import com.codeit.otboo.domain.feed.fixture.FeedFixture;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
+import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.mockito.exceptions.misusing.UnnecessaryStubbingException;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -45,6 +59,8 @@ class FeedServiceImplTest {
     private WeatherRepository weatherRepository;
     @Mock
     private ClothesRepository clothesRepository;
+    @Mock
+    private LikeRepository likeRepository;
 
     @Mock
     private FeedMapper feedMapper;
@@ -56,49 +72,187 @@ class FeedServiceImplTest {
     void setUp() {
     }
 
-//    @Nested
-//    @DisplayName("피드 생성")
-//    class FeedCreate {
-//
-//        @Test
-//        @DisplayName("피드를 생성할 수 있다.")
-//        void createFeed () {
-//            // given
-//            UUID userId = UUID.randomUUID();
-//            UUID weatherId = UUID.randomUUID();
-//            UUID clothesId = UUID.randomUUID();
-//            String content = "Feed 생성 테스트";
-//
-//            FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
-//            FeedResponse dto = FeedResponse.builder().content(request.content()).build();
-//
-//            User user = new User("otboo@a.a", "otboo123");
-//
-//            // TODO : 날씨 생성자 관련 변경 필요
-//            // Weather weather = new Weather(null);
-//            Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
-//
-//            given(userRepository.findById(userId)).willReturn(Optional.of(user));
-//            //given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
-//            given(clothesRepository.findAllById(List.of(clothesId))).willReturn(List.of(clothes));
-//            given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
-//
-//            // when
-//            FeedResponse response = feedService.createFeed(request);
-//
-//            // then
-//            verify(feedRepository, times(1)).save(any(Feed.class));
-//            assertThat(response).isNotNull();
-//            assertThat(response.content()).isEqualTo(content);
-//        }
-//    }
+    @Nested
+    @DisplayName("피드 생성")
+    class FeedCreate {
+
+        @Test
+        @DisplayName("피드를 생성할 수 있다.")
+        void createFeed_Success() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID weatherId = UUID.randomUUID();
+            UUID clothesId = UUID.randomUUID();
+            String content = "Feed 생성 테스트";
+
+            FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
+            FeedResponse dto = FeedResponse.builder().content(request.content()).build();
+
+            User user = new User("otboo@a.a", "otboo123");
+            Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
+            given(clothesRepository.findAllById(List.of(clothesId))).willReturn(List.of(clothes));
+            given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
+
+            // when
+            FeedResponse response = feedService.createFeed(request);
+
+            // then
+            verify(feedRepository, times(1)).save(any(Feed.class));
+            assertThat(response).isNotNull();
+            assertThat(response.content()).isEqualTo(content);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 유저Id면 예외를 반환한다.")
+        void createFeed_Fail_NotFoundUser() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> feedService.createFeed(
+                    new FeedCreateRequest(userId, null, null, null)))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 날씨Id면 예외를 반환한다.")
+        void createFeed_Fail_NotFoundWeather() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID weatherId = UUID.randomUUID();
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(new User("otboo@a.a", "otboo123")));
+            given(weatherRepository.findById(weatherId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> feedService.createFeed(
+                    new FeedCreateRequest(userId, weatherId, null, null)))
+                    .isInstanceOf(IllegalArgumentException.class); // TODO
+        }
+    }
+
+    @Nested
+    @DisplayName("피드 조회")
+    class FeedSearch {
+
+        @ParameterizedTest
+        @CsvSource({
+                "createdAt",
+                "likeCount"
+        })
+        @DisplayName("""
+                마지막 기사로부터 다음 페이지의 커서를 생성한다.
+                sortBy = createdAt, likeCount
+                pageSize = 5
+                sortDirection = "DESCENDING" (Default)
+                keywordLike, skyStatus, PrecipitationTypeEqual = null (전체검색)
+                """)
+        void convertFeedCursorByOrderBy(String sortBy) {
+            // given
+            UUID userId = UUID.randomUUID();
+            FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy, null, null, null, null);
+            List<Feed> feedList = FeedFixture.createFeedCursor(6);
+            if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
+
+            Slice<Feed> slice = new SliceImpl<>(feedList, PageRequest.of(0, 5), true);
+
+            given(userRepository.existsById(userId)).willReturn(true);
+            given(feedRepository.findAllByKeywordLike(any())).willReturn(slice);
+            given(feedRepository.countTotalElements(any())).willReturn(6L);
+            given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
+
+            given(feedMapper.toDto(any(Feed.class), anyBoolean())).willReturn(null);
+            // when
+            CursorResponse<FeedResponse> response = feedService.getAllFeed(request, userId);
+
+            // then
+            assertThat(response.hasNext()).isTrue();
+            Feed lastFeed = feedList.get(5);
+            assertThat(response.nextIdAfter()).isEqualTo(feedList.get(5).getId());
+            if ("createdAt".equals(sortBy))
+                assertThat(response.nextCursor()).isEqualTo(String.valueOf(lastFeed.getCreatedAt()));
+            else
+                assertThat(response.nextCursor()).isEqualTo(String.valueOf(lastFeed.getLikeCount()));
+        }
+
+        @Test
+        @DisplayName("마지막 페이지 조회 후, nextCursor와 nextAfter가 null을 반환한다.")
+        void searchLastPage_ReturnNoNextPage() {
+            // given
+            UUID userId = UUID.randomUUID();
+            FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, null, null, null);
+            List<Feed> feedList = FeedFixture.createFeedCursor(5);
+
+            Slice<Feed> slice = new SliceImpl<>(feedList, PageRequest.of(0, 5), false);
+
+            given(userRepository.existsById(userId)).willReturn(true);
+            given(feedRepository.findAllByKeywordLike(any())).willReturn(slice);
+            given(feedRepository.countTotalElements(any())).willReturn(5L);
+            given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
+
+            given(feedMapper.toDto(any(Feed.class), anyBoolean())).willReturn(null);
+            // when
+            CursorResponse<FeedResponse> response = feedService.getAllFeed(request, userId);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.nextIdAfter()).isNull();
+        }
+
+        @Test
+        @DisplayName("검색 결과가 없으면 DB조회를 하지 않고 반환한다.")
+        void searchEmptyResult_ReturnNullCursorAndAfter() {
+            UUID userId = UUID.randomUUID();
+            String keyword = "hello world";
+            FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, keyword, null, null);
+            Slice<Feed> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 5), false);
+
+            given(userRepository.existsById(userId)).willReturn(true);
+            given(feedRepository.findAllByKeywordLike(any())).willReturn(emptySlice);
+
+            // when
+            CursorResponse<FeedResponse> response = feedService.getAllFeed(request, userId);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.nextCursor()).isNull();
+            assertThat(response.nextIdAfter()).isNull();
+            assertThat(response.data()).isEmpty();
+
+            verify(feedRepository, never()).countTotalElements(any());
+            verify(likeRepository, never()).findByFeedIdAndUserId(any(), any());
+        }
+
+        @Test
+        @DisplayName("피드를 조회하는 유저의 id가 존재하지 않으면 예외를 반환한다.")
+        void searchFeedList_Fail_NotFoundUser() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            given(userRepository.existsById(userId)).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> feedService.getAllFeed(null, userId))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+    }
 
     @Nested
     @DisplayName("피드 수정")
     class FeedFind {
         @Test
         @DisplayName("피드 내용을 수정할 수 있다.")
-        void searchFeedList() {
+        void searchFeedList_Success() {
             // given
             UUID feedId = UUID.randomUUID();
             String newContent = "New Feed Content";
@@ -114,10 +268,66 @@ class FeedServiceImplTest {
 
             // when
             FeedResponse response = feedService.updateFeed(feedId, request);
-            
+
             // then
             verify(feedMapper, times(1)).toDto(any(Feed.class));
             assertThat(response.content()).isEqualTo("New Feed Content");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 피드Id면 예외를 반환한다.")
+        void searchFeedList_Fail_NotFoundFeed() {
+            // given
+            UUID feedId = UUID.randomUUID();
+            String newContent = "New Feed Content";
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+            FeedUpdateRequest request = new FeedUpdateRequest(newContent);
+
+            // when & then
+            assertThatThrownBy(() -> feedService.updateFeed(
+                    feedId, new FeedUpdateRequest(newContent)))
+                    .isInstanceOf(FeedNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("피드 삭제")
+    class FeedDelete {
+
+        @Test
+        @DisplayName("피드를 삭제할 수 있다.")
+        void deleteFeed_Success() {
+            // given
+            UUID feedId = UUID.randomUUID();
+            Feed feed = Feed.builder().build();
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+            // when
+            feedService.deleteFeed(feedId);
+
+            // then
+            verify(feedRepository, times(1)).delete(feed);
+            verify(likeRepository, times(1)).deleteAllByFeedId(feedId);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 피드Id라면 예외를 반환한다.")
+        void deleteFeed_Fail_NotFoundFeed() {
+            // given
+            UUID feedId = UUID.randomUUID();
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> feedService.deleteFeed(feedId))
+                    .isInstanceOf(FeedNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FEED_NOT_FOUND);
         }
     }
 

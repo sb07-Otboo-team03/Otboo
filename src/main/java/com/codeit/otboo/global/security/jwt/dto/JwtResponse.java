@@ -1,4 +1,4 @@
-package com.codeit.otboo.global.security.dto;
+package com.codeit.otboo.global.security.jwt.dto;
 
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 
