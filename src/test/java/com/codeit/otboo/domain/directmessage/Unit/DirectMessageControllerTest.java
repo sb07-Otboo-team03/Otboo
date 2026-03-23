@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.UnitTest;
+package com.codeit.otboo.domain.directmessage.Unit;
 
 import com.codeit.otboo.domain.directmessage.controller.DirectMessageController;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
