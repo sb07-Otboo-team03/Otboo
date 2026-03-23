@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
+
     @Query("""
         SELECT n
         FROM Notification n
