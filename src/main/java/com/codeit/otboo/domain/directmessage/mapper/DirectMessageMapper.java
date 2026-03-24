@@ -13,13 +13,35 @@ import org.springframework.stereotype.Component;
 public class DirectMessageMapper {
     private final UserMapper userMapper;
 
-    public DirectMessageResponse from(DirectMessageDto directMessageDto) {
+    public DirectMessageResponse toDto(DirectMessage directMessage) {
+
+        return new DirectMessageResponse(
+            directMessage.getId(),
+            directMessage.getCreatedAt(),
+            userMapper.toSummaryDto(
+                directMessage.getSender().getId(),
+                directMessage.getSender().getProfile().getName(),
+                directMessage.getSender().getProfile().getBinaryContent().getId()),
+            userMapper.toSummaryDto(
+                directMessage.getReceiver().getId(),
+                directMessage.getReceiver().getProfile().getName(),
+                directMessage.getReceiver().getProfile().getBinaryContent().getId()),
+            directMessage.getContent());
+    }
+
+    public DirectMessageResponse toDto(DirectMessageDto directMessageDto) {
 
         return new DirectMessageResponse(
             directMessageDto.id(),
             directMessageDto.createdAt(),
-            userMapper.toSummaryDto(directMessageDto.senderId(), directMessageDto.senderName(), directMessageDto.senderProfileImageId()),
-            userMapper.toSummaryDto(directMessageDto.receiverId(), directMessageDto.receiverName(), directMessageDto.receiverProfileImageId()),
+            userMapper.toSummaryDto(
+                directMessageDto.senderId(),
+                directMessageDto.senderName(),
+                directMessageDto.senderProfileImageId()),
+            userMapper.toSummaryDto(
+                directMessageDto.receiverId(),
+                directMessageDto.receiverName(),
+                directMessageDto.receiverProfileImageId()),
             directMessageDto.content());
     }
 }

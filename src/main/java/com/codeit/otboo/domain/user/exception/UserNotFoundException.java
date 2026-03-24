@@ -15,6 +15,6 @@ public class UserNotFoundException extends UserException {
     }
 
     public UserNotFoundException() {
-        super(ErrorCode.FEED_NOT_FOUND, HttpStatus.NOT_FOUND);
+        super(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 }

@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocket.listener;
+package com.codeit.otboo.global.event.listener;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
@@ -17,7 +17,7 @@ public class WebSocketRequiredEventListener {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Async("eventTaskExecutor")
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(DirectMessageCreatedEvent event) {
         DirectMessageResponse directMessageResponse = event.getData();
@@ -25,7 +25,9 @@ public class WebSocketRequiredEventListener {
         String senderId = directMessageResponse.sender().userId().toString();
         String receiverId = directMessageResponse.receiver().userId().toString();
 
-        String directMessageKey = (senderId.compareTo(receiverId) > 0) ? senderId + "_" + receiverId : receiverId + "_" + senderId;
+        String directMessageKey = (senderId.compareTo(receiverId) > 0) ?
+            senderId + "_" + receiverId :
+            receiverId + "_" + senderId;
 
         String destination = String.format("/sub/direct-messages_%s", directMessageKey);
         messagingTemplate.convertAndSend(destination, directMessageResponse);
