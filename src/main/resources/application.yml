@@ -32,4 +32,4 @@ sse:
   timeout: 300_000
 
 api:
-  kma-api-key: ${KMA_API_KEY}`
+  kma-api-key: ${KMA_API_KEY}

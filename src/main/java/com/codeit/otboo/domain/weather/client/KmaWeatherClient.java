@@ -19,7 +19,7 @@ public class KmaWeatherClient {
 
     private final RestClient restClient;
 
-    @Value("${kma.api.key}")
+    @Value("${api.kma-api-key}")
     private String kmaApiKey;
 
     public List<KmaWeatherItem> callWeatherApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
