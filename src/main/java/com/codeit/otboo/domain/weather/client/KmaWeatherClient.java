@@ -4,6 +4,8 @@ import com.codeit.otboo.domain.weather.client.dto.KmaHeader;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherApiResponse;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.entity.*;
+import com.codeit.otboo.domain.weather.exception.KmaApiErrorException;
+import com.codeit.otboo.domain.weather.exception.KmaApiInvalidResponseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -49,19 +51,16 @@ public class KmaWeatherClient {
 
     private List<KmaWeatherItem> parseItems(KmaWeatherApiResponse response) {
         if (response == null || response.response() == null || response.response().header() == null) {
-            throw new IllegalStateException("기상청 API 응답 헤더가 없습니다.");
+            throw new KmaApiInvalidResponseException("header is null");
         }
 
         KmaHeader header = response.response().header();
         if (!"00".equals(header.resultCode())) {
-            throw new IllegalStateException(
-                    "기상청 API 오류 - resultCode: " + header.resultCode()
-                            + ", resultMsg: " + header.resultMsg()
-            );
+            throw new KmaApiErrorException(header.resultCode(), header.resultMsg());
         }
 
         if (response.response().body() == null) {
-            throw new IllegalStateException("기상청 응답(body)이 없습니다.");
+            throw new KmaApiInvalidResponseException("body is null");
         }
 
         if (response.response().body().items() == null || response.response().body().items().item() == null) {
