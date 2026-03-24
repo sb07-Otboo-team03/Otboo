@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.feed.service;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
 import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
@@ -21,7 +22,6 @@ import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
-import com.codeit.otboo.global.slice.dto.SortDirection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,15 +31,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.exceptions.misusing.UnnecessaryStubbingException;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +57,8 @@ class FeedServiceImplTest {
     private ClothesRepository clothesRepository;
     @Mock
     private LikeRepository likeRepository;
+    @Mock
+    private CommentRepository commentRepository;
 
     @Mock
     private FeedMapper feedMapper;
@@ -313,6 +311,7 @@ class FeedServiceImplTest {
             // then
             verify(feedRepository, times(1)).delete(feed);
             verify(likeRepository, times(1)).deleteAllByFeedId(feedId);
+            verify(commentRepository, times(1)).deleteAllByFeedId(feedId);
         }
 
         @Test
