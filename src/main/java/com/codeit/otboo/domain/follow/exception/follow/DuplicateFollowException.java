@@ -12,12 +12,6 @@ public class DuplicateFollowException extends FollowException {
             HttpStatus.CONFLICT);
     }
 
-    public DuplicateFollowException(UUID followId) {
-        super(ErrorCode.DUPLICATE_FOLLOW,
-            Map.of("followerId : ", followId.toString()),
-            HttpStatus.CONFLICT);
-    }
-
     public DuplicateFollowException(UUID followerId, UUID followeeId) {
         super(ErrorCode.DUPLICATE_FOLLOW,
             Map.of("followerId : ", followerId.toString(),

@@ -106,7 +106,7 @@ public class FollowServiceImpl implements FollowService {
     public void cancelFollow(UUID followId) {
 
         Follow follow = followRepository.findById(followId)
-            .orElseThrow(() -> new DuplicateFollowException(followId));
+            .orElseThrow(() -> new UserNotFoundException(followId));
         followRepository.delete(follow);
     }
 
