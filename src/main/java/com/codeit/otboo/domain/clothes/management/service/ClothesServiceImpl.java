@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
@@ -47,18 +48,7 @@ public class ClothesServiceImpl implements ClothesService{
                 UserNotFoundException::new);
         BinaryContent binaryContent = binaryContentService.upload(imageRequest);
         binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
-
-
-        Set<ClothesAttributeValue> attributeValues = request.attributes().stream()
-            .map(attributeRequest->
-                clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(
-                    attributeRequest.definitionId(), attributeRequest.value()
-                ).orElseThrow(() -> new ClothesAttributeValueNotFoundException(
-                        attributeRequest.definitionId(), attributeRequest.value()
-                )
-            )
-        ).collect(Collectors.toSet());
-
+        Set<ClothesAttributeValue> attributeValues = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
             new Clothes(request.name(), request.type(), owner, binaryContent, attributeValues)
         );
@@ -70,6 +60,20 @@ public class ClothesServiceImpl implements ClothesService{
         );
     }
 
+    // 옷 속성값 request DTO 들을 받아 DB 에 있는지 확인하고 있으면 엔티티 Set 으로 반환하는 메소드
+    private Set<ClothesAttributeValue> getClothesAttributeValues(List<ClothesAttributeRequest> requests){
+        return requests.stream()
+                .map(attributeRequest->
+                        clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(
+                                attributeRequest.definitionId(), attributeRequest.value()
+                        ).orElseThrow(() -> new ClothesAttributeValueNotFoundException(
+                                        attributeRequest.definitionId(), attributeRequest.value()
+                                )
+                        )
+                ).collect(Collectors.toSet());
+    }
+
+    // 옷이 가진 속성들별로 속성이 선택할 수 있는 값들을 반환하는 메소드
     private Map<UUID, List<String>> groupingDefinitionSelectable(Clothes clothes){
         List<ClothesAttributeValue> selectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
                 clothes.getValues().stream().map(attributeValue ->
