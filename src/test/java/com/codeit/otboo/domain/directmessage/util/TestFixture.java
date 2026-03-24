@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.follow.entity.Follow;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Level;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
@@ -154,7 +155,7 @@ public class TestFixture {
     public Notification mockNotification(
         String title,
         String content,
-        Level level,
+        NotificationLevel level,
         User receiver,
         LocalDateTime createdAt) {
 

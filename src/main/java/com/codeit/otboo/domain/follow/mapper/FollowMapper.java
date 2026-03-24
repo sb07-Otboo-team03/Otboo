@@ -2,7 +2,6 @@ package com.codeit.otboo.domain.follow.mapper;
 
 import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
-import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.mapper.UserMapper;

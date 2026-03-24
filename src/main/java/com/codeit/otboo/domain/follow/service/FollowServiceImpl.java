@@ -10,9 +10,9 @@ import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.exception.follow.DuplicateFollowException;
-import com.codeit.otboo.global.exception.user.UserNotFoundException;
+import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
@@ -38,7 +38,7 @@ public class FollowServiceImpl implements FollowService {
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
-    
+
     @Override
     @Transactional
     public FollowResponse createFollow(FollowCreateRequest request) {
@@ -106,7 +106,7 @@ public class FollowServiceImpl implements FollowService {
     public void cancelFollow(UUID followId) {
 
         Follow follow = followRepository.findById(followId)
-            .orElseThrow(() -> new DuplicateFollowException(followId));
+            .orElseThrow(() -> new UserNotFoundException(followId));
         followRepository.delete(follow);
     }
 

@@ -57,6 +57,7 @@ dependencies {
     // actuator
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // QueryDSL JPA 의존성

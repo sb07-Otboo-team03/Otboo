@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.notification.entity;
 
 import com.codeit.otboo.domain.BaseEntity;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,7 +22,7 @@ public class Notification extends BaseEntity {
 
     @Column(nullable = false, length = 30)
     @Enumerated(EnumType.STRING)
-    private Level level;
+    private NotificationLevel level;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -34,7 +35,7 @@ public class Notification extends BaseEntity {
     )
     private User receiver;
 
-    public Notification(String title, String content, Level level, User receiver) {
+    public Notification(String title, String content, NotificationLevel level, User receiver) {
         this.title = title;
         this.content = content;
         this.level = level;

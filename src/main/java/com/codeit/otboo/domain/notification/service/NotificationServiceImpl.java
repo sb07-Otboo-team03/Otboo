@@ -6,7 +6,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
-import com.codeit.otboo.global.exception.notification.DuplicateNotificationException;
+import com.codeit.otboo.domain.notification.exception.notification.DuplicateNotificationException;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -30,6 +30,7 @@ public class NotificationServiceImpl implements NotificationService{
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
+
     @Override
     public CursorResponse<NotificationResponse> getNotifications(CursorRequest cursorRequest) {
 
