@@ -1,7 +1,7 @@
 package com.codeit.otboo.global.security.jwt;
 
-import com.codeit.otboo.global.security.jwt.exception.JwtErrorCode;
-import com.codeit.otboo.global.security.jwt.exception.JwtException;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.global.security.jwt.exception.*;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -53,7 +53,7 @@ public class JwtProvider {
         return new SecretKeySpec(secretBytes, "HmacSHA256");
     }
 
-    public String generateAccessToken(UUID userId) {
+    public String generateAccessToken(UUID userId, String email, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.accessTokenExpiration());
 
@@ -63,12 +63,14 @@ public class JwtProvider {
                 .issueTime(now)
                 .expirationTime(expiryDate)
                 .claim(TOKEN_TYPE, ACCESS)
+                .claim("email", email)
+                .claim("sessionId", sessionId)
                 .build();
 
         return sign(claimsSet);
     }
 
-    public String generateRefreshToken(UUID userId) {
+    public String generateRefreshToken(UUID userId, String email, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.refreshTokenExpiration());
 
@@ -79,6 +81,8 @@ public class JwtProvider {
                 .issueTime(now)
                 .expirationTime(expiryDate)
                 .claim(TOKEN_TYPE, REFRESH)
+                .claim("email", email)
+                .claim("sessionId", sessionId)
                 .build();
 
         return sign(claimsSet);
@@ -102,27 +106,27 @@ public class JwtProvider {
             SignedJWT jwt = SignedJWT.parse(token);
 
             if (!jwt.verify(verifier)) {
-                throw new JwtException(JwtErrorCode.INVALID_SIGNATURE);
+                throw new JwtInvalidSignatureException();
             }
 
             JWTClaimsSet claims = jwt.getJWTClaimsSet();
 
             if (claims.getExpirationTime() == null
                     || new Date().after(claims.getExpirationTime())) {
-                throw new JwtException(JwtErrorCode.EXPIRED_TOKEN);
+                throw new JwtExpiredTokenException();
             }
 
             if (!jwtProperties.issuer().equals(claims.getIssuer())) {
-                throw new JwtException(JwtErrorCode.INVALID_ISSUER);
+                throw new JwtInvalidIssuerException();
             }
 
             return claims;
 
         } catch (ParseException e) {
-            throw new JwtException(JwtErrorCode.PARSE_ERROR, e);
+            throw new JwtParseErrorException();
         } catch (JOSEException e) {
             log.error("JWT 서명 검증 내부 라이브러리 오류", e);
-            throw new JwtException(JwtErrorCode.INVALID_SIGNATURE);
+            throw new JwtInvalidSignatureException();
         }
     }
 
@@ -130,7 +134,7 @@ public class JwtProvider {
         JWTClaimsSet claims = verifyAndGetClaims(token);
 
         if (!ACCESS.equals(claims.getClaim(TOKEN_TYPE))) {
-            throw new JwtException(JwtErrorCode.INVALID_TOKEN_TYPE);
+            throw new JwtInvalidTokenTypeException();
         }
 
         return claims;
@@ -140,7 +144,7 @@ public class JwtProvider {
         JWTClaimsSet claims = verifyAndGetClaims(token);
 
         if (!REFRESH.equals(claims.getClaim(TOKEN_TYPE))) {
-            throw new JwtException(JwtErrorCode.INVALID_TOKEN_TYPE);
+            throw new JwtInvalidTokenTypeException();
         }
 
         return claims;
@@ -174,5 +178,48 @@ public class JwtProvider {
             return false;
         }
     }
+
+    public String getEmail(String token) {
+        try {
+            return parseClaims(token).getStringClaim("email");
+        } catch (Exception e) {
+            throw new JwtInvalidTokenTypeException();
+        }
+    }
+
+    public String getSessionId(String token) {
+        try {
+            return parseClaims(token).getStringClaim("sessionId");
+        } catch (Exception e) {
+            throw new JwtInvalidTokenTypeException();
+        }
+    }
+
+    private JWTClaimsSet parseClaims(String token) {
+        try {
+            SignedJWT jwt = SignedJWT.parse(token);
+
+            if (!jwt.verify(verifier)) {
+                throw new JwtInvalidTokenTypeException();
+            }
+
+            JWTClaimsSet claims = jwt.getJWTClaimsSet();
+
+            if (claims.getExpirationTime() == null || claims.getExpirationTime().before(new Date())) {
+                throw new JwtExpiredTokenException();
+            }
+
+            if (!jwtProperties.issuer().equals(claims.getIssuer())) {
+                throw new JwtInvalidTokenTypeException();
+            }
+
+            return claims;
+
+        } catch (ParseException | JOSEException e) {
+            throw new JwtInvalidTokenTypeException();
+        }
+    }
+
+
 
 }
