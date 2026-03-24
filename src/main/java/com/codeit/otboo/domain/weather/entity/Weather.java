@@ -20,10 +20,10 @@ public class Weather extends BaseUpdatableEntity {
     @Column(nullable = false)
     private LocalDateTime forecastAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private Integer x;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private Integer y;
 
     @Column(nullable = false)
@@ -42,7 +42,7 @@ public class Weather extends BaseUpdatableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private SkyStatus SkyStatus; // 하늘 상태
+    private SkyStatus skyStatus; // 하늘 상태
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -58,60 +58,25 @@ public class Weather extends BaseUpdatableEntity {
     private Double humidityCurrent; // 현재 습도
 
 
-    public void update(LocalDateTime forecastedAt,
-                       LocalDateTime forecastAt,
-                       Double temperatureCurrent,
-                       Double temperatureMax,
-                       Double temperatureMin,
-                       Double windSpeed,
-                       WindAsWord windAsWord,
-                       SkyStatus skyStatus,
-                       PrecipitationType precipitationType,
-                       Double precipitationAmount,
-                       Double precipitationProbability,
-                       Double humidityCurrent
-    ) {
-        if (forecastedAt != null && !forecastedAt.equals(this.forecastedAt)) {
-            this.forecastedAt = forecastedAt;
-        }
-        if (forecastAt != null && !forecastAt.equals(this.forecastAt)) {
-            this.forecastAt = forecastAt;
-        }
-        if (temperatureCurrent != null && !temperatureCurrent.equals(this.temperatureCurrent)) {
-            this.temperatureCurrent = temperatureCurrent;
-        }
-        if (temperatureMax != null && !temperatureMax.equals(this.temperatureMax)) {
-            this.temperatureMax = temperatureMax;
-        }
-        if (temperatureMin != null && !temperatureMin.equals(this.temperatureMin)) {
-            this.temperatureMin = temperatureMin;
-        }
-        if (windSpeed != null && !windSpeed.equals(this.windSpeed)) {
-            this.windSpeed = windSpeed;
-        }
-        if (windAsWord != null && !windAsWord.equals(this.windAsWord)) {
-            this.windAsWord = windAsWord;
-        }
-        if (skyStatus != null && !skyStatus.equals(this.SkyStatus)) {
-            this.SkyStatus = skyStatus;
-        }
-        if (precipitationType != null && !precipitationType.equals(this.precipitationType)) {
-            this.precipitationType = precipitationType;
-        }
-        if (precipitationAmount != null && !precipitationAmount.equals(this.precipitationAmount)) {
-            this.precipitationAmount = precipitationAmount;
-        }
-        if (precipitationProbability != null && !precipitationProbability.equals(this.precipitationProbability)) {
-            this.precipitationProbability = precipitationProbability;
-        }
-        if (humidityCurrent != null && !humidityCurrent.equals(this.humidityCurrent)) {
-            this.humidityCurrent = humidityCurrent;
-        }
+    public void update(Weather weather) {
+        this.forecastedAt = updateIfChanged(this.forecastedAt, weather.forecastedAt);
+        this.forecastAt = updateIfChanged(this.forecastAt, weather.forecastAt);
+        this.temperatureCurrent = updateIfChanged(this.temperatureCurrent, weather.temperatureCurrent);
+        this.temperatureMax = updateIfChanged(this.temperatureMax, weather.temperatureMax);
+        this.temperatureMin = updateIfChanged(this.temperatureMin, weather.temperatureMin);
+        this.windSpeed = updateIfChanged(this.windSpeed, weather.windSpeed);
+        this.windAsWord = updateIfChanged(this.windAsWord, weather.windAsWord);
+        this.skyStatus = updateIfChanged(this.skyStatus, weather.skyStatus);
+        this.precipitationType = updateIfChanged(this.precipitationType, weather.precipitationType);
+        this.precipitationAmount = updateIfChanged(this.precipitationAmount, weather.precipitationAmount);
+        this.precipitationProbability = updateIfChanged(this.precipitationProbability, weather.precipitationProbability);
+        this.humidityCurrent = updateIfChanged(this.humidityCurrent, weather.humidityCurrent);
     }
 
-
-    public Weather(int x, int y) {
-        this.x = x;
-        this.y = y;
+    private <T> T updateIfChanged(T current, T newValue) {
+        if (newValue != null && !newValue.equals(current)) {
+            return newValue;
+        }
+        return current;
     }
 }

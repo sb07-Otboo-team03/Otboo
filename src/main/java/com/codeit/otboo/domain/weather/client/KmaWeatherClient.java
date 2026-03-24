@@ -1,390 +1,66 @@
 package com.codeit.otboo.domain.weather.client;
 
+import com.codeit.otboo.domain.weather.client.dto.KmaHeader;
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherApiResponse;
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.entity.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.codeit.otboo.domain.weather.exception.KmaApiErrorException;
+import com.codeit.otboo.domain.weather.exception.KmaApiInvalidResponseException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@Getter
-@NoArgsConstructor
-class WeatherApiResponse {
-    private WeatherResponse response;
-}
-
-@Getter
-@NoArgsConstructor
-class WeatherResponse {
-    private Header header;
-    private Body body;
-}
-
-@Getter
-@NoArgsConstructor
-class Header {
-    private String resultCode;
-    private String resultMsg;
-}
-
-@Getter
-@NoArgsConstructor
-class Body {
-    private String dataType;
-    private Items items;
-    private int pageNo;
-    private int numOfRows;
-    private int totalCount;
-}
-
-@Getter
-@NoArgsConstructor
-class Items {
-    private List<WeatherItem> item;
-}
-
-@Getter
-@NoArgsConstructor
-class WeatherItem {
-    private String baseDate;
-    private String baseTime;
-    private String category;
-    private String fcstDate;
-    private String fcstTime;
-    private String fcstValue;
-    private int nx;
-    private int ny;
-}
-
+@Component
+@RequiredArgsConstructor
 public class KmaWeatherClient {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestClient restClient;
 
-    private static final String KMA_API_KEY = System.getenv("KMA_API_KEY");
-    private static final String BASE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
+    @Value("${api.kma-api-key}")
+    private String kmaApiKey;
 
-    public static String callWeatherApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
-        try {
-            StringBuilder urlBuilder = new StringBuilder(BASE_URL);
+    public List<KmaWeatherItem> callWeatherApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
+        KmaWeatherApiResponse response = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .scheme("http")
+                        .host("apis.data.go.kr")
+                        .path("/1360000/VilageFcstInfoService_2.0/getVilageFcst")
+                        .queryParam("serviceKey", kmaApiKey)
+                        .queryParam("numOfRows", numOfRows)
+                        .queryParam("pageNo", 1)
+                        .queryParam("dataType", "JSON")
+                        .queryParam("base_date", baseDate)
+                        .queryParam("base_time", baseTime)
+                        .queryParam("nx", nx)
+                        .queryParam("ny", ny)
+                        .build())
+                .retrieve()
+                .body(KmaWeatherApiResponse.class);
 
-            urlBuilder.append("?serviceKey=").append(URLEncoder.encode(KMA_API_KEY, "UTF-8"));
-            urlBuilder.append("&numOfRows=").append(numOfRows);
-            urlBuilder.append("&pageNo=1");
-            urlBuilder.append("&dataType=JSON");
-            urlBuilder.append("&base_date=").append(baseDate);
-            urlBuilder.append("&base_time=").append(baseTime);
-            urlBuilder.append("&nx=").append(nx);
-            urlBuilder.append("&ny=").append(ny);
-
-            URL url = new URL(urlBuilder.toString());
-
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            BufferedReader rd;
-            if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-                rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            } else {
-                rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-            }
-
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = rd.readLine()) != null) {
-                sb.append(line);
-            }
-
-            rd.close();
-            conn.disconnect();
-
-            return sb.toString();
-
-        } catch (Exception e) {
-            throw new RuntimeException("기상청 API 호출 실패", e);
-        }
+        return parseItems(response);
     }
 
-    public static List<List<Weather>> getWeathers(String baseTime, int nx, int ny, String json, boolean isScheduling) {
-        try {
-            // json 정보 정제
-            WeatherApiResponse result = objectMapper.readValue(json, WeatherApiResponse.class);
-            List<WeatherItem> items = result.getResponse().getBody().getItems().getItem();
-
-            // 각 날짜 별로 TMX, TMN을 최고, 최저 기온에 넣어가지고 전달?
-            // 업데이트하는거도 생각해서 해야됨.
-
-            // 필요한 정보만 필터링
-            List<WeatherItem> filtered = items.stream()
-                    .filter(i -> {
-                        String c = i.getCategory();
-                        return "POP".equals(c) || // 강수 확률
-                                "PCP".equals(c) || // 1시간 강수량
-                                "PTY".equals(c) || // 강수 형태
-                                "REH".equals(c) || // 습도
-                                "SKY".equals(c) || // 하늘 상태
-                                "TMP".equals(c) || // 1시간 기온
-                                "TMX".equals(c) || // 일 최고 기온
-                                "TMN".equals(c) || // 일 최저 기온
-                                "WSD".equals(c); // 풍속
-                    })
-                    .toList();
-
-            // 날짜 별로 분리
-            String fcstDate1, fcstDate2, fcstDate3, fcstDate4, fcstDate5;
-
-            ZoneId seoul = ZoneId.of("Asia/Seoul");
-
-            if(baseTime.equals("2300") && isScheduling) {
-                fcstDate1 = LocalDate.now(seoul).plusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate2 = LocalDate.now(seoul).plusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate3 = LocalDate.now(seoul).plusDays(3).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate4 = LocalDate.now(seoul).plusDays(4).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate5 = LocalDate.now(seoul).plusDays(5).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            } else {
-                fcstDate1 = LocalDate.now(seoul).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate2 = LocalDate.now(seoul).plusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate3 = LocalDate.now(seoul).plusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate4 = LocalDate.now(seoul).plusDays(3).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                fcstDate5 = LocalDate.now(seoul).plusDays(4).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            }
-
-            // 날짜 별로 데이터 정제
-            List<Weather> weatherDate1 = refineWeatherInfo(fcstDate1, filtered, nx, ny);
-            List<Weather> weatherDate2 = refineWeatherInfo(fcstDate2, filtered, nx, ny);
-            List<Weather> weatherDate3 = refineWeatherInfo(fcstDate3, filtered, nx, ny);
-            List<Weather> weatherDate4 = refineWeatherInfo(fcstDate4, filtered, nx, ny);
-            List<Weather> weatherDate5 = refineWeatherInfo(fcstDate5, filtered, nx, ny);
-
-            List<List<Weather>> weathers = new ArrayList<>();
-            weathers.add(weatherDate1);
-            weathers.add(weatherDate2);
-            weathers.add(weatherDate3);
-            weathers.add(weatherDate4);
-            weathers.add(weatherDate5);
-            weathers.forEach(list -> list.sort(Comparator.comparing(Weather::getForecastedAt))); // 예보 시간 순으로 정렬
-
-            return weathers;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+    private List<KmaWeatherItem> parseItems(KmaWeatherApiResponse response) {
+        if (response == null || response.response() == null || response.response().header() == null) {
+            throw new KmaApiInvalidResponseException("header is null");
         }
-    }
 
-    private static List<Weather> refineWeatherInfo(String fcstDate, List<WeatherItem> filtered, int nx, int ny) {
+        KmaHeader header = response.response().header();
+        if (!"00".equals(header.resultCode())) {
+            throw new KmaApiErrorException(header.resultCode(), header.resultMsg());
+        }
 
-        // fcstDate의 값을 가진 데이터만 필터링
-        List<WeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.getFcstDate()))
-                .toList();
+        if (response.response().body() == null) {
+            throw new KmaApiInvalidResponseException("body is null");
+        }
 
-        // 값이 없는 경우 빈 리스트 반환
-        if (filteredDate.isEmpty()) {
+        if (response.response().body().items() == null || response.response().body().items().item() == null) {
             return Collections.emptyList();
         }
 
-        // KEY : 예측 시간 (0800, 0900 ...)
-        // VALUE : 카테고리, 값 (WSD, 20)
-        Map<String, Map<String, String>> grouped = new HashMap<>();
-
-        for (WeatherItem item : filteredDate) {
-            String key = item.getFcstTime(); // 예측 시간을 키로 지정
-            Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.getCategory(), item.getFcstValue()); // 카테고리와 값을 value로 지정
-            grouped.put(key, value);
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-        List<Weather> weathers = new ArrayList<>();
-
-        // 시간 별로 날씨 엔티티 생성
-        for (String key : grouped.keySet()) {
-            Weather weather = new Weather(nx, ny);
-
-            String dateTimeStr = fcstDate + key;
-            LocalDateTime forecastAt = LocalDateTime.parse(dateTimeStr, formatter);
-
-            double temperatureCurrent = 0;
-            Double temperatureMax = null;
-            Double temperatureMin = null;
-            double windSpeed = 0;
-            WindAsWord windAsWord;
-            SkyStatus skyStatus = SkyStatus.CLEAR;
-            PrecipitationType precipitationType = PrecipitationType.NONE;
-            double precipitationAmount = 0;
-            double precipitationProbability = 0;
-            double humidityCurrent = 0;
-
-            for (Map.Entry<String, String> entry : grouped.get(key).entrySet()) {
-                switch (entry.getKey()) {
-                    case "TMP" -> temperatureCurrent = Double.parseDouble(entry.getValue());
-                    case "WSD" -> windSpeed = Double.parseDouble(entry.getValue());
-                    case "SKY" -> skyStatus = SkyStatus.from(Integer.parseInt(entry.getValue()));
-                    case "PTY" -> precipitationType = PrecipitationType.from(Integer.parseInt(entry.getValue()));
-                    case "PCP" -> precipitationAmount = parsePcpDouble(entry.getValue());
-                    case "POP" -> precipitationProbability = Double.parseDouble(entry.getValue());
-                    case "REH" -> humidityCurrent = Double.parseDouble(entry.getValue());
-                }
-            }
-
-            // TODO: 최저온도, 최고온도가 null인 경우 어떻게 저장할지 고민해보기
-
-            // 0600에 최저 온도 값을 가짐
-            // 특정 발표 시간대에 값을 가지고 있지 않은 경우 존재
-            if (grouped.get("0600") != null) {
-                if (grouped.get("0600").get("TMN") != null) {
-                    temperatureMin = Double.parseDouble(grouped.get("0600").get("TMN"));
-                }
-            }
-
-            // 1500에 최고 온도 값을 가짐
-            if (grouped.get("1500") != null) {
-                if (grouped.get("1500").get("TMX") != null) {
-                    temperatureMax = Double.parseDouble(grouped.get("1500").get("TMX"));
-                }
-            }
-            windAsWord = WindAsWord.from(windSpeed);
-
-            weather.update(
-                    LocalDate.now().atStartOfDay(),
-                    forecastAt,
-                    temperatureCurrent,
-                    temperatureMax,
-                    temperatureMin,
-                    windSpeed,
-                    windAsWord,
-                    skyStatus,
-                    precipitationType,
-                    precipitationAmount,
-                    precipitationProbability,
-                    humidityCurrent
-            );
-
-            weathers.add(weather);
-        }
-
-        return weathers;
-    }
-
-    private static double parsePcpDouble(String value) {
-        if (value == null || value.equals("강수없음") || value.equals("0")) {
-            return 0.0;
-        }
-
-        value = value.trim();
-
-        // 1mm 미만
-        if (value.equals("1mm 미만")) {
-            return 1.0;
-        }
-
-        // ~ 범위 (예: 10~19mm, 30~50mm)
-        if (value.contains("~")) {
-            String cleaned = value.replace("mm", "");
-            String[] parts = cleaned.split("~");
-
-            double min = Double.parseDouble(parts[0]);
-            double max = Double.parseDouble(parts[1]);
-
-            return (min + max) / 2.0;
-        }
-
-        // 이상 (예: 50mm 이상)
-        if (value.contains("이상")) {
-            return Double.parseDouble(value.replace("mm 이상", ""));
-        }
-
-        // 일반 숫자 (예: 5mm)
-        return Double.parseDouble(value.replace("mm", ""));
-    }
-
-    // 새로운 지역에서 날씨를 조회한 경우 어제 온도, 습도 저장을 위한 메서드
-    public static List<YesterdayHourlyWeather> getYesterdayWeathers(int nx, int ny, String json) {
-        try {
-            // json 정보 정제
-            WeatherApiResponse result = objectMapper.readValue(json, WeatherApiResponse.class);
-            List<WeatherItem> items = result.getResponse().getBody().getItems().getItem();
-
-            // 필요한 정보만 필터링
-            List<WeatherItem> filtered = items.stream()
-                    .filter(i -> {
-                        String c = i.getCategory();
-                        return  "REH".equals(c) || // 습도
-                                "TMP".equals(c);   // 1시간 기온
-                    })
-                    .toList();
-
-            ZoneId seoul = ZoneId.of("Asia/Seoul");
-            String fcstDate = LocalDate.now(seoul).minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-            List<YesterdayHourlyWeather> weathers = refineYesterdayWeatherInfo(fcstDate, filtered, nx, ny);
-
-            weathers.sort(Comparator.comparing(YesterdayHourlyWeather::getHour)); // 예보 시간 순으로 정렬
-
-            return weathers;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static List<YesterdayHourlyWeather> refineYesterdayWeatherInfo(String fcstDate, List<WeatherItem> filtered, int nx, int ny) {
-        // fcstDate의 값을 가진 데이터만 필터링
-        List<WeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.getFcstDate()))
-                .toList();
-
-        // 값이 없는 경우 빈 리스트 반환
-        if (filteredDate.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Map<String, Map<String, String>> grouped = new HashMap<>();
-
-        for (WeatherItem item : filteredDate) {
-            String key = item.getFcstTime(); // 예측 시간을 키로 지정
-            Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.getCategory(), item.getFcstValue()); // 카테고리와 값을 value로 지정
-            grouped.put(key, value);
-        }
-
-        List<YesterdayHourlyWeather> yesterdayHourlyWeathers = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
-
-        for (String key : grouped.keySet()) {
-
-            double temperatureCurrent = 0;
-            double humidityCurrent = 0;
-
-            for (Map.Entry<String, String> entry : grouped.get(key).entrySet()) {
-                switch (entry.getKey()) {
-                    case "TMP" -> temperatureCurrent = Double.parseDouble(entry.getValue());
-                    case "REH" -> humidityCurrent = Double.parseDouble(entry.getValue());
-                }
-            }
-
-            LocalTime hour = LocalTime.parse(key, formatter);
-
-            YesterdayHourlyWeather yesterdayHourlyWeather = new YesterdayHourlyWeather(
-                    nx,
-                    ny,
-                    LocalDate.now().minusDays(1),
-                    hour,
-                    temperatureCurrent,
-                    humidityCurrent
-            );
-
-            yesterdayHourlyWeathers.add(yesterdayHourlyWeather);
-        }
-
-        return yesterdayHourlyWeathers;
+        return response.response().body().items().item();
     }
 }

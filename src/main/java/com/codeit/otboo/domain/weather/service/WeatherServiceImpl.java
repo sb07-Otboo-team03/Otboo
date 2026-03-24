@@ -1,6 +1,8 @@
 package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
+import com.codeit.otboo.domain.weather.client.KmaWeatherMapper;
+import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.dto.mapper.WeatherMapper;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
@@ -26,8 +28,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.codeit.otboo.domain.weather.client.KmaWeatherClient.getWeathers;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,6 +38,11 @@ public class WeatherServiceImpl implements WeatherService{
     private final LocationNameMapRepository locationNameMapRepository;
 
     private final WeatherMapper weatherMapper;
+
+    private final KmaWeatherClient kmaWeatherClient;
+    private final KmaWeatherMapper kmaWeatherMapper;
+
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
     @Override
     @Transactional
@@ -67,8 +72,8 @@ public class WeatherServiceImpl implements WeatherService{
             location = locationNameMapRepository.save(locationNameMap);
         }
 
-        LocalDateTime forecastedAt = LocalDate.now(ZoneId.of("Asia/Seoul")).atStartOfDay(); // 저장 날짜
-        LocalDateTime forecastAt = LocalDateTime.now(ZoneId.of("Asia/Seoul")) // 날씨 조회 시간
+        LocalDateTime forecastedAt = LocalDate.now(SEOUL).atStartOfDay(); // 저장 날짜
+        LocalDateTime forecastAt = LocalDateTime.now(SEOUL) // 날씨 조회 시간
                 .withMinute(0)
                 .withSecond(0)
                 .withNano(0);
@@ -97,13 +102,13 @@ public class WeatherServiceImpl implements WeatherService{
 
         // 어제 온도, 습도 정보 조회
         YesterdayHourlyWeather yesterdayHourlyWeather = yesterdayHourlyWeatherRepository.findByDateAndHour(
-                        LocalDate.now().minusDays(1),
-                        LocalTime.now().withMinute(0).withSecond(0).withNano(0))
+                        LocalDate.now(SEOUL).minusDays(1),
+                        LocalTime.now(SEOUL).withMinute(0).withSecond(0).withNano(0))
                 .orElseGet(() -> { // 없으면 새로 저장하고 조회
                     addYesterdayWeatherInfo(x, y);
                     return yesterdayHourlyWeatherRepository.findByDateAndHour(
-                            LocalDate.now().minusDays(1),
-                            LocalTime.now().withMinute(0).withSecond(0).withNano(0)
+                            LocalDate.now(SEOUL).minusDays(1),
+                            LocalTime.now(SEOUL).withMinute(0).withSecond(0).withNano(0)
                     ).orElseThrow(() -> new RuntimeException("YesterdayHourlyWeather is not found"));
                 });
 
@@ -112,58 +117,19 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
     private void insertNewLocationWeather(int x, int y) {
-        String baseDate = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseDate = LocalDate.now(SEOUL).minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
-
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<List<Weather>> weathers = getWeathers(baseTime, x, y, json, false);
-
-        List<Weather> weatherList = new ArrayList<>();
-
-        weathers.forEach(list ->
-                list.forEach(w -> {
-                    Weather weather = weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                            w.getForecastedAt(),
-                            w.getForecastAt(),
-                            w.getX(),
-                            w.getY()
-                    ).orElse(null);
-
-                    // 만약 저장된 데이터가 있는 경우 업데이트
-                    if(weather != null) {
-                        log.debug("존재하는 날씨 정보를 업데이트 합니다. ForecastedAt = {}, ForecastAt = {}", w.getForecastedAt(), w.getForecastAt());
-                        weather.update(
-                                w.getForecastedAt(),
-                                w.getForecastAt(),
-                                w.getTemperatureCurrent(),
-                                w.getTemperatureMax(),
-                                w.getTemperatureMin(),
-                                w.getWindSpeed(),
-                                w.getWindAsWord(),
-                                w.getSkyStatus(),
-                                w.getPrecipitationType(),
-                                w.getPrecipitationAmount(),
-                                w.getPrecipitationProbability(),
-                                w.getHumidityCurrent()
-                        );
-                        weatherList.add(weather);
-                    } else { // 새로운 데이터는 리스트에 추가
-                        weatherList.add(w);
-                    }
-                }));
-
-        weatherList.sort(Comparator.comparing(Weather::getForecastAt));
-        weatherRepository.saveAll(weatherList);
+        saveOrUpdateWeather(baseDate, baseTime, x, y, false);
     }
 
     private void addYesterdayWeatherInfo(int x, int y) {
 
         // 어제 정보를 00시 ~ 23시 전부 불러오기 위해 2일 전 23시 발표 정보 조회
-        String baseDate = LocalDate.now().minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseDate = LocalDate.now(SEOUL).minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
 
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
-        List<YesterdayHourlyWeather> yesterdayWeathers = KmaWeatherClient.getYesterdayWeathers(x, y, json);
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
+        List<YesterdayHourlyWeather> yesterdayWeathers = kmaWeatherMapper.toYesterdayWeathers(x, y, items);
 
         yesterdayHourlyWeatherRepository.saveAll(yesterdayWeathers);
     }
@@ -218,52 +184,46 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
     public void updateWeather(int x, int y) {
-        String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseDate = LocalDate.now(SEOUL).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = getBaseTimeForWeather();
+        saveOrUpdateWeather(baseDate, baseTime, x, y, true);
+    }
 
-        String json = KmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<List<Weather>> weathers = getWeathers(baseTime, x, y, json, true);
+    private void saveOrUpdateWeather(String baseDate, String baseTime, int x, int y, boolean isScheduling) {
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
+        List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, isScheduling);
 
         List<Weather> weatherList = new ArrayList<>();
 
-        weathers.forEach(list ->
-                list.forEach(w -> {
-                    Weather weather = weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                            w.getForecastedAt(),
-                            w.getForecastAt(),
-                            w.getX(),
-                            w.getY()
-                    ).orElse(null);
+        for (Weather w : weathers) {
+            Weather savedWeather = weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
+                    w.getForecastedAt(),
+                    w.getForecastAt(),
+                    w.getX(),
+                    w.getY()
+            ).orElse(null);
 
-                    // 이전 발표에서 저장된 데이터가 있는 경우 업데이트
-                    if(weather != null) {
-                        log.debug("존재하는 날씨 정보를 업데이트 합니다. ForecastedAt = {}, ForecastAt = {}", w.getForecastedAt(), w.getForecastAt());
-                        weather.update(
-                                w.getForecastedAt(),
-                                w.getForecastAt(),
-                                w.getTemperatureCurrent(),
-                                w.getTemperatureMax(),
-                                w.getTemperatureMin(),
-                                w.getWindSpeed(),
-                                w.getWindAsWord(),
-                                w.getSkyStatus(),
-                                w.getPrecipitationType(),
-                                w.getPrecipitationAmount(),
-                                w.getPrecipitationProbability(),
-                                w.getHumidityCurrent()
-                        );
-                        weatherList.add(weather);
-                    } else { // 새로운 데이터는 리스트에 추가
-                        weatherList.add(w);
-                    }
-                }));
+            if (savedWeather != null) {
+                log.debug("존재하는 날씨 정보를 업데이트 합니다. ForecastedAt = {}, ForecastAt = {}",
+                        w.getForecastedAt(), w.getForecastAt());
 
-        weatherList.sort(Comparator.comparing(Weather::getForecastAt));
+                savedWeather.update(w);
+                weatherList.add(savedWeather);
+            } else {
+                weatherList.add(w);
+            }
+        }
+
+        weatherList.sort(
+                Comparator.comparing(Weather::getForecastAt)
+                        .thenComparing(Weather::getForecastedAt)
+        );
+
         weatherRepository.saveAll(weatherList);
     }
 
     public static String getBaseTimeForWeather() {
-        int hour = LocalTime.now().getHour();
+        int hour = LocalTime.now(SEOUL).getHour();
 
         if (hour < 2) return "2300";
         else if (hour < 5) return "0200";

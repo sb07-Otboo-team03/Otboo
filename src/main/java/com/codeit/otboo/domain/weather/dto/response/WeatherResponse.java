@@ -11,8 +11,8 @@ public record WeatherResponse (
     LocalDateTime forecastAt,
     WeatherAPILocationResponse location,
     SkyStatus skyStatus,
-    PrecipitationResponse precipitationStatus,
+    PrecipitationResponse precipitation,
     HumidityResponse humidity,
-    TemperatureResponse temperatureStatus,
+    TemperatureResponse temperature,
     WindSpeedResponse windSpeed
 ) {}
