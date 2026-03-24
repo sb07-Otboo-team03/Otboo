@@ -6,6 +6,7 @@ import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
@@ -47,12 +48,14 @@ public class ClothesServiceImpl implements ClothesService{
         BinaryContent binaryContent = binaryContentService.upload(imageRequest);
         binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
 
-        // 옷 속성-값
+
         Set<ClothesAttributeValue> attributeValues = request.attributes().stream()
             .map(attributeRequest->
                 clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(
                     attributeRequest.definitionId(), attributeRequest.value()
-                ).orElseThrow(() -> new IllegalArgumentException("해당 옷 속성값이 존재하지 않습니다")
+                ).orElseThrow(() -> new ClothesAttributeValueNotFoundException(
+                        attributeRequest.definitionId(), attributeRequest.value()
+                )
             )
         ).collect(Collectors.toSet());
 

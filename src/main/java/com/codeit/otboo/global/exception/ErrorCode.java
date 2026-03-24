@@ -17,6 +17,9 @@ public enum ErrorCode {
     CLOTHES_SELECTABLE_VALUE_MISSING("속성값 목록이 비어있습니다."),
     CLOTHES_ATTRIBUTE_DEFINITION_NOT_FOUND("속성 정의를 찾을 수 없습니다."),
 
+    // ClothesAttributeValue
+    CLOTHES_ATTRIBUTE_VALUES_NOT_FOUND("해당 속성값을 찾을 수 없습니다"),
+
     // Comment
 
     // Feed
