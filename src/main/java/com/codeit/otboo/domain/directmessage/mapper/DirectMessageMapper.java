@@ -21,11 +21,11 @@ public class DirectMessageMapper {
             userMapper.toSummaryDto(
                 directMessage.getSender().getId(),
                 directMessage.getSender().getProfile().getName(),
-                directMessage.getSender().getProfile().getId()),
+                directMessage.getSender().getProfile().getBinaryContent().getId()),
             userMapper.toSummaryDto(
                 directMessage.getReceiver().getId(),
                 directMessage.getReceiver().getProfile().getName(),
-                directMessage.getReceiver().getProfile().getId()),
+                directMessage.getReceiver().getProfile().getBinaryContent().getId()),
             directMessage.getContent());
     }
 
