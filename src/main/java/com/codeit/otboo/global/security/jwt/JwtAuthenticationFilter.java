@@ -1,6 +1,8 @@
 package com.codeit.otboo.global.security.jwt;
 
+import com.codeit.otboo.global.security.OtBooUserDetailsService;
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
+import com.codeit.otboo.global.security.jwt.registry.LoginSessionRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,11 +11,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +26,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final LoginSessionRegistry loginSessionRegistry;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -44,13 +49,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
 
             UUID userId = UUID.fromString(claims.getSubject());
+            String sessionId = jwtProvider.getSessionId(accessToken);
+            String email = jwtProvider.getEmail(accessToken);
+
+            if (!loginSessionRegistry.isValid(userId, sessionId)) {
+                return;
+            }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            userDetails,
                             null,
-                            List.of()
+                            userDetails.getAuthorities()
                     );
+
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -65,4 +78,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilterAsyncDispatch() {
         return false;
     }
+
 }

@@ -8,6 +8,7 @@ import com.codeit.otboo.global.security.jwt.dto.JwtResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
@@ -40,5 +42,26 @@ public class AuthController {
         response.addCookie(cookie);
         JwtResponse jwtResponse = new JwtResponse(jwtInformation.userResponse(), jwtInformation.accessToken());
         return ResponseEntity.ok(jwtResponse);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtResponse> refresh(@CookieValue("REFRESH_TOKEN") String refreshToken, HttpServletResponse response) {
+        log.debug("refreshToken : {}", refreshToken);
+        JwtInformation jwtInformation = authService.refreshToken(refreshToken);
+
+        long refreshTokenExpirationSeconds =
+                TimeUnit.MILLISECONDS.toSeconds(
+                        jwtProperties.refreshTokenExpiration()
+                );
+
+        Cookie cookie = refreshCookieFactory.create(
+                jwtInformation.refreshToken(),
+                refreshTokenExpirationSeconds
+        );
+
+        response.addCookie(cookie);
+        JwtResponse jwtResponse = new JwtResponse(jwtInformation.userResponse(), jwtInformation.accessToken());
+        return ResponseEntity.ok(jwtResponse);
+
     }
 }
