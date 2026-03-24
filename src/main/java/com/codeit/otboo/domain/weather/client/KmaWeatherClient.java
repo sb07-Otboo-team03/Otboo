@@ -96,11 +96,7 @@ public class KmaWeatherClient {
 
         // 날짜 별로 데이터 정제
         List<Weather> weathers = forecastDates.stream()
-                .flatMap(date -> {
-                    List<Weather> list = refineWeatherInfo(date, filtered, nx, ny);
-                    list.sort(Comparator.comparing(Weather::getForecastedAt)); // 날짜 내부에서 시간순 정렬
-                    return list.stream();
-                })
+                .flatMap(date -> refineWeatherInfo(date, filtered, nx, ny).stream())
                 .toList();
 
         return weathers;
@@ -123,9 +119,7 @@ public class KmaWeatherClient {
     private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
 
         // fcstDate의 값을 가진 데이터만 필터링
-        List<KmaWeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.fcstDate()))
-                .toList();
+        List<KmaWeatherItem> filteredDate = filterByForecastDate(fcstDate, filtered);
 
         // 값이 없는 경우 빈 리스트 반환
         if (filteredDate.isEmpty()) {
@@ -134,88 +128,121 @@ public class KmaWeatherClient {
 
         // KEY : 예측 시간 (0800, 0900 ...)
         // VALUE : 카테고리, 값 (WSD, 20)
-        Map<String, Map<String, String>> grouped = new HashMap<>();
+        Map<String, Map<String, String>> groupedByTime = groupByForecastTime(filteredDate);
 
-        for (KmaWeatherItem item : filteredDate) {
-            String key = item.fcstTime(); // 예측 시간을 키로 지정
-            Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.category(), item.fcstValue()); // 카테고리와 값을 value로 지정
-            grouped.put(key, value);
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-        List<Weather> weathers = new ArrayList<>();
+        // TODO: 최저온도, 최고온도가 null인 경우 어떻게 저장할지 고민해보기
+        Double temperatureMin = extractTemperature(groupedByTime, "0600", "TMN");
+        Double temperatureMax = extractTemperature(groupedByTime, "1500", "TMX");
 
         // 시간 별로 날씨 엔티티 생성
-        for (String key : grouped.keySet()) {
-            String dateTimeStr = fcstDate + key;
-            LocalDateTime forecastAt = LocalDateTime.parse(dateTimeStr, formatter);
-
-            double temperatureCurrent = 0;
-            Double temperatureMax = null;
-            Double temperatureMin = null;
-            double windSpeed = 0;
-            WindAsWord windAsWord;
-            SkyStatus skyStatus = SkyStatus.CLEAR;
-            PrecipitationType precipitationType = PrecipitationType.NONE;
-            double precipitationAmount = 0;
-            double precipitationProbability = 0;
-            double humidityCurrent = 0;
-
-            for (Map.Entry<String, String> entry : grouped.get(key).entrySet()) {
-                switch (entry.getKey()) {
-                    case "TMP" -> temperatureCurrent = Double.parseDouble(entry.getValue());
-                    case "WSD" -> windSpeed = Double.parseDouble(entry.getValue());
-                    case "SKY" -> skyStatus = SkyStatus.from(Integer.parseInt(entry.getValue()));
-                    case "PTY" -> precipitationType = PrecipitationType.from(Integer.parseInt(entry.getValue()));
-                    case "PCP" -> precipitationAmount = parsePcpDouble(entry.getValue());
-                    case "POP" -> precipitationProbability = Double.parseDouble(entry.getValue());
-                    case "REH" -> humidityCurrent = Double.parseDouble(entry.getValue());
-                }
-            }
-
-            // TODO: 최저온도, 최고온도가 null인 경우 어떻게 저장할지 고민해보기
-
-            // 0600에 최저 온도 값을 가짐
-            // 특정 발표 시간대에 값을 가지고 있지 않은 경우 존재
-            if (grouped.get("0600") != null) {
-                if (grouped.get("0600").get("TMN") != null) {
-                    temperatureMin = Double.parseDouble(grouped.get("0600").get("TMN"));
-                }
-            }
-
-            // 1500에 최고 온도 값을 가짐
-            if (grouped.get("1500") != null) {
-                if (grouped.get("1500").get("TMX") != null) {
-                    temperatureMax = Double.parseDouble(grouped.get("1500").get("TMX"));
-                }
-            }
-            windAsWord = WindAsWord.from(windSpeed);
-
-            Weather weather = new Weather(
-                    LocalDate.now().atStartOfDay(),
-                    forecastAt,
-                    nx,
-                    ny,
-                    temperatureCurrent,
-                    temperatureMax,
-                    temperatureMin,
-                    windSpeed,
-                    windAsWord,
-                    skyStatus,
-                    precipitationType,
-                    precipitationAmount,
-                    precipitationProbability,
-                    humidityCurrent
-            );
-
-            weathers.add(weather);
-        }
-
-        return weathers;
+        return groupedByTime.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey()) // 시간순 정렬
+                .map(entry -> buildWeather(
+                        fcstDate,
+                        entry.getKey(),
+                        entry.getValue(),
+                        temperatureMin,
+                        temperatureMax,
+                        nx,
+                        ny
+                ))
+                .toList();
     }
 
-    private double parsePcpDouble(String value) {
+    private List<KmaWeatherItem> filterByForecastDate(String fcstDate, List<KmaWeatherItem> items) {
+        return items.stream()
+                .filter(item -> fcstDate.equals(item.fcstDate()))
+                .toList();
+    }
+
+    private Map<String, Map<String, String>> groupByForecastTime(List<KmaWeatherItem> items) {
+        Map<String, Map<String, String>> grouped = new HashMap<>();
+
+        for (KmaWeatherItem item : items) {
+            grouped
+                    .computeIfAbsent(item.fcstTime(), key -> new HashMap<>()) // 있으면 key에 해당하는 value를 꺼내고 아니면 생성
+                    .put(item.category(), item.fcstValue()); // value 값에 item의 새로운 타입과 값 추가
+        }
+
+        return grouped;
+    }
+
+    private Double extractTemperature(Map<String, Map<String, String>> groupedByTime, String time, String category) {
+        Map<String, String> valuesByTime = groupedByTime.get(time);
+
+        if (valuesByTime == null) {
+            return null;
+        }
+
+        String value = valuesByTime.get(category);
+        if (value == null) {
+            return null;
+        }
+
+        return Double.parseDouble(value);
+    }
+
+    private Weather buildWeather(
+            String fcstDate,
+            String fcstTime,
+            Map<String, String> values,
+            Double temperatureMin,
+            Double temperatureMax,
+            int nx,
+            int ny
+    ) {
+        LocalDateTime forecastAt = parseForecastAt(fcstDate, fcstTime);
+
+        double temperatureCurrent = 0;
+        double windSpeed = 0;
+        SkyStatus skyStatus = SkyStatus.CLEAR;
+        PrecipitationType precipitationType = PrecipitationType.NONE;
+        double precipitationAmount = 0;
+        double precipitationProbability = 0;
+        double humidityCurrent = 0;
+
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            String category = entry.getKey();
+            String rawValue = entry.getValue();
+
+            switch (category) {
+                case "TMP" -> temperatureCurrent = Double.parseDouble(rawValue);
+                case "WSD" -> windSpeed = Double.parseDouble(rawValue);
+                case "SKY" -> skyStatus = SkyStatus.from(Integer.parseInt(rawValue));
+                case "PTY" -> precipitationType = PrecipitationType.from(Integer.parseInt(rawValue));
+                case "PCP" -> precipitationAmount = parsePcpToApproximateAmount(rawValue);
+                case "POP" -> precipitationProbability = Double.parseDouble(rawValue);
+                case "REH" -> humidityCurrent = Double.parseDouble(rawValue);
+            }
+        }
+
+        WindAsWord windAsWord = WindAsWord.from(windSpeed);
+
+        return new Weather(
+                LocalDate.now().atStartOfDay(),
+                forecastAt,
+                nx,
+                ny,
+                temperatureCurrent,
+                temperatureMax,
+                temperatureMin,
+                windSpeed,
+                windAsWord,
+                skyStatus,
+                precipitationType,
+                precipitationAmount,
+                precipitationProbability,
+                humidityCurrent
+        );
+    }
+
+    private LocalDateTime parseForecastAt(String fcstDate, String fcstTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        return LocalDateTime.parse(fcstDate + fcstTime, formatter);
+    }
+
+    // 기상청 강수량 문자열을 근사값(double)으로 변환
+    private double parsePcpToApproximateAmount(String value) {
         if (value == null || value.equals("강수없음") || value.equals("0")) {
             return 0.0;
         }
@@ -260,64 +287,66 @@ public class KmaWeatherClient {
                 .toList();
 
         ZoneId seoul = ZoneId.of("Asia/Seoul");
-        String fcstDate = LocalDate.now(seoul).minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        LocalDate yesterday = LocalDate.now(seoul).minusDays(1);
+        String fcstDate = yesterday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        List<YesterdayHourlyWeather> weathers = refineYesterdayWeatherInfo(fcstDate, filtered, nx, ny);
-
-        weathers.sort(Comparator.comparing(YesterdayHourlyWeather::getHour)); // 예보 시간 순으로 정렬
-
-        return weathers;
+        return refineYesterdayWeatherInfo(yesterday, fcstDate, filtered, nx, ny).stream()
+                .sorted(Comparator.comparing(YesterdayHourlyWeather::getHour))
+                .toList();
     }
 
-    private List<YesterdayHourlyWeather> refineYesterdayWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
-        // fcstDate의 값을 가진 데이터만 필터링
-        List<KmaWeatherItem> filteredDate = filtered.stream()
-                .filter(i -> fcstDate.equals(i.fcstDate()))
-                .toList();
+    private List<YesterdayHourlyWeather> refineYesterdayWeatherInfo(
+            LocalDate yesterday,
+            String fcstDate,
+            List<KmaWeatherItem> filtered,
+            int nx,
+            int ny
+    ) {
+        List<KmaWeatherItem> filteredDate = filterByForecastDate(fcstDate, filtered);
 
-        // 값이 없는 경우 빈 리스트 반환
         if (filteredDate.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, Map<String, String>> grouped = new HashMap<>();
+        Map<String, Map<String, String>> groupedByTime = groupByForecastTime(filteredDate);
 
-        for (KmaWeatherItem item : filteredDate) {
-            String key = item.fcstTime(); // 예측 시간을 키로 지정
-            Map<String, String> value = grouped.getOrDefault(key, new HashMap<>());
-            value.put(item.category(), item.fcstValue()); // 카테고리와 값을 value로 지정
-            grouped.put(key, value);
-        }
+        return groupedByTime.entrySet().stream()
+                .map(entry -> buildYesterdayHourlyWeather(
+                        yesterday,
+                        entry.getKey(),
+                        entry.getValue(),
+                        nx,
+                        ny
+                ))
+                .toList();
+    }
 
-        List<YesterdayHourlyWeather> yesterdayHourlyWeathers = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
+    private YesterdayHourlyWeather buildYesterdayHourlyWeather(
+            LocalDate date,
+            String fcstTime,
+            Map<String, String> values,
+            int nx,
+            int ny
+    ) {
+        double temperatureCurrent = 0;
+        double humidityCurrent = 0;
 
-        for (String key : grouped.keySet()) {
-
-            double temperatureCurrent = 0;
-            double humidityCurrent = 0;
-
-            for (Map.Entry<String, String> entry : grouped.get(key).entrySet()) {
-                switch (entry.getKey()) {
-                    case "TMP" -> temperatureCurrent = Double.parseDouble(entry.getValue());
-                    case "REH" -> humidityCurrent = Double.parseDouble(entry.getValue());
-                }
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            switch (entry.getKey()) {
+                case "TMP" -> temperatureCurrent = Double.parseDouble(entry.getValue());
+                case "REH" -> humidityCurrent = Double.parseDouble(entry.getValue());
             }
-
-            LocalTime hour = LocalTime.parse(key, formatter);
-
-            YesterdayHourlyWeather yesterdayHourlyWeather = new YesterdayHourlyWeather(
-                    nx,
-                    ny,
-                    LocalDate.now().minusDays(1),
-                    hour,
-                    temperatureCurrent,
-                    humidityCurrent
-            );
-
-            yesterdayHourlyWeathers.add(yesterdayHourlyWeather);
         }
 
-        return yesterdayHourlyWeathers;
+        LocalTime hour = LocalTime.parse(fcstTime, DateTimeFormatter.ofPattern("HHmm"));
+
+        return new YesterdayHourlyWeather(
+                nx,
+                ny,
+                date,
+                hour,
+                temperatureCurrent,
+                humidityCurrent
+        );
     }
 }
