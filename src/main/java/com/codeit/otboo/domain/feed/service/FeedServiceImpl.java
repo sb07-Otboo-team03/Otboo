@@ -130,7 +130,7 @@ public class FeedServiceImpl implements FeedService{
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         likeRepository.deleteAllByFeedId(id);
-//        commentRepository.deleteAllByFeedId(id); // TODO
+        commentRepository.deleteAllByFeedId(id);
         feedRepository.delete(feed);
 
         log.debug("Feed 삭제 완료");
