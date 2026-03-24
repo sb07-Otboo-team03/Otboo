@@ -80,8 +80,8 @@ class DirectMessageServiceImplTest {
             any(Pageable.class)
         )).willReturn(List.of(dto1, dto2));
 
-        given(directMessageMapper.fromDto(dto1)).willReturn(res1);
-        given(directMessageMapper.fromDto(dto2)).willReturn(res2);
+        given(directMessageMapper.toDto(dto1)).willReturn(res1);
+        given(directMessageMapper.toDto(dto2)).willReturn(res2);
 
         // when
         CursorResponse<DirectMessageResponse> result =
@@ -114,8 +114,8 @@ class DirectMessageServiceImplTest {
             any(Pageable.class)
         )).willReturn(List.of(dto1, dto2, dto3)); // limit + 1
 
-        given(directMessageMapper.fromDto(dto1)).willReturn(res1);
-        given(directMessageMapper.fromDto(dto2)).willReturn(res2);
+        given(directMessageMapper.toDto(dto1)).willReturn(res1);
+        given(directMessageMapper.toDto(dto2)).willReturn(res2);
 
         // when
         CursorResponse<DirectMessageResponse> result =
@@ -173,8 +173,8 @@ class DirectMessageServiceImplTest {
             any(Pageable.class)
         )).willReturn(List.of(dto1, dto2));
 
-        given(directMessageMapper.fromDto(dto1)).willReturn(res1);
-        given(directMessageMapper.fromDto(dto2)).willReturn(res2);
+        given(directMessageMapper.toDto(dto1)).willReturn(res1);
+        given(directMessageMapper.toDto(dto2)).willReturn(res2);
 
         CursorResponse<DirectMessageResponse> result =
             directMessageService.getDirectMessages(userId, request);

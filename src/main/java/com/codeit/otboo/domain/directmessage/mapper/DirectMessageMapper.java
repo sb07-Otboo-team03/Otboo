@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class DirectMessageMapper {
     private final UserMapper userMapper;
 
-    public DirectMessageResponse from(DirectMessage directMessage) {
+    public DirectMessageResponse toDto(DirectMessage directMessage) {
 
         return new DirectMessageResponse(
             directMessage.getId(),
@@ -29,7 +29,7 @@ public class DirectMessageMapper {
             directMessage.getContent());
     }
 
-    public DirectMessageResponse fromDto(DirectMessageDto directMessageDto) {
+    public DirectMessageResponse toDto(DirectMessageDto directMessageDto) {
 
         return new DirectMessageResponse(
             directMessageDto.id(),

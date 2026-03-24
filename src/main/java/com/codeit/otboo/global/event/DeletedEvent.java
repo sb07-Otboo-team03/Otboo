@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocket.event;
+package com.codeit.otboo.global.event;
 
 import java.time.LocalDateTime;
 import lombok.Getter;

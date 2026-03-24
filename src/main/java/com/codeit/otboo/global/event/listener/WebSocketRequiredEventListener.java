@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocket.listener;
+package com.codeit.otboo.global.event.listener;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;

@@ -50,7 +50,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         DirectMessage directMessage = new DirectMessage(sender, receiver, request.content());
         DirectMessage saveDirectMessage = directMessageRepository.save(directMessage);
-        DirectMessageResponse response = directMessageMapper.from(saveDirectMessage);
+        DirectMessageResponse response = directMessageMapper.toDto(saveDirectMessage);
 
         eventPublisher.publishEvent(
             new DirectMessageCreatedEvent(
@@ -92,7 +92,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         }
 
         List<DirectMessageResponse> content = page.stream()
-            .map(directMessageMapper::fromDto)
+            .map(directMessageMapper::toDto)
             .toList();
 
         return CursorResponse.fromList(
