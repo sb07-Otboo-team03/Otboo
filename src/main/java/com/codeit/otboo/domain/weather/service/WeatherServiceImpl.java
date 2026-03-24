@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
+import com.codeit.otboo.domain.weather.client.KmaWeatherMapper;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.dto.mapper.WeatherMapper;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
@@ -39,6 +40,7 @@ public class WeatherServiceImpl implements WeatherService{
     private final WeatherMapper weatherMapper;
 
     private final KmaWeatherClient kmaWeatherClient;
+    private final KmaWeatherMapper kmaWeatherMapper;
 
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
@@ -127,7 +129,7 @@ public class WeatherServiceImpl implements WeatherService{
         String baseTime = "2300";
 
         List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
-        List<YesterdayHourlyWeather> yesterdayWeathers = kmaWeatherClient.getYesterdayWeathers(x, y, items);
+        List<YesterdayHourlyWeather> yesterdayWeathers = kmaWeatherMapper.toYesterdayWeathers(x, y, items);
 
         yesterdayHourlyWeatherRepository.saveAll(yesterdayWeathers);
     }
@@ -189,7 +191,7 @@ public class WeatherServiceImpl implements WeatherService{
 
     private void saveOrUpdateWeather(String baseDate, String baseTime, int x, int y, boolean isScheduling) {
         List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<Weather> weathers = kmaWeatherClient.getWeathers(baseTime, x, y, items, isScheduling);
+        List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, isScheduling);
 
         List<Weather> weatherList = new ArrayList<>();
 
