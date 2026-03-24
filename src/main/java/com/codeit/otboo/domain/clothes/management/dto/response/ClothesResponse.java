@@ -3,7 +3,7 @@ package com.codeit.otboo.domain.clothes.management.dto.response;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeWithDefResponse;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public record ClothesResponse (
@@ -12,5 +12,5 @@ public record ClothesResponse (
         String name,
         String imageUrl,
         ClothesType type,
-        ArrayList<ClothesAttributeWithDefResponse> attributes
+        List<ClothesAttributeWithDefResponse> attributes
 ){}

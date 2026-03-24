@@ -6,19 +6,24 @@ import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ import java.util.List;
 public class ClothesServiceImpl implements ClothesService{
     private final UserRepository userRepository;
     private final ClothesRepository clothesRepository;
+    private final ClothesAttributeValueRepository clothesAttributeValueRepository;
     private final BinaryContentStorage binaryContentStorage;
     private final BinaryContentService binaryContentService;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
@@ -36,21 +42,41 @@ public class ClothesServiceImpl implements ClothesService{
             BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest request
     ){
-        // Todo : 유저 관련 도메인 예외가 생기면 수정
         User owner = userRepository.findById(request.ownerId()).orElseThrow(
-                () -> new IllegalArgumentException("유저를 찾을 수 없음")
-        );
+                UserNotFoundException::new);
         BinaryContent binaryContent = binaryContentService.upload(imageRequest);
         binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
-        Clothes clothes = new Clothes(request.name(), request.type(), owner, binaryContent);
 
-        // Todo : ClothesAttribute Repository 미존재로 인하여 빈 리스트로 일단 넣어놓음
-        List<ClothesAttributeValue> attributes = List.of();
+        // 옷 속성-값
+        Set<ClothesAttributeValue> attributeValues = request.attributes().stream()
+            .map(attributeRequest->
+                clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(
+                    attributeRequest.definitionId(), attributeRequest.value()
+                ).orElseThrow(() -> new IllegalArgumentException("해당 옷 속성값이 존재하지 않습니다")
+            )
+        ).collect(Collectors.toSet());
+
+        Clothes savedClothes = clothesRepository.save(
+            new Clothes(request.name(), request.type(), owner, binaryContent, attributeValues)
+        );
         
         return clothesMapper.toDto(
-                clothesRepository.save(clothes),
+                savedClothes,
                 binaryContentUrlResolver.resolve(binaryContent.getId()),
-                attributes
+                groupingDefinitionSelectable(savedClothes)
         );
+    }
+
+    private Map<UUID, List<String>> groupingDefinitionSelectable(Clothes clothes){
+        List<ClothesAttributeValue> selectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
+                clothes.getValues().stream().map(attributeValue ->
+                        attributeValue.getAttributeDef().getId()
+                ).toList()
+        );
+        return selectableValues.stream()
+                .collect(Collectors.groupingBy(
+                        v -> v.getAttributeDef().getId(),
+                        Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())
+                ));
     }
 }
