@@ -1,9 +1,7 @@
 package com.codeit.otboo.global.security.jwt;
 
-import com.codeit.otboo.global.security.OtBooUserDetailsService;
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
-import com.codeit.otboo.global.security.jwt.exception.JwtInvalidTokenTypeException;
-import com.codeit.otboo.global.security.jwt.registry.LoginSessionRegistry;
+import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,8 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -28,7 +24,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final LoginSessionRegistry loginSessionRegistry;
+    private final RedisRegistry redisRegistry;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -54,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String sessionId = jwtProvider.getSessionId(accessToken);
             String email = jwtProvider.getEmail(accessToken);
 
-            if (!loginSessionRegistry.isValid(userId, sessionId)) {
+            if (!redisRegistry.isValidSession(userId, sessionId)) {
                 throw new BadCredentialsException("유효하지 않은 세션입니다.");
             }
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -69,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        } catch (JwtException e) {
+        } catch (JwtException | BadCredentialsException e) {
             SecurityContextHolder.clearContext();
             throw new BadCredentialsException("유효하지 않은 access token입니다.", e);
         }

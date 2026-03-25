@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.user.service;
 
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -10,8 +11,7 @@ import com.codeit.otboo.global.security.jwt.JwtProperties;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.exception.JwtExpiredTokenException;
-import com.codeit.otboo.global.security.jwt.registry.LoginSessionRegistry;
-import com.codeit.otboo.global.security.jwt.registry.RefreshTokenRegistry;
+import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,8 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
-    private final RefreshTokenRegistry refreshTokenRegistry;
-    private final LoginSessionRegistry loginSessionRegistry;
+    private final RedisRegistry redisRegistry;
     private final JwtProperties jwtProperties;
     private final UserMapper userMapper;
 
@@ -48,17 +47,12 @@ public class AuthServiceImpl implements AuthService {
 
         String refreshToken = jwtProvider.generateRefreshToken(userId, authenticatedEmail, sessionId);
 
-        loginSessionRegistry.save(
-                userId,
-                sessionId,
-                jwtProperties.refreshTokenExpiration()
-        );
-
-        refreshTokenRegistry.register(
-                userId,
-                refreshToken,
-                jwtProperties.refreshTokenExpiration()
-        );
+        try {
+            redisRegistry.save(userId, sessionId, refreshToken, jwtProperties.refreshTokenExpiration());
+        } catch (Exception e) {
+            redisRegistry.delete(userId);
+            throw new AuthStatePersistentException();
+        }
 
         String accessToken = jwtProvider.generateAccessToken(userId, authenticatedEmail, sessionId);
 
@@ -75,12 +69,11 @@ public class AuthServiceImpl implements AuthService {
 
         // JWT 자체 검증
         JWTClaimsSet claims = jwtProvider.validateRefreshToken(refreshToken);
+        UUID userId = UUID.fromString(claims.getSubject());
 
-        if (!refreshTokenRegistry.isValidRefreshToken(refreshToken)) {
+        if (!redisRegistry.isValidRefreshToken(userId, refreshToken)) {
             throw new JwtExpiredTokenException();
         }
-
-        UUID userId = UUID.fromString(claims.getSubject());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -90,11 +83,14 @@ public class AuthServiceImpl implements AuthService {
 
         String newRefreshToken = jwtProvider.generateRefreshToken(userId, email, sessionId);
 
-        refreshTokenRegistry.rotate(userId, refreshToken, newRefreshToken, jwtProperties.refreshTokenExpiration());
-        loginSessionRegistry.save(userId, sessionId, jwtProperties.refreshTokenExpiration());
+        try {
+            redisRegistry.rotateRefreshToken(userId, refreshToken, newRefreshToken, jwtProperties.refreshTokenExpiration());
+        } catch (Exception e) {
+            redisRegistry.delete(userId);
+            throw new AuthStatePersistentException();
+        }
 
         String newAccessToken = jwtProvider.generateAccessToken(userId, email, sessionId);
-
         UserResponse userResponse = userMapper.toDto(user);
 
         return JwtInformation.builder()
