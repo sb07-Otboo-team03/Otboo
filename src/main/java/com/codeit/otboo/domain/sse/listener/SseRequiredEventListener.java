@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
@@ -20,7 +21,7 @@ public class SseRequiredEventListener {
     private final SseService sseService;
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(ClothesAttributeCreateEvent event) {
         NotificationDto notification = event.getData();
         UUID receiverId = notification.receiverId();
@@ -28,7 +29,7 @@ public class SseRequiredEventListener {
     }
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(SseEvent event) {
         NotificationDto notification = event.getData();
         UUID receiverId = notification.receiverId();
