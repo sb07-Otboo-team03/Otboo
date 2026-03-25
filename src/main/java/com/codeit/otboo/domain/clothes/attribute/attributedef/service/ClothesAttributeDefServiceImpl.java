@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.attribute.attributedef.service;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
@@ -48,8 +49,10 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
     @Override
     public List<ClothesAttributeDefResponse> getAllAttributeDef(
-            ClothesAttributeSearchCondition searchCondition
+            ClothesAttributeSearchRequest searchRequest
     ) {
+        ClothesAttributeSearchCondition searchCondition = ClothesAttributeSearchCondition.from(searchRequest);
+
         // 속성명 조회
         List<ClothesAttributeDef> getAttributes = clothesAttributeDefRepository.searchAttributes(searchCondition);
 

@@ -5,4 +5,11 @@ public record ClothesAttributeSearchCondition(
         String sortDirection,
         String keywordLike
 ) {
+    public static ClothesAttributeSearchCondition from(ClothesAttributeSearchRequest searchRequest) {
+        return new ClothesAttributeSearchCondition(
+                searchRequest.sortBy(),
+                searchRequest.sortDirection(),
+                searchRequest.keywordLike()
+        );
+    }
 }

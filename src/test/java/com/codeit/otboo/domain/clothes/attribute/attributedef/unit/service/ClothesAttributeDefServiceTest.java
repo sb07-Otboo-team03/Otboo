@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.attribute.attributedef.unit.service;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
@@ -66,8 +67,10 @@ class ClothesAttributeDefServiceTest {
                 .attributeDef(attributeDef)
                 .build();
 
-        given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class))).willReturn(color1);
-        given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class))).willReturn(color2);
+        given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class)))
+                .willReturn(color1);
+        given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class)))
+                .willReturn(color2);
 
         ClothesAttributeDefResponse defResponse1 = ClothesAttributeDefResponse.builder()
                 .id(defId)
@@ -197,10 +200,12 @@ class ClothesAttributeDefServiceTest {
         ReflectionTestUtils.setField(sizeDef, "id", sizeDefId);
 
         List<ClothesAttributeDef> listDefs = List.of(colorDef, sizeDef);
-        ClothesAttributeSearchCondition searchCondition
-                = new ClothesAttributeSearchCondition(
+        ClothesAttributeSearchRequest searchRequest
+                = new ClothesAttributeSearchRequest(
                         "name", "ASCENDING", "색상"
         );
+
+        ClothesAttributeSearchCondition searchCondition = ClothesAttributeSearchCondition.from(searchRequest);
 
         ClothesAttributeValue colorValue1 = ClothesAttributeValue.builder()
                 .selectableValue("레드")
@@ -234,7 +239,7 @@ class ClothesAttributeDefServiceTest {
                 ));
 
         // when
-        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchCondition);
+        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchRequest);
 
         // then
         assertThat(defResponseList).hasSize(2);

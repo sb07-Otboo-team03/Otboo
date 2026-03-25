@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.attribute.attributedef.service;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 
 import java.util.List;
@@ -16,6 +17,6 @@ public interface ClothesAttributeDefService {
 
     void deleteAttributeDef(UUID definition_id);
 
-    List<ClothesAttributeDefResponse> getAllAttributeDef( ClothesAttributeSearchCondition searchCondition);
+    List<ClothesAttributeDefResponse> getAllAttributeDef(ClothesAttributeSearchRequest searchRequest);
 
 }
