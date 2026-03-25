@@ -40,9 +40,6 @@ public class KmaWeatherMapper {
 
     public List<Weather> toWeathers(String baseTime, int nx, int ny, List<KmaWeatherItem> items, boolean isScheduling) {
 
-        // 각 날짜 별로 TMX, TMN을 최고, 최저 기온에 넣어가지고 전달?
-        // 업데이트하는거도 생각해서 해야됨.
-
         // 필요한 정보만 필터링
         List<KmaWeatherItem> filtered = items.stream()
                 .filter(item -> KmaCategory.from(item.category())
@@ -65,7 +62,7 @@ public class KmaWeatherMapper {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-        return IntStream.range(0, 5)
+        return IntStream.range(0, 4)
                 .mapToObj(startDate::plusDays)
                 .map(date -> date.format(formatter))
                 .toList();
@@ -128,6 +125,9 @@ public class KmaWeatherMapper {
         return grouped;
     }
 
+    // 하루 기준 최고 온도, 최저 온도 구하는 메서드
+    // 0600, 1500 기준으로 각각 최저온도, 최고온도를 가짐
+    // 0600, 1500 데이터가 없을 시 null 값을 반환
     private Double extractTemperature(Map<String, Map<KmaCategory, String>> groupedByTime, String time, KmaCategory category) {
         Map<KmaCategory, String> valuesByTime = groupedByTime.get(time);
 
