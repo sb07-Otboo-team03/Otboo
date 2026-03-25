@@ -29,7 +29,7 @@ info:
     version: 1.0.0
 
 sse:
+  event-queue-capacity: 100
   timeout: 300_000
-
 api:
   kma-api-key: ${KMA_API_KEY}

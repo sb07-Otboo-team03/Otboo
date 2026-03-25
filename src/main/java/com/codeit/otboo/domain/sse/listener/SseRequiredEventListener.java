@@ -1,12 +1,37 @@
 package com.codeit.otboo.domain.sse.listener;
 
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
+import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.sse.service.SseService;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
 @Component
 public class SseRequiredEventListener {
 
+    private final SseService sseService;
+
+    @Async
+    @TransactionalEventListener
+    public void on(ClothesAttributeCreateEvent event) {
+        NotificationDto notification = event.getData();
+        UUID receiverId = notification.receiverId();
+        sseService.broadcast("notifications", notification);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(SseEvent event) {
+        NotificationDto notification = event.getData();
+        UUID receiverId = notification.receiverId();
+        sseService.send(Set.of(receiverId), "notifications", notification);
+    }
 }
