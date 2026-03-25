@@ -58,13 +58,15 @@ class CommentRepositoryTest {
             commentList.add(comment);
         }
         commentRepository.saveAll(commentList);
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Test
     @DisplayName("""
             피드Id로 댓글을 조회할 수 있다.
             cursor: 생성일
-            idAtfer: id
+            idAfter: id
             limit: 5
             정렬: 내림차순
             """)
@@ -84,9 +86,6 @@ class CommentRepositoryTest {
         // page 2
         Slice<Comment> page2 = commentRepository.findAllByCursor(feed.getId(), lastCursor, lastId, 5);
         List<Comment> comments2 = page2.getContent();
-
-        // when
-        commentRepository.findAllByCursor(feed.getId(), null, null, 5);
 
         // then
         assertThat(comments1.size()).isEqualTo(5);
@@ -110,11 +109,8 @@ class CommentRepositoryTest {
         Feed feed = feedList.get(0);
         createComment(feed, user, 7);
 
-        // page 1
-        Slice<Comment> page1 = commentRepository.findAllByCursor(feed.getId(), cursor, idAfter, 5);
-
         // when
-        commentRepository.findAllByCursor(feed.getId(), null, null, 5);
+        Slice<Comment> page1 = commentRepository.findAllByCursor(feed.getId(), cursor, idAfter, 5);
 
         // then
         assertThat(page1.getContent().size()).isEqualTo(5);
@@ -150,6 +146,8 @@ class CommentRepositoryTest {
 
         // when
         commentRepository.deleteAllByFeedId(feed.getId());
+        entityManager.flush();
+        entityManager.clear();
 
         // then
         assertThat(commentRepository.count()).isEqualTo(0);
