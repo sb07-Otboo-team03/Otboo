@@ -1,14 +1,18 @@
 package com.codeit.otboo.domain.sse.service;
 
+import static org.springframework.boot.logging.DeferredLog.replay;
+
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.sse.object.SseMessage;
 import com.codeit.otboo.domain.sse.repository.SseEmitterRepository;
 import com.codeit.otboo.domain.sse.repository.SseMessageRepository;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,24 +48,36 @@ public class SseServiceImpl implements SseService {
             sseEmitterRepository.delete(receiverId, sseEmitter);
         });
 
-        sseEmitterRepository.save(receiverId, sseEmitter);
+        AtomicBoolean success = new AtomicBoolean(true);
 
         Optional.ofNullable(lastEventId)
             .ifPresentOrElse(
                 id -> {
-                    sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)
-                        .forEach(sseMessage -> {
-                            try {
-                                sseEmitter.send(sseMessage.toEvent());
-                            } catch (IOException e) {
-                                log.warn( e.getMessage(), e);
-                            }
-                        });
+                    List<SseMessage> messages =
+                        sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId);
+
+                    for (SseMessage sseMessage : messages) {
+                        try {
+                            sseEmitter.send(sseMessage.toEvent());
+                        } catch (IOException e) {
+                            log.warn(e.getMessage(), e);
+                            sseEmitter.completeWithError(e);
+                            success.set(false);
+                            return;
+                        }
+                    }
                 },
                 () -> {
-                    ping(sseEmitter);
+                    if (!ping(sseEmitter)) {
+                        sseEmitter.completeWithError(new RuntimeException("initial ping failed"));
+                        success.set(false);
+                    }
                 }
             );
+
+        if (success.get()) {
+            sseEmitterRepository.save(receiverId, sseEmitter);
+        }
 
         return sseEmitter;
     }
@@ -75,6 +91,7 @@ public class SseServiceImpl implements SseService {
                     sseEmitter.send(event);
                 } catch (IOException e) {
                     log.warn( e.getMessage(), e);
+                    sseEmitter.completeWithError(e);
                 }
             });
     }
@@ -88,6 +105,7 @@ public class SseServiceImpl implements SseService {
                     sseEmitter.send(event);
                 } catch (IOException e) {
                     log.warn( e.getMessage(), e);
+                    sseEmitter.completeWithError(e);
                 }
             });
     }
@@ -108,6 +126,7 @@ public class SseServiceImpl implements SseService {
             return true;
         } catch (IOException e) {
             log.warn("Failed to send ping event", e);
+//            sseEmitter.completeWithError(e);
             return false;
         }
     }
