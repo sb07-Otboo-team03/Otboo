@@ -17,7 +17,6 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static com.codeit.otboo.domain.comment.entity.QComment.comment;
-import static com.codeit.otboo.domain.feed.entity.QFeed.feed;
 
 @Repository
 @RequiredArgsConstructor
