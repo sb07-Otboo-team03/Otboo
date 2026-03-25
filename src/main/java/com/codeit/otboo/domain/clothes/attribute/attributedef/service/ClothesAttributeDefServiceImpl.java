@@ -2,7 +2,7 @@ package com.codeit.otboo.domain.clothes.attribute.attributedef.service;
 
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 @Slf4j
 public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefService {
 
@@ -31,6 +31,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     private final ClothesAttributeDefMapper clothesAttributeDefMapper;
 
     @Override
+    @Transactional
     public ClothesAttributeDefResponse createAttributeDef(ClothesAttributeDefCreateRequest request) {
         ClothesAttributeDef clothesAttributeDef = new ClothesAttributeDef(request.name());
         ClothesAttributeDef saveDef = clothesAttributeDefRepository.save(clothesAttributeDef);
@@ -46,12 +47,11 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ClothesAttributeDefResponse> getAllAttributeDef(
-            ClothesAttributeSearchRequest searchRequest
+            ClothesAttributeSearchCondition searchCondition
     ) {
         // 속성명 조회
-        List<ClothesAttributeDef> getAttributes = clothesAttributeDefRepository.searchAttributes(searchRequest);
+        List<ClothesAttributeDef> getAttributes = clothesAttributeDefRepository.searchAttributes(searchCondition);
 
         // 속성명 ID 리스트 생성
         List<UUID> defIds = getAttributes.stream()
@@ -74,6 +74,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     }
 
     @Override
+    @Transactional
     public ClothesAttributeDefResponse updateAttributeDef(
             UUID definition_id,
             ClothesAttributeDefUpdateRequest request
@@ -110,6 +111,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     }
 
     @Override
+    @Transactional
     public void deleteAttributeDef(UUID definition_id) {
         // Def Hart Delete
         ClothesAttributeDef attributeDef = clothesAttributeDefRepository.findById(definition_id)

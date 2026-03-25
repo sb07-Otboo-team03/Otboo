@@ -1,13 +1,11 @@
-package com.codeit.otboo.domain.clothes.attribute.attributedef.UnitTest;
+package com.codeit.otboo.domain.clothes.attribute.attributedef.unit.service;
 
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeNameMissingException;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeSelectableValueMissingException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.mapper.ClothesAttributeDefMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.ClothesAttributeDefRepository;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.service.ClothesAttributeDefServiceImpl;
@@ -199,8 +197,8 @@ class ClothesAttributeDefServiceTest {
         ReflectionTestUtils.setField(sizeDef, "id", sizeDefId);
 
         List<ClothesAttributeDef> listDefs = List.of(colorDef, sizeDef);
-        ClothesAttributeSearchRequest searchRequest
-                = new ClothesAttributeSearchRequest(
+        ClothesAttributeSearchCondition searchCondition
+                = new ClothesAttributeSearchCondition(
                         "name", "ASCENDING", "색상"
         );
 
@@ -222,7 +220,7 @@ class ClothesAttributeDefServiceTest {
 
         List<ClothesAttributeValue> listValues = List.of(colorValue1, colorValue2, sizeValue);
 
-        given(defRepository.searchAttributes(any(ClothesAttributeSearchRequest.class)))
+        given(defRepository.searchAttributes(any(ClothesAttributeSearchCondition.class)))
                 .willReturn(listDefs);
         given(valueRepository.findByAttributeDefIdInAndIsActiveTrue(anyList()))
                 .willReturn(listValues);
@@ -236,7 +234,7 @@ class ClothesAttributeDefServiceTest {
                 ));
 
         // when
-        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchRequest);
+        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchCondition);
 
         // then
         assertThat(defResponseList).hasSize(2);
@@ -247,7 +245,7 @@ class ClothesAttributeDefServiceTest {
         assertThat(defResponseList.get(1).name()).isEqualTo(sizeDef.getName());
         assertThat(defResponseList.get(1).selectableValues()).containsExactly("L");
 
-        verify(defRepository, times(1)).searchAttributes(searchRequest);
+        verify(defRepository, times(1)).searchAttributes(searchCondition);
         verify(valueRepository, times(1))
                 .findByAttributeDefIdInAndIsActiveTrue(anyList());
     }

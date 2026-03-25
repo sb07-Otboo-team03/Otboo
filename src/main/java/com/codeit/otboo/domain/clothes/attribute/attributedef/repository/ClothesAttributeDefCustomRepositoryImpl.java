@@ -1,9 +1,7 @@
 package com.codeit.otboo.domain.clothes.attribute.attributedef.repository;
 
-import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.QClothesAttributeDef;
-import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.QClothesAttributeValue;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -23,18 +21,18 @@ public class ClothesAttributeDefCustomRepositoryImpl implements  ClothesAttribut
 
     @Override
     public List<ClothesAttributeDef> searchAttributes(
-            ClothesAttributeSearchRequest clothesAttributeSearchRequest) {
+            ClothesAttributeSearchCondition clothesAttributeSearchCondition) {
         return queryFactory.select(clothesAttributeDef)
                 .from(clothesAttributeDef)
                 .leftJoin(clothesAttributeValue)
                 .on(clothesAttributeValue.attributeDef.eq(clothesAttributeDef))
                 .where(
-                        keywordLike(clothesAttributeSearchRequest.keywordLike())
+                        keywordLike(clothesAttributeSearchCondition.keywordLike())
                 )
                 .distinct()
                 .orderBy(getSortOrder(
-                        clothesAttributeSearchRequest.sortBy(),
-                        clothesAttributeSearchRequest.sortDirection()))
+                        clothesAttributeSearchCondition.sortBy(),
+                        clothesAttributeSearchCondition.sortDirection()))
                 .fetch();
     }
 
