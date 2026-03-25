@@ -89,14 +89,10 @@ public class WeatherServiceImpl implements WeatherService{
             addWeathers(forecastedAt, forecastAt, location, weathers);
         }
 
-        // TODO: +5일뒤 데이터를 어떻게 저장할지 고민해봐야함.
-        // TODO: 00시 데이터만 가진 날짜는 어떻게 전달할지 고민해봐야함.
-        // 1400까지 +3일뒤 데이터는 3시간 간격 + 4일뒤 00시 데이터만 존재
-        // 1700부터 +4일뒤 데이터는 3시간 간격 + 5일뒤 00시 데이터 추가
-
-        if (weathers.size() == 3) { // 1400 발표까지
-            findClosestWeather(forecastAt, location, weathers, forecastedAt, weathers.size());
-        } else if (forecastAt.getHour() >= 17 && weathers.size() == 4) { // 1700발표 이후
+        // 3일 뒤 까지 날씨 정보 저장
+        // 3일 뒤 정보는 17시 발표 전까지 3시간 간격 정보만 가짐
+        // 현재 시간의 날씨 정보가 없는 경우 가까운 시간의 날씨 정보를 가져옴.
+        if (weathers.size() == 3) {
             findClosestWeather(forecastAt, location, weathers, forecastedAt, weathers.size());
         }
 
@@ -221,6 +217,45 @@ public class WeatherServiceImpl implements WeatherService{
 
         weatherRepository.saveAll(weatherList);
     }
+
+    /**
+     * 00시 마다 어제 저장했던 모든 날씨 데이터 삭제
+     * 삭제 이전에 어제자 날씨의 (온도, 습도) 정보는 yesterday_hourly_weather 테이블에 저장
+     */
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void deleteYesterdayWeather() {
+        LocalDate today = LocalDate.now(SEOUL);
+        LocalDateTime todayStart = today.atStartOfDay();
+
+        LocalDate yesterday = today.minusDays(1);
+        LocalDateTime start = yesterday.atStartOfDay();
+        LocalDateTime end = yesterday.plusDays(1).atStartOfDay();
+
+        // 어제자 날씨 정보만 저장
+        List<Weather> yesterdayWeatherList = weatherRepository.findYesterdayWeather(start, start, end);
+
+        // 어제자 날씨의 온도, 습도를 YesterdayHourlyWeather 엔티티에 저장
+        List<YesterdayHourlyWeather> yesterdayHourlyWeatherList = yesterdayWeatherList.stream()
+                .map(weather -> new YesterdayHourlyWeather(
+                        weather.getX(),
+                        weather.getY(),
+                        weather.getForecastAt().toLocalDate(),
+                        weather.getForecastAt().toLocalTime(),
+                        weather.getTemperatureCurrent(),
+                        weather.getHumidityCurrent()
+                ))
+                .sorted(Comparator.comparing(YesterdayHourlyWeather::getX)
+                        .thenComparing(YesterdayHourlyWeather::getY)
+                        .thenComparing(YesterdayHourlyWeather::getHour))
+                .toList();
+
+        yesterdayHourlyWeatherRepository.saveAll(yesterdayHourlyWeatherList);
+
+        // 오늘 이전의 날씨 데이터는 모두 삭제
+        weatherRepository.deleteByForecastedAtBefore(todayStart);
+    }
+
 
     public static String getBaseTimeForWeather() {
         int hour = LocalTime.now(SEOUL).getHour();
