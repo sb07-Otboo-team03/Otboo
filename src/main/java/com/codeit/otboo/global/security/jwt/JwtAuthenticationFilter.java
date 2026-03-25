@@ -2,6 +2,7 @@ package com.codeit.otboo.global.security.jwt;
 
 import com.codeit.otboo.global.security.OtBooUserDetailsService;
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
+import com.codeit.otboo.global.security.jwt.exception.JwtInvalidTokenTypeException;
 import com.codeit.otboo.global.security.jwt.registry.LoginSessionRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.servlet.FilterChain;
@@ -9,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtProvider.getEmail(accessToken);
 
             if (!loginSessionRegistry.isValid(userId, sessionId)) {
-                return;
+                throw new BadCredentialsException("유효하지 않은 세션입니다.");
             }
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
@@ -69,6 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (JwtException e) {
             SecurityContextHolder.clearContext();
+            throw new BadCredentialsException("유효하지 않은 access token입니다.", e);
         }
 
         filterChain.doFilter(request, response);
