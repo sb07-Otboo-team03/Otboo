@@ -18,6 +18,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -45,7 +46,6 @@ public class AuthServiceImpl implements AuthService {
         String authenticatedEmail = userResponse.email();
         String sessionId = UUID.randomUUID().toString();
 
-        String accessToken = jwtProvider.generateAccessToken(userId, authenticatedEmail, sessionId);
         String refreshToken = jwtProvider.generateRefreshToken(userId, authenticatedEmail, sessionId);
 
         loginSessionRegistry.save(
@@ -60,6 +60,8 @@ public class AuthServiceImpl implements AuthService {
                 jwtProperties.refreshTokenExpiration()
         );
 
+        String accessToken = jwtProvider.generateAccessToken(userId, authenticatedEmail, sessionId);
+
         return JwtInformation.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -68,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JwtInformation refreshToken(String refreshToken) {
 
         // JWT 자체 검증
@@ -78,17 +81,19 @@ public class AuthServiceImpl implements AuthService {
         }
 
         UUID userId = UUID.fromString(claims.getSubject());
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
         String sessionId = jwtProvider.getSessionId(refreshToken);
         String email = jwtProvider.getEmail(refreshToken);
 
-        String newAccessToken = jwtProvider.generateAccessToken(userId, email, sessionId);
         String newRefreshToken = jwtProvider.generateRefreshToken(userId, email, sessionId);
 
         refreshTokenRegistry.rotate(userId, refreshToken, newRefreshToken, jwtProperties.refreshTokenExpiration());
         loginSessionRegistry.save(userId, sessionId, jwtProperties.refreshTokenExpiration());
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        String newAccessToken = jwtProvider.generateAccessToken(userId, email, sessionId);
 
         UserResponse userResponse = userMapper.toDto(user);
 
