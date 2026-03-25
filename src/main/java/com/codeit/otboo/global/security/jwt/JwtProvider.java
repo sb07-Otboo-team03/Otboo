@@ -149,41 +149,11 @@ public class JwtProvider {
 
         return claims;
     }
-
-    public boolean isValidAccessToken(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
-        }
-
-        try {
-            JWTClaimsSet claims = verifyAndGetClaims(token);
-            return ACCESS.equals(claims.getClaim(TOKEN_TYPE));
-
-        } catch (JwtException e) {
-            return false;
-        }
-    }
-
-    public boolean isValidRefreshToken(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
-        }
-
-        try {
-            JWTClaimsSet claims = verifyAndGetClaims(token);
-
-            return REFRESH.equals(claims.getClaim(TOKEN_TYPE));
-
-        } catch (JwtException e) {
-            return false;
-        }
-    }
-
     public String getEmail(String token) {
         try {
             return parseClaims(token).getStringClaim("email");
         } catch (Exception e) {
-            throw new JwtInvalidTokenTypeException();
+            throw new JwtParseErrorException();
         }
     }
 
@@ -191,7 +161,7 @@ public class JwtProvider {
         try {
             return parseClaims(token).getStringClaim("sessionId");
         } catch (Exception e) {
-            throw new JwtInvalidTokenTypeException();
+            throw new JwtParseErrorException();
         }
     }
 
