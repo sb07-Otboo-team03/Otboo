@@ -50,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             redisRegistry.save(userId, sessionId, refreshToken, jwtProperties.refreshTokenExpiration());
         } catch (Exception e) {
+            // Redis 저장 중, 예외가 발생한다면 해당 key 삭제
             redisRegistry.delete(userId);
             throw new AuthStatePersistentException();
         }
@@ -71,6 +72,7 @@ public class AuthServiceImpl implements AuthService {
         JWTClaimsSet claims = jwtProvider.validateRefreshToken(refreshToken);
         UUID userId = UUID.fromString(claims.getSubject());
 
+        // Redis에 저장된 user의 refresh Token 비교
         if (!redisRegistry.isValidRefreshToken(userId, refreshToken)) {
             throw new JwtExpiredTokenException();
         }
