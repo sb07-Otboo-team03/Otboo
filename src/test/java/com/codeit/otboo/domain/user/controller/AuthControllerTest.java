@@ -6,6 +6,7 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.service.AuthService;
+import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.codeit.otboo.global.security.jwt.JwtProperties;
 import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.RefreshCookieFactory;
@@ -19,7 +20,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,10 +35,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@WebMvcTest(controllers = AuthController.class,
+        excludeFilters = {
+                @ComponentScan.Filter(
+                        type = FilterType.ASSIGNABLE_TYPE,
+                        classes = JwtAuthenticationFilter.class
+                )
+        })
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
     @Autowired
@@ -131,7 +142,7 @@ class AuthControllerTest {
                 "test@codeit.com, ",
                 ", ppaaosss2", // 이메일 아님
                 "test@codeit.com, pass" // password 길이 미충족
-                
+
         })
         @DisplayName("로그인 실패 - BadRequest, 잘못된 파라미터 요청")
         void login_fail_badRequest(String username, String password) throws Exception {
@@ -143,8 +154,6 @@ class AuthControllerTest {
 
         // TODO: Lock이 된 계정의 테스트는, 계정 비활성화 기능 구현 이후 진행하겠습니다.
     }
-
-
 
 
 }
