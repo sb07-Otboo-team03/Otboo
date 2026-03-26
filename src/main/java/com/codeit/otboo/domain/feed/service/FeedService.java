@@ -14,7 +14,7 @@ public interface FeedService {
 
     CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual);
 
-    FeedResponse updateFeed(UUID id, FeedUpdateRequest request);
+    FeedResponse updateFeed(UUID id, FeedUpdateRequest request, UUID authorId);
 
-    void deleteFeed(UUID id);
+    void deleteFeed(UUID id, UUID authorId);
 }

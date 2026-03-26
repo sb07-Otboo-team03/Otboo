@@ -35,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
 
@@ -66,8 +67,13 @@ class FeedServiceImplTest {
     @InjectMocks
     private FeedServiceImpl feedService;
 
+    private User user;
+    
     @BeforeEach
-    void setUp() {
+    void setup() {
+        UUID authorId = UUID.randomUUID();
+        user = new User("otboo@a.a", "otboo123");
+        ReflectionTestUtils.setField(user, "id", authorId);
     }
 
     @Nested
@@ -78,15 +84,14 @@ class FeedServiceImplTest {
         @DisplayName("피드를 생성할 수 있다.")
         void createFeed_Success() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             UUID weatherId = UUID.randomUUID();
             UUID clothesId = UUID.randomUUID();
             String content = "Feed 생성 테스트";
 
             FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
-
-            User user = new User("otboo@a.a", "otboo123");
+            
             Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
             Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
 
@@ -108,7 +113,7 @@ class FeedServiceImplTest {
         @DisplayName("존재하지 않는 유저Id면 예외를 반환한다.")
         void createFeed_Fail_NotFoundUser() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
 
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
@@ -124,7 +129,7 @@ class FeedServiceImplTest {
         @DisplayName("존재하지 않는 날씨Id면 예외를 반환한다.")
         void createFeed_Fail_NotFoundWeather() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             UUID weatherId = UUID.randomUUID();
 
             given(userRepository.findById(userId)).willReturn(Optional.of(new User("otboo@a.a", "otboo123")));
@@ -155,7 +160,7 @@ class FeedServiceImplTest {
                 """)
         void convertFeedCursorByOrderBy(String sortBy) {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy, null, null, null, null);
             List<Feed> feedList = FeedFixture.createFeedCursor(6);
             if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
@@ -185,7 +190,7 @@ class FeedServiceImplTest {
         @DisplayName("마지막 페이지 조회 후, nextCursor와 nextAfter가 null을 반환한다.")
         void searchLastPage_ReturnNoNextPage() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, null, null, null);
             List<Feed> feedList = FeedFixture.createFeedCursor(5);
 
@@ -208,7 +213,7 @@ class FeedServiceImplTest {
         @Test
         @DisplayName("검색 결과가 없으면 DB조회를 하지 않고 반환한다.")
         void searchEmptyResult_ReturnNullCursorAndAfter() {
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             String keyword = "hello world";
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, keyword, null, null);
             Slice<Feed> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 5), false);
@@ -233,7 +238,7 @@ class FeedServiceImplTest {
         @DisplayName("피드를 조회하는 유저의 id가 존재하지 않으면 예외를 반환한다.")
         void searchFeedList_Fail_NotFoundUser() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
 
             given(userRepository.existsById(userId)).willReturn(false);
 
@@ -247,16 +252,19 @@ class FeedServiceImplTest {
 
     @Nested
     @DisplayName("피드 수정")
+    
     class FeedFind {
         @Test
         @DisplayName("피드 내용을 수정할 수 있다.")
         void searchFeedList_Success() {
             // given
+            UUID userId = user.getId();
             UUID feedId = UUID.randomUUID();
             String newContent = "New Feed Content";
 
             FeedWeather weatherInformation = FeedWeather.builder().build();
-            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation).build();
+            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation)
+                    .author(user).build();
             FeedResponse dto = FeedResponse.builder().id(feedId).content(newContent).build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
@@ -265,7 +273,7 @@ class FeedServiceImplTest {
             FeedUpdateRequest request = new FeedUpdateRequest(newContent);
 
             // when
-            FeedResponse response = feedService.updateFeed(feedId, request);
+            FeedResponse response = feedService.updateFeed(feedId, request, userId);
 
             // then
             verify(feedMapper, times(1)).toDto(any(Feed.class));
@@ -285,10 +293,31 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.updateFeed(
-                    feedId, new FeedUpdateRequest(newContent)))
+                    feedId, new FeedUpdateRequest(newContent), user.getId()))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+        }
+        
+        @Test
+        @DisplayName("자신의 피드만 수정 가능하다")
+        void updateFeed_Fail_NotAuthor() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID feedId = UUID.randomUUID();
+            String newContent = "New Feed Content";
+
+            FeedWeather weatherInformation = FeedWeather.builder().build();
+            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation)
+                    .author(user).build();
+
+            FeedUpdateRequest request = new FeedUpdateRequest(newContent);
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+            // when & then
+            assertThatThrownBy(() -> feedService.updateFeed(feedId, request, userId))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -300,13 +329,17 @@ class FeedServiceImplTest {
         @DisplayName("피드를 삭제할 수 있다.")
         void deleteFeed_Success() {
             // given
+            UUID authorId = UUID.randomUUID();
+            User author = new User("otboo@a.a", "otboo123");
+            ReflectionTestUtils.setField(author, "id", authorId);
+
             UUID feedId = UUID.randomUUID();
-            Feed feed = Feed.builder().build();
+            Feed feed = Feed.builder().author(author).build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
             // when
-            feedService.deleteFeed(feedId);
+            feedService.deleteFeed(feedId, authorId);
 
             // then
             verify(feedRepository, times(1)).delete(feed);
@@ -318,15 +351,32 @@ class FeedServiceImplTest {
         @DisplayName("존재하지 않는 피드Id라면 예외를 반환한다.")
         void deleteFeed_Fail_NotFoundFeed() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID feedId = UUID.randomUUID();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> feedService.deleteFeed(feedId))
+            assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("자신의 피드만 삭제 가능하다.")
+        void deleteFeed_Fail_NotAuthor() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            UUID feedId = UUID.randomUUID();
+            Feed feed = Feed.builder().author(user).build();
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+            // when & then
+            assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
