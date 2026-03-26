@@ -326,8 +326,8 @@ class AuthServiceImplTest {
             given(jwtProvider.generateRefreshToken(userId, email, sessionId)).willReturn(newRefreshToken);
             given(jwtProperties.refreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
-            doThrow(new RuntimeException("redis rotate fail"))
-                    .when(redisRegistry)
+            willThrow(new RuntimeException("redis rotate fail"))
+                    .given(redisRegistry)
                     .rotateRefreshToken(userId, refreshToken, newRefreshToken, refreshTokenExpiration);
 
             // when & then
