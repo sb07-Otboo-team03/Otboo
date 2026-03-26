@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
@@ -79,7 +80,7 @@ class AuthServiceImplTest {
             // given
             String email = "test@test.com";
             String password = "1234";
-            LocalDateTime createdAt = LocalDateTime.of(2026, 1, 1, 0, 0);
+            SignInRequest signInRequest = new SignInRequest(email, password);
 
             UUID userId = UUID.randomUUID();
             User user = UserFixture.create(userId, email, password);
@@ -102,7 +103,7 @@ class AuthServiceImplTest {
             ArgumentCaptor<String> sessionIdCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
-            JwtInformation result = authService.signIn(email, password);
+            JwtInformation result = authService.signIn(signInRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -131,11 +132,13 @@ class AuthServiceImplTest {
                 "test@codeit.com, password_fail123!", // password 실패
         })
         void signIn_fail(String email, String password) {
+            // given
+            SignInRequest signInRequest = new SignInRequest(email, password);
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willThrow(new BadCredentialsException("Bad credentials"));
 
             // when & then
-            assertThatThrownBy(() -> authService.signIn(email, password))
+            assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(BadCredentialsException.class);
 
             then(jwtProvider).shouldHaveNoInteractions();
@@ -147,7 +150,7 @@ class AuthServiceImplTest {
         void signIn_fail_authStatePersistence() {
             String email = "test@test.com";
             String password = "1234";
-            LocalDateTime createdAt = LocalDateTime.of(2026, 1, 1, 0, 0);
+            SignInRequest signInRequest = new SignInRequest(email, password);
 
             UUID userId = UUID.randomUUID();
             User user = UserFixture.create(userId, email, password);
@@ -170,7 +173,7 @@ class AuthServiceImplTest {
                     .save(eq(userId), any(String.class), eq(refreshToken), eq(refreshTokenExpiration));
 
             // when & then
-            assertThatThrownBy(() -> authService.signIn(email, password))
+            assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(AuthStatePersistentException.class);
 
             then(redisRegistry).should().delete(userId);
@@ -185,12 +188,12 @@ class AuthServiceImplTest {
             // given
             String email = "test@test.com";
             String password = "1234";
-
+            SignInRequest signInRequest = new SignInRequest(email, password);
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willThrow(new LockedException("Account is locked"));
 
             // when & then
-            assertThatThrownBy(() -> authService.signIn(email, password))
+            assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(LockedException.class);
 
             then(jwtProvider).shouldHaveNoInteractions();

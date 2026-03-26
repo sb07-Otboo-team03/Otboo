@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.service.AuthService;
 import com.codeit.otboo.global.security.jwt.JwtProperties;
 import com.codeit.otboo.global.security.jwt.RefreshCookieFactory;
@@ -7,6 +8,7 @@ import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.dto.JwtResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -25,10 +27,9 @@ public class AuthController {
     private final JwtProperties jwtProperties;
 
     @PostMapping(value = "/sign-in", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<JwtResponse> signIn(@RequestPart("username") String username,
-                                              @RequestPart("password") String password,
+    public ResponseEntity<JwtResponse> signIn(@Valid @ModelAttribute SignInRequest signInRequest,
                                               HttpServletResponse response) {
-        JwtInformation jwtInformation = authService.signIn(username, password);
+        JwtInformation jwtInformation = authService.signIn(signInRequest);
         long refreshTokenExpirationSeconds =
                 TimeUnit.MILLISECONDS.toSeconds(
                         jwtProperties.refreshTokenExpiration()

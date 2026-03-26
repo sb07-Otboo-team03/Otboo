@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
@@ -34,7 +35,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
 
     @Override
-    public JwtInformation signIn(String email, String password) {
+    public JwtInformation signIn(SignInRequest signInRequest) {
+        String email = signInRequest.username();
+        String password = signInRequest.password();
+
         Authentication authRequest = new UsernamePasswordAuthenticationToken(email, password);
         Authentication authentication = authenticationManager.authenticate(authRequest);
 

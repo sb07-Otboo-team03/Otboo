@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
@@ -66,6 +67,7 @@ class AuthControllerTest {
         @DisplayName("로그인 성공")
         void login_success() throws Exception {
             UUID userId = UUID.randomUUID();
+            SignInRequest signInRequest = new SignInRequest(username, password);
             User user = UserFixture.create(userId, username, password);
             UserResponse userResponse = UserResponseFixture.create(user);
 
@@ -80,7 +82,7 @@ class AuthControllerTest {
 
             Cookie cookie = new Cookie(JwtProvider.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
 
-            given(authService.signIn(username, password))
+            given(authService.signIn(signInRequest))
                     .willReturn(jwtInformation);
             given(jwtProperties.refreshTokenExpiration())
                     .willReturn(999L);
@@ -107,7 +109,7 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.userDto.email").value("test@codeit.com"))
                     .andExpect(cookie().exists(JwtProvider.REFRESH_TOKEN_COOKIE_NAME));
 
-            then(authService).should().signIn(username, password);
+            then(authService).should().signIn(signInRequest);
             then(refreshCookieFactory).should().create(anyString(), anyLong());
         }
 
@@ -116,8 +118,8 @@ class AuthControllerTest {
         void login_fail() throws Exception {
             UUID userId = UUID.randomUUID();
             password = "incorrect-password";
-            User user = UserFixture.create(userId, username, password);
-            given(authService.signIn(username, password))
+            SignInRequest signInRequest = new SignInRequest(username, password);
+            given(authService.signIn(new SignInRequest(username, password)))
                     .willThrow(new BadCredentialsException("인증 실패"));
 
             // when
@@ -138,8 +140,10 @@ class AuthControllerTest {
                     .andExpect(status().isUnauthorized())
                     .andExpect(cookie().doesNotExist(JwtProvider.REFRESH_TOKEN_COOKIE_NAME));
 
-            then(authService).should().signIn(username, password);
+            then(authService).should().signIn(signInRequest);
             then(refreshCookieFactory).should(never()).create(anyString(), anyLong());
         }
     }
+
+
 }
