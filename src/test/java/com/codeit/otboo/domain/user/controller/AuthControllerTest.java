@@ -15,10 +15,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -91,18 +92,8 @@ class AuthControllerTest {
 
             // when & then
             mockMvc.perform(multipart("/api/auth/sign-in")
-                            .file(new MockMultipartFile(
-                                    "username",
-                                    "",
-                                    "text/plain",
-                                    username.getBytes()
-                            ))
-                            .file(new MockMultipartFile(
-                                    "password",
-                                    "",
-                                    "text/plain",
-                                    password.getBytes()
-                            ))
+                            .param("username", username)
+                            .param("password", password)
                     )
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.accessToken").value("access-token"))
@@ -116,7 +107,6 @@ class AuthControllerTest {
         @Test
         @DisplayName("로그인 실패 - 잘못된 인증 정보")
         void login_fail() throws Exception {
-            UUID userId = UUID.randomUUID();
             password = "incorrect-password";
             SignInRequest signInRequest = new SignInRequest(username, password);
             given(authService.signIn(new SignInRequest(username, password)))
@@ -124,18 +114,8 @@ class AuthControllerTest {
 
             // when
             mockMvc.perform(multipart("/api/auth/sign-in")
-                            .file(new MockMultipartFile(
-                                    "username",
-                                    "",
-                                    "text/plain",
-                                    username.getBytes()
-                            ))
-                            .file(new MockMultipartFile(
-                                    "password",
-                                    "",
-                                    "text/plain",
-                                    password.getBytes()
-                            ))
+                            .param("username", username)
+                            .param("password", password)
                     )
                     .andExpect(status().isUnauthorized())
                     .andExpect(cookie().doesNotExist(JwtProvider.REFRESH_TOKEN_COOKIE_NAME));
@@ -143,7 +123,28 @@ class AuthControllerTest {
             then(authService).should().signIn(signInRequest);
             then(refreshCookieFactory).should(never()).create(anyString(), anyLong());
         }
+
+        @ParameterizedTest
+        @CsvSource({
+                ", password123!",
+                ", ",
+                "test@codeit.com, ",
+                ", ppaaosss2", // 이메일 아님
+                "test@codeit.com, pass" // password 길이 미충족
+                
+        })
+        @DisplayName("로그인 실패 - BadRequest, 잘못된 파라미터 요청")
+        void login_fail_badRequest(String username, String password) throws Exception {
+            mockMvc.perform(multipart("/api/auth/sign-in")
+                            .param("username", username)
+                            .param("password", password))
+                    .andExpect(status().isBadRequest());
+        }
+
+        // TODO: Lock이 된 계정의 테스트는, 계정 비활성화 기능 구현 이후 진행하겠습니다.
     }
+
+
 
 
 }
