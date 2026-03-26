@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 public record SignInRequest(
         @Email
+        @NotBlank
         String username,
 
         @NotBlank
