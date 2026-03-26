@@ -25,7 +25,8 @@ public class ClothesAttributeDefCustomRepositoryImpl implements  ClothesAttribut
         return queryFactory.select(clothesAttributeDef)
                 .from(clothesAttributeDef)
                 .leftJoin(clothesAttributeValue)
-                .on(clothesAttributeValue.attributeDef.eq(clothesAttributeDef))
+                .on(clothesAttributeValue.attributeDef.eq(clothesAttributeDef)
+                        .and(clothesAttributeValue.isActive.eq(true)))
                 .where(
                         keywordLike(clothesAttributeSearchCondition.keywordLike())
                 )
@@ -41,7 +42,8 @@ public class ClothesAttributeDefCustomRepositoryImpl implements  ClothesAttribut
             return null;
         }
         return clothesAttributeDef.name.containsIgnoreCase(keyword)
-                .or(clothesAttributeValue.selectableValue.containsIgnoreCase(keyword));
+                .or(clothesAttributeValue.selectableValue.containsIgnoreCase(keyword)
+                        .and(clothesAttributeValue.isActive.eq(true)));
     }
 
     private OrderSpecifier<?> getSortOrder(String sortBy, String sortDirection) {
