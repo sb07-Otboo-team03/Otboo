@@ -1,12 +1,12 @@
-package com.codeit.otboo.domain.clothes.attribute.attributedef.UnitTest;
+package com.codeit.otboo.domain.clothes.attribute.attributedef.unit.service;
 
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchCondition;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeNameMissingException;
-import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeSelectableValueMissingException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.mapper.ClothesAttributeDefMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.ClothesAttributeDefRepository;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.service.ClothesAttributeDefServiceImpl;
@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,8 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ClothesAttributeDefServiceTest {
@@ -67,8 +67,10 @@ class ClothesAttributeDefServiceTest {
                 .attributeDef(attributeDef)
                 .build();
 
-        given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class))).willReturn(color1);
-        given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class))).willReturn(color2);
+        given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class)))
+                .willReturn(color1);
+        given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class)))
+                .willReturn(color2);
 
         ClothesAttributeDefResponse defResponse1 = ClothesAttributeDefResponse.builder()
                 .id(defId)
@@ -123,18 +125,18 @@ class ClothesAttributeDefServiceTest {
                 .isActive(true)
                 .build();
 
-        ClothesAttributeDefResponse defResponse = ClothesAttributeDefResponse.builder()
-                .id(defId)
-                .name(updateRequest.name())
-                .selectableValues(updateRequest.selectableValues())
-                .build();
-
         given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(listValues);
         given(valueMapper.toClothesAttributeValue(anyString(), eq(attributeDef)))
                 .willReturn(attributeValue3);
-        given(defMapper.toClothesAttributeDefResponse(attributeDef, updateRequest.selectableValues()))
-                .willReturn(defResponse);
+        given(valueRepository.saveAll(anyList())).willReturn(listValues)
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        ClothesAttributeDefResponse expectedResponse = ClothesAttributeDefResponse.builder()
+                .id(defId)
+                .name("사이즈")
+                .selectableValues(List.of("S", "L")).build();
+        given(defMapper.toClothesAttributeDefResponse(eq(attributeDef), anyList())).willReturn(expectedResponse);
 
         // when
         ClothesAttributeDefResponse defResponse2 = service.updateAttributeDef(defId, updateRequest);
@@ -143,7 +145,7 @@ class ClothesAttributeDefServiceTest {
         assertThat(attributeDef.getName()).isEqualTo("사이즈");
         assertThat(attributeValue1.isActive()).isTrue();
         assertThat(attributeValue2.isActive()).isFalse();
-        verify(valueRepository).save(any(ClothesAttributeValue.class));
+        verify(valueRepository).saveAll(anyList());
         assertThat(defResponse2.name()).isEqualTo("사이즈");
     }
 
@@ -182,5 +184,74 @@ class ClothesAttributeDefServiceTest {
 
         assertThrows(ClothesAttributeDefNotFoundException.class,
                 () -> service.deleteAttributeDef(defId));
+    }
+
+    @Test
+    @DisplayName("목록 조회")
+    void getValueList() {
+        // given
+        UUID colorDefId = UUID.randomUUID();
+        UUID sizeDefId = UUID.randomUUID();
+
+        ClothesAttributeDef colorDef = new ClothesAttributeDef("색상");
+        ReflectionTestUtils.setField(colorDef, "id", colorDefId);
+
+        ClothesAttributeDef sizeDef = new ClothesAttributeDef("사이즈");
+        ReflectionTestUtils.setField(sizeDef, "id", sizeDefId);
+
+        List<ClothesAttributeDef> listDefs = List.of(colorDef, sizeDef);
+        ClothesAttributeSearchRequest searchRequest
+                = new ClothesAttributeSearchRequest(
+                        "name", "ASCENDING", "색상"
+        );
+
+        ClothesAttributeSearchCondition searchCondition = ClothesAttributeSearchCondition.from(searchRequest);
+
+        ClothesAttributeValue colorValue1 = ClothesAttributeValue.builder()
+                .selectableValue("레드")
+                .attributeDef(colorDef)
+                .isActive(true)
+                .build();
+        ClothesAttributeValue colorValue2 = ClothesAttributeValue.builder()
+                .selectableValue("그린")
+                .attributeDef(colorDef)
+                .isActive(true)
+                .build();
+        ClothesAttributeValue sizeValue = ClothesAttributeValue.builder()
+                .selectableValue("L")
+                .attributeDef(colorDef)
+                .isActive(true)
+                .build();
+
+        List<ClothesAttributeValue> listValues = List.of(colorValue1, colorValue2, sizeValue);
+
+        given(defRepository.searchAttributes(any(ClothesAttributeSearchCondition.class)))
+                .willReturn(listDefs);
+        given(valueRepository.findByAttributeDefIdInAndIsActiveTrue(anyList()))
+                .willReturn(listValues);
+        given(defMapper.toClothesAttributeDefResponse(eq(colorDef), anyList()))
+                .willReturn(new ClothesAttributeDefResponse(
+                        colorDefId, "색상", List.of("레드", "그린"), LocalDateTime.now()
+                ));
+        given(defMapper.toClothesAttributeDefResponse(eq(sizeDef), anyList()))
+                .willReturn(new ClothesAttributeDefResponse(
+                        sizeDefId, "사이즈", List.of("L"), LocalDateTime.now()
+                ));
+
+        // when
+        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchRequest);
+
+        // then
+        assertThat(defResponseList).hasSize(2);
+        assertThat(defResponseList.get(0).name()).isEqualTo(colorDef.getName());
+        assertThat(defResponseList.get(0).selectableValues()).hasSize(2);
+        assertThat(defResponseList.get(0).selectableValues()).containsExactly("레드", "그린");
+
+        assertThat(defResponseList.get(1).name()).isEqualTo(sizeDef.getName());
+        assertThat(defResponseList.get(1).selectableValues()).containsExactly("L");
+
+        verify(defRepository, times(1)).searchAttributes(searchCondition);
+        verify(valueRepository, times(1))
+                .findByAttributeDefIdInAndIsActiveTrue(anyList());
     }
 }
