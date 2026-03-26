@@ -64,22 +64,6 @@ public class RedisRegistryImpl implements RedisRegistry {
     }
 
     @Override
-    public void refreshSession(UUID userId, String sessionId, long ttlSeconds) {
-        UserInfo current = get(userId);
-
-        if (current == null || !sessionId.equals(current.sessionId())) {
-            throw new IllegalStateException("현재 유효한 session이 아닙니다.");
-        }
-
-        redisTemplate.opsForValue().set(
-                key(userId),
-                serialize(current),
-                ttlSeconds,
-                TimeUnit.SECONDS
-        );
-    }
-
-    @Override
     public void delete(UUID userId) {
         redisTemplate.delete(key(userId));
     }

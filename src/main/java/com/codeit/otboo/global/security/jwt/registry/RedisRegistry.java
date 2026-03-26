@@ -12,8 +12,6 @@ public interface RedisRegistry {
 
     void rotateRefreshToken(UUID userId, String oldRefreshToken, String newRefreshToken, long ttlSeconds);
 
-    void refreshSession(UUID userId, String sessionId, long ttlSeconds);
-
     void delete(UUID userId);
 
     UserInfo get(UUID userId);
