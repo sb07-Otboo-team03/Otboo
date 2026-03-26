@@ -329,17 +329,13 @@ class FeedServiceImplTest {
         @DisplayName("피드를 삭제할 수 있다.")
         void deleteFeed_Success() {
             // given
-            UUID authorId = UUID.randomUUID();
-            User author = new User("otboo@a.a", "otboo123");
-            ReflectionTestUtils.setField(author, "id", authorId);
-
             UUID feedId = UUID.randomUUID();
-            Feed feed = Feed.builder().author(author).build();
+            Feed feed = Feed.builder().author(user).build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
             // when
-            feedService.deleteFeed(feedId, authorId);
+            feedService.deleteFeed(feedId, user.getId());
 
             // then
             verify(feedRepository, times(1)).delete(feed);
