@@ -109,7 +109,11 @@ class AuthControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.accessToken").value("access-token"))
                     .andExpect(jsonPath("$.userDto.email").value("test@codeit.com"))
-                    .andExpect(cookie().exists(JwtProvider.REFRESH_TOKEN_COOKIE_NAME));
+                    .andExpect(cookie().exists(JwtProvider.REFRESH_TOKEN_COOKIE_NAME))
+                    .andExpect(cookie().value(
+                            JwtProvider.REFRESH_TOKEN_COOKIE_NAME,
+                            "refresh-token"
+                    ));
 
             then(authService).should().signIn(signInRequest);
             then(refreshCookieFactory).should().create(anyString(), anyLong());
@@ -154,6 +158,7 @@ class AuthControllerTest {
 
         // TODO: Lock이 된 계정의 테스트는, 계정 비활성화 기능 구현 이후 진행하겠습니다.
     }
+
 
 
 }
