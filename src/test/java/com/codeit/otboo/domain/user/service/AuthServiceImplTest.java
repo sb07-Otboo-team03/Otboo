@@ -1,11 +1,11 @@
 package com.codeit.otboo.domain.user.service;
 
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
+import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.security.OtbooUserDetails;
@@ -82,14 +82,8 @@ class AuthServiceImplTest {
             LocalDateTime createdAt = LocalDateTime.of(2026, 1, 1, 0, 0);
 
             UUID userId = UUID.randomUUID();
-            UserResponse userResponse = UserResponse.builder()
-                    .id(userId)
-                    .createdAt(createdAt)
-                    .email(email)
-                    .name("test")
-                    .role(Role.USER)
-                    .locked(false)
-                    .build();
+            User user = UserFixture.create(userId, email, password);
+            UserResponse userResponse = UserResponseFixture.create(user);
 
             Authentication authentication = mock(Authentication.class);
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
@@ -156,14 +150,8 @@ class AuthServiceImplTest {
             LocalDateTime createdAt = LocalDateTime.of(2026, 1, 1, 0, 0);
 
             UUID userId = UUID.randomUUID();
-            UserResponse userResponse = UserResponse.builder()
-                    .id(userId)
-                    .createdAt(createdAt)
-                    .email(email)
-                    .name("test")
-                    .role(Role.USER)
-                    .locked(false)
-                    .build();
+            User user = UserFixture.create(userId, email, password);
+            UserResponse userResponse = UserResponseFixture.create(user);
 
             Authentication authentication = mock(Authentication.class);
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
@@ -244,14 +232,7 @@ class AuthServiceImplTest {
         void refreshToken_success() {
             // given
             User user = UserFixture.create(userId, email, password);
-            UserResponse userResponse = UserResponse.builder()
-                    .id(userId)
-                    .createdAt(LocalDateTime.of(2026, 1, 1, 0, 0))
-                    .email(email)
-                    .name("test")
-                    .role(Role.USER)
-                    .locked(false)
-                    .build();
+            UserResponse userResponse = UserResponseFixture.create(user);
 
             given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
             given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(true);
@@ -294,6 +275,7 @@ class AuthServiceImplTest {
                     .isInstanceOf(UserNotFoundException.class);
 
             then(redisRegistry).should().isValidRefreshToken(userId, refreshToken);
+            then(userRepository).should().findById(userId);
             then(jwtProvider).shouldHaveNoMoreInteractions();
         }
 
