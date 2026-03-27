@@ -75,6 +75,12 @@ dependencies {
 
     // S3
     implementation 'software.amazon.awssdk:s3:2.31.7'
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // aop
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 }
 
 tasks.named('test') {

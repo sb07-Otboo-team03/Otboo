@@ -2,13 +2,14 @@ package com.codeit.otboo.domain.clothes.attribute.attributevalue.repository;
 
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ClothesAttributeValueRepository extends JpaRepository<ClothesAttributeValue, UUID> {
 
-    List<ClothesAttributeValue> findByAttributeDefIdAndIsActiveTrue(UUID id);
+    List<ClothesAttributeValue> findByAttributeDefIdInAndIsActiveTrue(List<UUID> definitionId);
 
     List<ClothesAttributeValue> findByAttributeDefId(UUID definitionId);
 }

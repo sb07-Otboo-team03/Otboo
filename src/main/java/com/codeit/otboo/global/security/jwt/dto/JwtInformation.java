@@ -7,7 +7,6 @@ import lombok.Builder;
 public record JwtInformation(
         UserResponse userResponse,
         String accessToken,
-        String refreshToken,
-        long refreshTokenExpireInSecond
+        String refreshToken
 ) {
 }

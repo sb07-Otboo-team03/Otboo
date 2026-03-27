@@ -69,7 +69,6 @@ public class FeedFixture {
                     user,
                     weather,
                     null);
-            ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(i));
             ReflectionTestUtils.setField(feed, "likeCount", i);
             feedList.add(feed);
         }

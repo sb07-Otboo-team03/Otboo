@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,8 +51,8 @@ public class FeedServiceImpl implements FeedService{
 
     @Override
     @Transactional
+    @PreAuthorize("#request.authorId() == authentication.principal.id")
     public FeedResponse createFeed(FeedCreateRequest request) {
-        log.debug("Feed 생성 요청 - userId={}", request.authorId());
 
         User author = userRepository.findById(request.authorId())
                 .orElseThrow(() -> new UserNotFoundException(request.authorId()));
@@ -111,10 +112,13 @@ public class FeedServiceImpl implements FeedService{
 
     @Override
     @Transactional
-    public FeedResponse updateFeed(UUID id, FeedUpdateRequest request) {
+    public FeedResponse updateFeed(UUID id, FeedUpdateRequest request, UUID authorId) {
         log.debug("Feed 수정 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new FeedNotFoundException(id));
+
+        if (!feed.getAuthor().getId().equals(authorId))
+            throw new IllegalArgumentException("Feed author is not the same as the request author");
 
         feed.updateContent(request.content());
         log.debug("Feed 수정 완료");
@@ -124,10 +128,13 @@ public class FeedServiceImpl implements FeedService{
 
     @Override
     @Transactional
-    public void deleteFeed(UUID id) {
+    public void deleteFeed(UUID id, UUID authorId) {
         log.debug("Feed 삭제 요청 - id={}", id);
         Feed feed = feedRepository.findById(id)
                 .orElseThrow(() -> new FeedNotFoundException(id));
+
+        if (!feed.getAuthor().getId().equals(authorId))
+            throw new IllegalArgumentException("Feed author is not the same as the request author");
 
         likeRepository.deleteAllByFeedId(id);
         commentRepository.deleteAllByFeedId(id);

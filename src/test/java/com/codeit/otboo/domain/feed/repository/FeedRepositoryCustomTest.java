@@ -21,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,8 +42,12 @@ class FeedRepositoryCustomTest {
     private void saveFeed(int n) {
         User user = new User("otboo@a.a", "otboo123");
         entityManager.persist(user);
-
-        feedRepository.saveAll(FeedFixture.createFeed(n, user));
+        List<Feed> feedList = FeedFixture.createFeed(n, user);
+        for (int i = 0; i < n; i++) {
+            Feed feed = feedList.get(i);
+            entityManager.persist(feed);
+            ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(i));
+        }
 
         entityManager.flush();
         entityManager.clear();
