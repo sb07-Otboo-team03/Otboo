@@ -70,7 +70,7 @@ class CommentServiceImplTest {
             Feed feed = Feed.builder().build();
             User user = new User("otboo@a.a", "otboo123");
 
-            CommentCreateRequest request = new CommentCreateRequest(feedId, userId, "Test Comment");
+            CommentCreateRequest request = new CommentCreateRequest("Test Comment");
             CommentResponse response = CommentResponse.builder().content("Test Comment").build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
@@ -78,7 +78,7 @@ class CommentServiceImplTest {
             given(commentMapper.toDto(any(Comment.class))).willReturn(response);
 
             // when
-            CommentResponse result = commentService.createComment(request);
+            CommentResponse result = commentService.createComment(feedId, userId, request);
 
             // then
             assertThat(result.content()).isEqualTo(response.content());
@@ -93,8 +93,7 @@ class CommentServiceImplTest {
             given(feedRepository.findById(feedId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> commentService.createComment(
-                    new CommentCreateRequest(feedId, null, null)))
+            assertThatThrownBy(() -> commentService.createComment(feedId, null, null))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
@@ -113,8 +112,7 @@ class CommentServiceImplTest {
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> commentService.createComment(
-                    new CommentCreateRequest(feedId, userId, null)))
+            assertThatThrownBy(() -> commentService.createComment(feedId, userId, null))
                     .isInstanceOf(UserNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
