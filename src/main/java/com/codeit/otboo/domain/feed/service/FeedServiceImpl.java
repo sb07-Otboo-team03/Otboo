@@ -51,7 +51,7 @@ public class FeedServiceImpl implements FeedService{
 
     @Override
     @Transactional
-    @PreAuthorize("#request.authorId() == authentication.principal.id")
+    @PreAuthorize("#request.authorId() == authentication.principal.userResponse.id()")
     public FeedResponse createFeed(FeedCreateRequest request) {
 
         User author = userRepository.findById(request.authorId())
