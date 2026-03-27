@@ -16,6 +16,7 @@ import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.global.util.KakaoLocalUtil.KakaoRegionType;
 import com.codeit.otboo.global.util.KmaGridConverter;
 import com.codeit.otboo.global.util.KmaGridConverter.GridResult;
+import com.codeit.otboo.global.util.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -42,7 +43,7 @@ public class WeatherServiceImpl implements WeatherService{
     private final KmaWeatherClient kmaWeatherClient;
     private final KmaWeatherMapper kmaWeatherMapper;
 
-    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
+    private final TimeProvider timeProvider;
 
     @Override
     @Transactional
@@ -72,8 +73,8 @@ public class WeatherServiceImpl implements WeatherService{
             location = locationNameMapRepository.save(locationNameMap);
         }
 
-        LocalDateTime forecastedAt = LocalDate.now(SEOUL).atStartOfDay(); // 저장 날짜
-        LocalDateTime forecastAt = LocalDateTime.now(SEOUL) // 날씨 조회 시간
+        LocalDateTime forecastedAt = timeProvider.nowDate().atStartOfDay(); // 저장 날짜
+        LocalDateTime forecastAt = timeProvider.nowDateTime() // 날씨 조회 시간
                 .withMinute(0)
                 .withSecond(0)
                 .withNano(0);
@@ -98,13 +99,13 @@ public class WeatherServiceImpl implements WeatherService{
 
         // 어제 온도, 습도 정보 조회
         YesterdayHourlyWeather yesterdayHourlyWeather = yesterdayHourlyWeatherRepository.findByDateAndHour(
-                        LocalDate.now(SEOUL).minusDays(1),
-                        LocalTime.now(SEOUL).withMinute(0).withSecond(0).withNano(0))
+                        timeProvider.nowDate().minusDays(1),
+                        timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0))
                 .orElseGet(() -> { // 없으면 새로 저장하고 조회
                     addYesterdayWeatherInfo(x, y);
                     return yesterdayHourlyWeatherRepository.findByDateAndHour(
-                            LocalDate.now(SEOUL).minusDays(1),
-                            LocalTime.now(SEOUL).withMinute(0).withSecond(0).withNano(0)
+                            timeProvider.nowDate().minusDays(1),
+                            timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0)
                     ).orElseThrow(() -> new RuntimeException("YesterdayHourlyWeather is not found"));
                 });
 
@@ -113,7 +114,7 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
     private void insertNewLocationWeather(int x, int y) {
-        String baseDate = LocalDate.now(SEOUL).minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseDate = timeProvider.nowDate().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
         saveOrUpdateWeather(baseDate, baseTime, x, y, false);
     }
@@ -121,7 +122,7 @@ public class WeatherServiceImpl implements WeatherService{
     private void addYesterdayWeatherInfo(int x, int y) {
 
         // 어제 정보를 00시 ~ 23시 전부 불러오기 위해 2일 전 23시 발표 정보 조회
-        String baseDate = LocalDate.now(SEOUL).minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseDate = timeProvider.nowDate().minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
 
         List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
@@ -144,7 +145,7 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
     private void addWeathers(LocalDateTime forecastedAt, LocalDateTime forecastAt, LocationNameMap location, List<Weather> weathers) {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
                             forecastedAt,
                             forecastAt.plusDays(i),
@@ -179,8 +180,8 @@ public class WeatherServiceImpl implements WeatherService{
         }
     }
 
-    public void updateWeather(int x, int y) {
-        String baseDate = LocalDate.now(SEOUL).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    private void updateWeather(int x, int y) {
+        String baseDate = timeProvider.nowDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = getBaseTimeForWeather();
         saveOrUpdateWeather(baseDate, baseTime, x, y, true);
     }
@@ -225,7 +226,7 @@ public class WeatherServiceImpl implements WeatherService{
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void deleteYesterdayWeather() {
-        LocalDate today = LocalDate.now(SEOUL);
+        LocalDate today = timeProvider.nowDate();
         LocalDateTime todayStart = today.atStartOfDay();
 
         LocalDate yesterday = today.minusDays(1);
@@ -257,8 +258,8 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
 
-    public static String getBaseTimeForWeather() {
-        int hour = LocalTime.now(SEOUL).getHour();
+    private String getBaseTimeForWeather() {
+        int hour = timeProvider.nowTime().getHour();
 
         if (hour < 2) return "2300";
         else if (hour < 5) return "0200";
