@@ -39,10 +39,10 @@ public class RedisRegistryImpl implements RedisRegistry {
 
     @Override
     public boolean isValidRefreshToken(UUID userId, String refreshToken) {
-        UserInfo loginState = get(userId);
-        return loginState != null
+        UserInfo userInfo = get(userId);
+        return userInfo != null
                 && refreshToken != null
-                && refreshToken.equals(loginState.refreshToken());
+                && refreshToken.equals(userInfo.refreshToken());
     }
 
     @Override
