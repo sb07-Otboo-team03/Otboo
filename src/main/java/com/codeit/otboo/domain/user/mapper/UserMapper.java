@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserMapper {
-    BinaryContentUrlResolver urlResolver;
+    private final BinaryContentUrlResolver urlResolver;
 
     public UserResponse toDto(User user) {
         return UserResponse.builder()

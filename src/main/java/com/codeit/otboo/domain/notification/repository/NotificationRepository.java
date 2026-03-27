@@ -14,13 +14,26 @@ import org.springframework.data.repository.query.Param;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
     @Query("""
-        SELECT n
+        SELECT new com.codeit.otboo.domain.notification.dto.NotificationDto(
+            n.id,
+            n.createdAt,
+            n.receiver.id,
+            n.title,
+            n.content,
+            n.level
+        )
         FROM Notification n
-        WHERE :cursor IS NULL
-            OR (n.createdAt < :cursor
-                  AND (:idAfter IS NULL OR n.id < :idAfter)
+        WHERE (
+                :cursor IS NULL
+                OR (
+                    n.createdAt < :cursor
+                    OR (
+                        n.createdAt = :cursor
+                        AND (:idAfter IS NULL OR n.id < :idAfter)
+                    )
+                )
             )
-        ORDER BY n.createdAt DESC
+        ORDER BY n.createdAt DESC, n.id DESC
     """)
     List<NotificationDto> findAll(
         @Param("cursor") LocalDateTime cursor,

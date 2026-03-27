@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "notifications")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@Builder
 public class Notification extends BaseEntity {
 
     @Column(nullable = false, length = 100)
