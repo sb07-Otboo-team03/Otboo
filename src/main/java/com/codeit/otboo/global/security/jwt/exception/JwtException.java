@@ -1,15 +1,18 @@
 package com.codeit.otboo.global.security.jwt.exception;
 
-public class JwtException extends RuntimeException {
-    private final JwtErrorCode errorCode;
+import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.exception.OtbooException;
+import org.springframework.http.HttpStatus;
 
-    public JwtException(JwtErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.errorCode = errorCode;
+import java.util.Map;
+
+public class JwtException extends OtbooException {
+
+    public JwtException(ErrorCode errorCode, Map<String, String> map, HttpStatus status) {
+        super(errorCode, map, status);
     }
 
-    public JwtException(JwtErrorCode errorCode, Throwable cause) {
-        super(errorCode.getMessage(), cause);
-        this.errorCode = errorCode;
+    public JwtException(ErrorCode errorCode, HttpStatus status) {
+        super(errorCode, status);
     }
 }

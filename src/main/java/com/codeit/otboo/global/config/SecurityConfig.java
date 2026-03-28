@@ -45,7 +45,13 @@ public class SecurityConfig {
                                            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() //TODO: JWT 작성 이후 authenticated 활성화
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/auth/sign-in", "/api/auth/sign-out",
+                                "/api/auth/reset-password", "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll()
+                        .requestMatchers("/actuator/**", "/actuator", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/", "/assets/**", "index.html", "/favicon.ico").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable
                         //TODO csrf 엔드포인트 구현 이후, 활성화
@@ -54,6 +60,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new Http401AuthenticationEntryPoint(objectMapper))
                         .accessDeniedHandler(new Http403ForbiddenAccessDeniedHandler(objectMapper))
                 )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

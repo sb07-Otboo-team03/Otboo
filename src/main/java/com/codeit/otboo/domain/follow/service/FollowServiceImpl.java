@@ -1,5 +1,7 @@
 package com.codeit.otboo.domain.follow.service;
 
+import static com.codeit.otboo.domain.user.entity.QUser.user;
+
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowDto;
@@ -8,6 +10,9 @@ import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -18,6 +23,7 @@ import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +40,7 @@ public class FollowServiceImpl implements FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -56,6 +63,19 @@ public class FollowServiceImpl implements FollowService {
 
         Follow follow = new Follow(follower, followee);
         Follow saveFollow = followRepository.save(follow);
+
+        NotificationDto eventData = NotificationDto.builder()
+            .id(saveFollow.getId())
+            .createdAt(saveFollow.getCreatedAt())
+            .receiverId(followee.getId())
+            .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
+            .content("")
+            .level(NotificationLevel.INFO)
+            .build();
+
+        eventPublisher.publishEvent(
+            new SseEvent(eventData, saveFollow.getCreatedAt())
+        );
 
         return followMapper.toDto(saveFollow);
     }

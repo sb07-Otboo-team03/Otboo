@@ -36,6 +36,8 @@ public enum ErrorCode {
     DUPLICATE_NOTIFICATION("이미 존재하는 알림입니다."),
 
     // Weather
+    KMA_API_INVALID_RESPONSE("기상청 API 응답이 올바르지 않습니다."),
+    KMA_API_ERROR("기상청 API 호출 결과 오류가 발생했습니다."),
 
     // Profile
 
@@ -45,6 +47,11 @@ public enum ErrorCode {
     INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
 
     // JWT
+    INVALID_SIGNATURE("JWT 서명 검증 실패"),
+    EXPIRED_TOKEN("JWT 토큰 만료"),
+    INVALID_ISSUER("JWT issuer 불일치"),
+    INVALID_TOKEN_TYPE("JWT 타입 불일치"),
+    PARSE_ERROR("JWT 파싱 실패"),
 
     // Validation
     VALIDATION_ERROR("유효성 검사에 실패하였습니다."),

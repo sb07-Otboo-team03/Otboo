@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.feed.service;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
 import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
@@ -21,7 +22,6 @@ import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
-import com.codeit.otboo.global.slice.dto.SortDirection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,15 +31,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.exceptions.misusing.UnnecessaryStubbingException;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +58,8 @@ class FeedServiceImplTest {
     private ClothesRepository clothesRepository;
     @Mock
     private LikeRepository likeRepository;
+    @Mock
+    private CommentRepository commentRepository;
 
     @Mock
     private FeedMapper feedMapper;
@@ -68,8 +67,13 @@ class FeedServiceImplTest {
     @InjectMocks
     private FeedServiceImpl feedService;
 
+    private User user;
+    
     @BeforeEach
-    void setUp() {
+    void setup() {
+        UUID authorId = UUID.randomUUID();
+        user = new User("otboo@a.a", "otboo123");
+        ReflectionTestUtils.setField(user, "id", authorId);
     }
 
     @Nested
@@ -80,15 +84,14 @@ class FeedServiceImplTest {
         @DisplayName("피드를 생성할 수 있다.")
         void createFeed_Success() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             UUID weatherId = UUID.randomUUID();
             UUID clothesId = UUID.randomUUID();
             String content = "Feed 생성 테스트";
 
             FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
-
-            User user = new User("otboo@a.a", "otboo123");
+            
             Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
             Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
 
@@ -110,7 +113,7 @@ class FeedServiceImplTest {
         @DisplayName("존재하지 않는 유저Id면 예외를 반환한다.")
         void createFeed_Fail_NotFoundUser() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
 
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
@@ -126,7 +129,7 @@ class FeedServiceImplTest {
         @DisplayName("존재하지 않는 날씨Id면 예외를 반환한다.")
         void createFeed_Fail_NotFoundWeather() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             UUID weatherId = UUID.randomUUID();
 
             given(userRepository.findById(userId)).willReturn(Optional.of(new User("otboo@a.a", "otboo123")));
@@ -157,7 +160,7 @@ class FeedServiceImplTest {
                 """)
         void convertFeedCursorByOrderBy(String sortBy) {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy, null, null, null, null);
             List<Feed> feedList = FeedFixture.createFeedCursor(6);
             if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
@@ -187,7 +190,7 @@ class FeedServiceImplTest {
         @DisplayName("마지막 페이지 조회 후, nextCursor와 nextAfter가 null을 반환한다.")
         void searchLastPage_ReturnNoNextPage() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, null, null, null);
             List<Feed> feedList = FeedFixture.createFeedCursor(5);
 
@@ -210,7 +213,7 @@ class FeedServiceImplTest {
         @Test
         @DisplayName("검색 결과가 없으면 DB조회를 하지 않고 반환한다.")
         void searchEmptyResult_ReturnNullCursorAndAfter() {
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
             String keyword = "hello world";
             FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, keyword, null, null);
             Slice<Feed> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 5), false);
@@ -235,7 +238,7 @@ class FeedServiceImplTest {
         @DisplayName("피드를 조회하는 유저의 id가 존재하지 않으면 예외를 반환한다.")
         void searchFeedList_Fail_NotFoundUser() {
             // given
-            UUID userId = UUID.randomUUID();
+            UUID userId = user.getId();
 
             given(userRepository.existsById(userId)).willReturn(false);
 
@@ -249,16 +252,19 @@ class FeedServiceImplTest {
 
     @Nested
     @DisplayName("피드 수정")
+    
     class FeedFind {
         @Test
         @DisplayName("피드 내용을 수정할 수 있다.")
         void searchFeedList_Success() {
             // given
+            UUID userId = user.getId();
             UUID feedId = UUID.randomUUID();
             String newContent = "New Feed Content";
 
             FeedWeather weatherInformation = FeedWeather.builder().build();
-            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation).build();
+            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation)
+                    .author(user).build();
             FeedResponse dto = FeedResponse.builder().id(feedId).content(newContent).build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
@@ -267,7 +273,7 @@ class FeedServiceImplTest {
             FeedUpdateRequest request = new FeedUpdateRequest(newContent);
 
             // when
-            FeedResponse response = feedService.updateFeed(feedId, request);
+            FeedResponse response = feedService.updateFeed(feedId, request, userId);
 
             // then
             verify(feedMapper, times(1)).toDto(any(Feed.class));
@@ -287,10 +293,31 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.updateFeed(
-                    feedId, new FeedUpdateRequest(newContent)))
+                    feedId, new FeedUpdateRequest(newContent), user.getId()))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+        }
+        
+        @Test
+        @DisplayName("자신의 피드만 수정 가능하다")
+        void updateFeed_Fail_NotAuthor() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID feedId = UUID.randomUUID();
+            String newContent = "New Feed Content";
+
+            FeedWeather weatherInformation = FeedWeather.builder().build();
+            Feed feed = Feed.builder().content("Old Feed Content").weather(weatherInformation)
+                    .author(user).build();
+
+            FeedUpdateRequest request = new FeedUpdateRequest(newContent);
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+            // when & then
+            assertThatThrownBy(() -> feedService.updateFeed(feedId, request, userId))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -303,31 +330,49 @@ class FeedServiceImplTest {
         void deleteFeed_Success() {
             // given
             UUID feedId = UUID.randomUUID();
-            Feed feed = Feed.builder().build();
+            Feed feed = Feed.builder().author(user).build();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
             // when
-            feedService.deleteFeed(feedId);
+            feedService.deleteFeed(feedId, user.getId());
 
             // then
             verify(feedRepository, times(1)).delete(feed);
             verify(likeRepository, times(1)).deleteAllByFeedId(feedId);
+            verify(commentRepository, times(1)).deleteAllByFeedId(feedId);
         }
 
         @Test
         @DisplayName("존재하지 않는 피드Id라면 예외를 반환한다.")
         void deleteFeed_Fail_NotFoundFeed() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID feedId = UUID.randomUUID();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> feedService.deleteFeed(feedId))
+            assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("자신의 피드만 삭제 가능하다.")
+        void deleteFeed_Fail_NotAuthor() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            UUID feedId = UUID.randomUUID();
+            Feed feed = Feed.builder().author(user).build();
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+            // when & then
+            assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 

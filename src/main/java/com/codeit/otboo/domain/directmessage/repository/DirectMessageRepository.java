@@ -33,10 +33,14 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
             LEFT JOIN rp.binaryContent rpb
         WHERE (d.sender.id = :userId
               OR d.receiver.id = :userId)
-            AND ( :cursor IS NULL
-                OR d.createdAt < :cursor
-                OR (d.createdAt = :cursor
-                  AND (:idAfter IS NULL OR d.id < :idAfter)
+            AND (
+                :cursor IS NULL
+                OR (
+                    d.createdAt < :cursor
+                    OR (
+                        d.createdAt = :cursor 
+                        AND (:idAfter IS NULL OR d.id < :idAfter)
+                    )
                 )
             )
         ORDER BY d.createdAt DESC, d.id DESC

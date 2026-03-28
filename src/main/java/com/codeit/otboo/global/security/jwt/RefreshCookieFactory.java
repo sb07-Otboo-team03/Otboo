@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 public class RefreshCookieFactory {
 
     public Cookie create(String refreshToken, long maxAgeSeconds) {
-        Cookie cookie = new Cookie("REFRESH_TOKEN", refreshToken);
+        Cookie cookie = new Cookie(JwtProvider.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");

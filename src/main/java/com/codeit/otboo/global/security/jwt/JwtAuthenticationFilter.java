@@ -1,20 +1,22 @@
 package com.codeit.otboo.global.security.jwt;
 
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
+import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -22,6 +24,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final RedisRegistry redisRegistry;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -44,18 +47,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
 
             UUID userId = UUID.fromString(claims.getSubject());
+            String sessionId = jwtProvider.getSessionId(accessToken);
+            String email = jwtProvider.getEmail(accessToken);
+
+            if (!redisRegistry.isValidSession(userId, sessionId)) {
+                throw new BadCredentialsException("유효하지 않은 세션입니다.");
+            }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            userDetails,
                             null,
-                            List.of()
+                            userDetails.getAuthorities()
                     );
+
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        } catch (JwtException e) {
+        } catch (JwtException | BadCredentialsException e) {
             SecurityContextHolder.clearContext();
+            throw new BadCredentialsException("유효하지 않은 access token입니다.", e);
         }
 
         filterChain.doFilter(request, response);
@@ -65,4 +77,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilterAsyncDispatch() {
         return false;
     }
+
 }
