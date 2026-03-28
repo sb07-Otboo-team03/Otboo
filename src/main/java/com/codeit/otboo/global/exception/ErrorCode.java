@@ -2,13 +2,13 @@ package com.codeit.otboo.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
     // User
     USER_NOT_FOUND("사용자를 찾을 수 없습니다."),
+    USER_ALREADY_EXISTS_EMAIL("이미 존재하는 이메일입니다."),
 
     // Clothes
 
