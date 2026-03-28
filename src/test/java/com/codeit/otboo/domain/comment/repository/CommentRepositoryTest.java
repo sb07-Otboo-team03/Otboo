@@ -18,7 +18,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,13 +51,23 @@ class CommentRepositoryTest {
 
     void createComment(Feed feed, User user, int n) {
         List<Comment> commentList = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            Comment comment = new Comment("comment " + i, feed, user);
-            ReflectionTestUtils.setField(comment, "createdAt", LocalDateTime.now().minusDays(i));
-            commentList.add(comment);
-        }
+        for (int i = 0; i < n; i++)
+            commentList.add(new Comment("comment " + i, feed, user));
+
         commentRepository.saveAll(commentList);
         entityManager.flush();
+
+        LocalDateTime baseTime = LocalDateTime.now();
+        var em = entityManager.getEntityManager();
+
+        for (int i = 0; i < n; i++) {
+            Comment comment = commentList.get(i);
+            em.createQuery("update Comment c set c.createdAt = :createdAt where c.id = :id")
+                    .setParameter("createdAt", baseTime.minusDays(i))
+                    .setParameter("id", comment.getId())
+                    .executeUpdate();
+        }
+
         entityManager.clear();
     }
 
@@ -97,7 +106,7 @@ class CommentRepositoryTest {
 
     @ParameterizedTest
     @CsvSource(value = {
-            "2026-03-24 10:00:00.000000, null",
+            "2026-01-01 10:00:00.000000, null",
             "null, 6de3b7bc-b14c-4608-a343-2b16a27a7dd0"
     }, nullValues = "null")
     @DisplayName("""
