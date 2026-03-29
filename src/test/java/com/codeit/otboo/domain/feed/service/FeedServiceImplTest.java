@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.feed.service;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
@@ -88,16 +89,17 @@ class FeedServiceImplTest {
             UUID weatherId = UUID.randomUUID();
             UUID clothesId = UUID.randomUUID();
             String content = "Feed 생성 테스트";
+            Clothes clothes = ClothesFixture.create();
 
-            FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothesId), content);
+            FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothes.getId()), content);
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
             
             Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
-            Clothes clothes = new Clothes("상의", ClothesType.TOP, user, null);
+
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
-            given(clothesRepository.findAllById(List.of(clothesId))).willReturn(List.of(clothes));
+            given(clothesRepository.findAllById(List.of(clothes.getId()))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
 
             // when
