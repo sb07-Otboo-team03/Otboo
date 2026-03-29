@@ -60,12 +60,10 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
                 }
                 else {
                     log.debug("⚠️Invalid JWT token. username error");
-
                     throw new JwtInvalidTokenTypeException();
                 }
             } else {
                 log.debug("⚠️Invalid JWT token");
-
                 throw new JwtInvalidTokenTypeException();
             }
         }
