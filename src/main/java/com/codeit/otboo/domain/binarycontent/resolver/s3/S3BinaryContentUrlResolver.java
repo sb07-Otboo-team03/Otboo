@@ -26,7 +26,7 @@ public class S3BinaryContentUrlResolver implements BinaryContentUrlResolver {
     public String resolve(UUID binaryContentId) {
         GetObjectRequest objectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(path + binaryContentId)
+                .key(path + "/" + binaryContentId)
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
