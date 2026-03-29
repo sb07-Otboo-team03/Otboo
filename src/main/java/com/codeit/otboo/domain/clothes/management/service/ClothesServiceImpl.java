@@ -46,8 +46,11 @@ public class ClothesServiceImpl implements ClothesService{
     ){
         User owner = userRepository.findById(request.ownerId()).orElseThrow(
                 UserNotFoundException::new);
-        BinaryContent binaryContent = binaryContentService.upload(imageRequest);
-        binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
+        BinaryContent binaryContent = null;
+        if(imageRequest != null){
+            binaryContent = binaryContentService.upload(imageRequest);
+            binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
+        }
         Set<ClothesAttributeValue> attributeValues = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
             new Clothes(request.name(), request.type(), owner, binaryContent, attributeValues)
@@ -55,7 +58,7 @@ public class ClothesServiceImpl implements ClothesService{
         
         return clothesMapper.toDto(
                 savedClothes,
-                binaryContentUrlResolver.resolve(binaryContent.getId()),
+                binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
                 groupingDefinitionSelectable(savedClothes)
         );
     }
@@ -75,6 +78,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     // 옷이 가진 속성들별로 속성이 선택할 수 있는 값들을 반환하는 메소드
     private Map<UUID, List<String>> groupingDefinitionSelectable(Clothes clothes){
+        if(clothes.getValues().isEmpty()) return Map.of();
         List<ClothesAttributeValue> selectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
                 clothes.getValues().stream().map(attributeValue ->
                         attributeValue.getAttributeDef().getId()
