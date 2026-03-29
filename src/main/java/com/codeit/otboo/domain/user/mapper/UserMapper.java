@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.user.mapper;
 
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
+import com.codeit.otboo.domain.feed.dto.response.AuthorResponse;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.domain.user.entity.User;
@@ -31,5 +32,14 @@ public class UserMapper {
             .name(name)
             .profileImageUrl(urlResolver.resolve(binaryContentId))
             .build();
+    }
+
+    public AuthorResponse toAuthorDto(UUID userId, String name, UUID binaryContentId) {
+
+        return AuthorResponse.builder()
+                .userId(userId)
+                .name(name)
+                .profileImageUrl(urlResolver.resolve(binaryContentId))
+                .build();
     }
 }
