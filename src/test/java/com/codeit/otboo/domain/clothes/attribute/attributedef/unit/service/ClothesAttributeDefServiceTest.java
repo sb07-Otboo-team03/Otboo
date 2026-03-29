@@ -6,7 +6,9 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.Clothe
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeAlreadyExistsException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeValueDuplicateExceptionException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.mapper.ClothesAttributeDefMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.ClothesAttributeDefRepository;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.service.ClothesAttributeDefServiceImpl;
@@ -88,8 +90,44 @@ class ClothesAttributeDefServiceTest {
         assertThat(defResponse2.id()).isEqualTo(defId);
         assertThat(defResponse2.name()).isEqualTo("색상");
         assertEquals(2, defResponse2.selectableValues().size());
+        verify(defRepository).existsByNameIgnoreCase("색상");
         verify(defRepository).save(any(ClothesAttributeDef.class));
         verify(valueRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("속성 생성 실패 - 동일한 속성 존재")
+    void createDef_Fail_DuplicateName () {
+    // given
+    ClothesAttributeDefCreateRequest request
+            = ClothesAttributeDefCreateRequest.builder()
+            .name("색상")
+            .selectableValues(List.of("화이트"))
+            .build();
+    given(defRepository.existsByNameIgnoreCase("색상")).willReturn(true);
+
+    // when & then
+    assertThrows(ClothesAttributeAlreadyExistsException.class, () -> service.createAttributeDef(request));
+
+    verify(defRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("속성 생성 실패 - 속성값 중복")
+    void createDef_Fail_DuplicateValues() {
+    // given
+    ClothesAttributeDefCreateRequest request =
+            ClothesAttributeDefCreateRequest.builder()
+                    .name("색상")
+                    .selectableValues(List.of("화이트", "화이트"))
+                    .build();
+
+    given(defRepository.existsByNameIgnoreCase(anyString())).willReturn(false);
+
+    // when & then
+    assertThrows(ClothesAttributeValueDuplicateExceptionException.class,
+            () -> service.createAttributeDef(request));
+
     }
 
     @Test
@@ -145,6 +183,7 @@ class ClothesAttributeDefServiceTest {
         assertThat(attributeDef.getName()).isEqualTo("사이즈");
         assertThat(attributeValue1.isActive()).isTrue();
         assertThat(attributeValue2.isActive()).isFalse();
+        verify(defRepository).existsByNameIgnoreCaseAndIdNot(anyString(), any());
         verify(valueRepository).saveAll(anyList());
         assertThat(defResponse2.name()).isEqualTo("사이즈");
     }
@@ -159,6 +198,42 @@ class ClothesAttributeDefServiceTest {
         assertThrows(ClothesAttributeDefNotFoundException.class,
                 () -> service.updateAttributeDef(defId,
                         new ClothesAttributeDefUpdateRequest("사이즈", List.of("S"))));
+    }
+
+    @Test
+    @DisplayName("속성 수정 실패 - 다른 속성과 이름 중복")
+    void updateDef_Fail_DuplicateName() {
+    // given
+    UUID defId = UUID.randomUUID();
+    ClothesAttributeDef def = new ClothesAttributeDef("기존");
+    ReflectionTestUtils.setField(def, "id", defId);
+
+    ClothesAttributeDefUpdateRequest updateRequest =
+            new ClothesAttributeDefUpdateRequest("색상", List.of("화이트"));
+
+    given(defRepository.findById(defId)).willReturn(Optional.of(def));
+    given(defRepository.existsByNameIgnoreCaseAndIdNot("색상", defId)).willReturn(true);
+
+    // when & then
+    assertThrows(ClothesAttributeAlreadyExistsException.class,
+            () -> service.updateAttributeDef(defId, updateRequest));
+    }
+    
+    @Test
+    @DisplayName("속성 수정 실패 - value 중복")
+    void updateDef_Fail_DuplicateValues() {
+    // given
+    UUID defId = UUID.randomUUID();
+    ClothesAttributeDef def = new ClothesAttributeDef("사이즈");
+
+    ClothesAttributeDefUpdateRequest request =
+            new ClothesAttributeDefUpdateRequest("사이즈", List.of("S", "s"));
+
+    given(defRepository.findById(defId)).willReturn(Optional.of(def));
+
+    // when & then
+    assertThrows(ClothesAttributeValueDuplicateExceptionException.class,
+            () -> service.updateAttributeDef(defId, request));
     }
 
     @Test
