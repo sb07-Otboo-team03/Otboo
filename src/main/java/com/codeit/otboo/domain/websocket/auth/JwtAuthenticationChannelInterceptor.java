@@ -40,30 +40,23 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
             String jwtToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
 
             JWTClaimsSet accessTokenClaimsSet = tokenProvider.validateAccessToken(jwtToken);
+            String username = accessTokenClaimsSet.getSubject();
+            if (username != null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (accessTokenClaimsSet != null) {
-                String username = accessTokenClaimsSet.getSubject();
+                UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                    );
 
-                if (username != null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                accessor.setUser(authentication);
 
-                    UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                        );
-
-                    accessor.setUser(authentication);
-
-                    log.debug("✅ Set authentication for user: {}", username);
-                }
-                else {
-                    log.debug("⚠️Invalid JWT token. username error");
-                    throw new JwtInvalidTokenTypeException();
-                }
-            } else {
-                log.debug("⚠️Invalid JWT token");
+                log.debug("✅ Set authentication for user: {}", username);
+            }
+            else {
+                log.debug("⚠️Invalid JWT token. username error");
                 throw new JwtInvalidTokenTypeException();
             }
         }
