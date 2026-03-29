@@ -16,6 +16,8 @@ public enum ErrorCode {
     CLOTHES_ATTRIBUTE_NAME_MISSING("속성 이름은 필수입력입니다."),
     CLOTHES_SELECTABLE_VALUE_MISSING("속성값 목록이 비어있습니다."),
     CLOTHES_ATTRIBUTE_DEFINITION_NOT_FOUND("속성 정의를 찾을 수 없습니다."),
+    CLOTHES_ATTRIBUTE_ALREADY_EXISTS("이미 존재하는 속성 정의입니다."),
+    CLOTHES_ATTRIBUTE_VALUE_DUPLICATE("중복된 속성값입니다."),
 
     // Comment
 
