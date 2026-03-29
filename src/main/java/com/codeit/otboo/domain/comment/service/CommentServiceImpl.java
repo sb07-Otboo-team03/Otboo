@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.comment.service;
 
-import com.codeit.otboo.domain.comment.dto.CommentMapper;
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
+import com.codeit.otboo.domain.comment.dto.CommentMapper;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
@@ -35,12 +35,12 @@ public class CommentServiceImpl implements CommentService{
 
     @Override
     @Transactional
-    public CommentResponse createComment(CommentCreateRequest request) {
+    public CommentResponse createComment(UUID feedId, UUID userId, CommentCreateRequest request) {
 
-        Feed feed = feedRepository.findById(request.feedId())
-                .orElseThrow(() -> new FeedNotFoundException(request.feedId()));
-        User user = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new UserNotFoundException(request.authorId()));
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new FeedNotFoundException(feedId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         Comment comment = new Comment(request.content(), feed, user);
 

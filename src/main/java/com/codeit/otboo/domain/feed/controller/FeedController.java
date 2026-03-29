@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.service.FeedService;
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,19 +33,24 @@ public class FeedController {
     @GetMapping
     public ResponseEntity<CursorResponse<FeedResponse>> getFeedList(
             @ParameterObject @ModelAttribute @Valid FeedSearchRequest request,
-            @AuthenticationPrincipal UUID authorIdEqual) {
+            @AuthenticationPrincipal OtbooUserDetails details
+            ) {
+        UUID authorIdEqual = details.getUserResponse().id();
         return ResponseEntity.ok(feedService.getAllFeed(request, authorIdEqual));
     }
 
     @PatchMapping("/{feedId}")
     public ResponseEntity<FeedResponse> updateFeed (@Valid @RequestBody FeedUpdateRequest request,
                                                     @PathVariable UUID feedId,
-                                                    @AuthenticationPrincipal UUID authorId) {
+                                                    @AuthenticationPrincipal OtbooUserDetails details) {
+        UUID authorId = details.getUserResponse().id();
         return ResponseEntity.ok(feedService.updateFeed(feedId, request, authorId));
     }
 
     @DeleteMapping("/{feedId}")
-    public ResponseEntity<Void> deleteFeed(@PathVariable UUID feedId, @AuthenticationPrincipal UUID authorId) {
+    public ResponseEntity<Void> deleteFeed(@PathVariable UUID feedId,
+                                           @AuthenticationPrincipal OtbooUserDetails details) {
+        UUID authorId = details.getUserResponse().id();
         feedService.deleteFeed(feedId, authorId);
         return ResponseEntity.noContent().build();
     }
