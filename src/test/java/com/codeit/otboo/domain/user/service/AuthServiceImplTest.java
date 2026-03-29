@@ -322,6 +322,24 @@ class AuthServiceImplTest {
             then(redisRegistry).should().delete(userId);
             then(jwtProvider).should(never()).generateAccessToken(any(), any(), any());
         }
-
     }
+
+    @Nested
+    @DisplayName("로그 아웃")
+    class SignOut {
+        @Test
+        @DisplayName("로그아웃 성공 - redis 정보 삭제")
+        void logout_success() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            // when
+            authService.signOut(userId);
+
+            // then
+            then(redisRegistry).should().delete(userId);
+            then(redisRegistry).shouldHaveNoMoreInteractions();
+        }
+    }
+
 }
