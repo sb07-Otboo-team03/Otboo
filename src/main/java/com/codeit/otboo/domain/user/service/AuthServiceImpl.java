@@ -105,4 +105,9 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(newRefreshToken)
                 .build();
     }
+
+    @Override
+    public void signOut(UUID userId) {
+        redisRegistry.delete(userId);
+    }
 }
