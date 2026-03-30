@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_NOT_FOUND("사용자를 찾을 수 없습니다."),
 
     // Clothes
+    CLOTHES_DUPLICATED_VALUE("하나의 속성에 여러 개의 값을 가질 수 없습니다."),
 
     // ClothesAttribute
     CLOTHES_ATTRIBUTE_NAME_MISSING("속성 이름은 필수입력입니다."),
