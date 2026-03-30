@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -39,16 +42,27 @@ class LikeServiceImplTest {
     UserRepository userRepository;
     @Mock
     FeedRepository feedRepository;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     LikeServiceImpl likeService;
 
-    private UUID feedId;
-    private UUID userId;
+    private Feed feed;
+    private User user;
 
     @BeforeEach
     void setUp() {
-        UUID feedId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+        User author = User.builder().build();
+        ReflectionTestUtils.setField(author, "id", UUID.randomUUID());
+
+        feed = Feed.builder().author(author).build();
+        ReflectionTestUtils.setField(feed, "id", UUID.randomUUID());
+
+        user = User.builder().build();
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        new Profile(user, "user");
+
     }
 
     @Nested
@@ -59,8 +73,8 @@ class LikeServiceImplTest {
         @DisplayName("좋아요를 누를 수 있다.")
         void likeFeed_Success() {
             // given
-            Feed feed = Feed.builder().build();
-            User user = User.builder().build();
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -78,12 +92,13 @@ class LikeServiceImplTest {
         @DisplayName("존재하지 않는 피드Id라면 예외를 반환한다.")
         void likeFeed_Fail_NotFoundFeed() {
             // given
-            UUID FeedId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
-            given(feedRepository.findById(FeedId)).willReturn(Optional.empty());
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
+
+            given(feedRepository.findById(feedId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> likeService.feedLike(FeedId, userId))
+            assertThatThrownBy(() -> likeService.feedLike(feedId, userId))
                     .isInstanceOf(FeedNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FEED_NOT_FOUND);
@@ -93,8 +108,8 @@ class LikeServiceImplTest {
         @DisplayName("존재하지 않는 유저Id라면 예외를 반환한다.")
         void likeFeed_Fail_NotFoundUser() {
             // given
-            UUID feedId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(Feed.builder().build()));
             given(userRepository.findById(userId)).willReturn(Optional.empty());
@@ -110,8 +125,8 @@ class LikeServiceImplTest {
         @DisplayName("좋아요가 이미 존재한다면 예외를 반환한다.")
         void likeFeed_Fail_AlreadyLiked() {
             // given
-            UUID feedId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
 
             given(feedRepository.findById(feedId)).willReturn(Optional.of(Feed.builder().build()));
             given(userRepository.findById(userId)).willReturn(Optional.of(User.builder().build()));
@@ -133,9 +148,8 @@ class LikeServiceImplTest {
         @DisplayName("좋아요를 취소할 수 있다.")
         void unlikeFeed_Success() {
             // given
-
-            Feed feed = Feed.builder().build();
-            User user = User.builder().build();
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
 
             Like like = Like.builder().feed(feed).user(user).build();
             feed.increaseLike();
@@ -153,8 +167,8 @@ class LikeServiceImplTest {
         @DisplayName("좋아요가 존재하지 않으면 예외를 반환한다.")
         void unlikeFeed_Fail_NotFoundLike() {
             // given
-            UUID feedId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
+            UUID feedId = feed.getId();
+            UUID userId = user.getId();
 
             given(likeRepository.findByFeedIdAndUserId(feedId, userId)).willReturn(Optional.empty());
 

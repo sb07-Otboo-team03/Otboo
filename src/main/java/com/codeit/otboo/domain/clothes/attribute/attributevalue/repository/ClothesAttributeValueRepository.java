@@ -2,7 +2,6 @@ package com.codeit.otboo.domain.clothes.attribute.attributevalue.repository;
 
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;

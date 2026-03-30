@@ -6,7 +6,10 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.Clothe
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeAlreadyExistsException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeDefNotFoundException;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeValueDuplicateExceptionException;
+import com.codeit.otboo.domain.clothes.attribute.attributedef.exception.ClothesAttributeValueEmptyException;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.mapper.ClothesAttributeDefMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.ClothesAttributeDefRepository;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
@@ -34,17 +37,28 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     @Override
     @Transactional
     public ClothesAttributeDefResponse createAttributeDef(ClothesAttributeDefCreateRequest request) {
-        ClothesAttributeDef clothesAttributeDef = new ClothesAttributeDef(request.name());
+
+        String name = request.name().trim();
+
+        if (clothesAttributeDefRepository.existsByNameIgnoreCase(name)) {
+            throw new ClothesAttributeAlreadyExistsException();
+        }
+
+        // postman에서 동일한 속성값 요청 시 입력되는 것 방지
+        validateAndNormalize(request.selectableValues());
+
+        ClothesAttributeDef clothesAttributeDef = new ClothesAttributeDef(name);
         ClothesAttributeDef saveDef = clothesAttributeDefRepository.save(clothesAttributeDef);
 
         List<ClothesAttributeValue> valueList = request.selectableValues().stream()
                 .map(value ->
-                        clothesAttributeValueMapper.toClothesAttributeValue(value, saveDef))
+                        clothesAttributeValueMapper.toClothesAttributeValue(format(value), saveDef))
                 .toList();
         clothesAttributeValueRepository.saveAll(valueList);
 
-        return clothesAttributeDefMapper
-                .toClothesAttributeDefResponse(saveDef, request.selectableValues());
+        List<String> list = valueList.stream().map(ClothesAttributeValue::getSelectableValue).toList();
+
+        return clothesAttributeDefMapper.toClothesAttributeDefResponse(saveDef, list);
     }
 
     @Override
@@ -70,7 +84,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .collect(Collectors.groupingBy(v -> v.getAttributeDef().getId(),
                         Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())));
 
-       return getAttributes.stream().map(
+        return getAttributes.stream().map(
                 def -> clothesAttributeDefMapper.toClothesAttributeDefResponse(
                         def, valueMap.getOrDefault(def.getId(), List.of())
                 )).toList();
@@ -85,32 +99,52 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         // Def존재확인 및 이름 수정
         ClothesAttributeDef clothesAttributeDef = clothesAttributeDefRepository.findById(definition_id)
                 .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
-        clothesAttributeDef.updateClothesAttributeDefName(request.name());
 
-        // DB에 저장된 기존 Value갖고오기
-        List<ClothesAttributeValue> attributeValues =
-                clothesAttributeValueRepository.findByAttributeDefId(definition_id);
+        String newName = request.name().trim();
 
-        // 요청으로 들어온 value처리
-        Set<String> requestValues = new HashSet<>(request.selectableValues());
-        for (ClothesAttributeValue value : attributeValues) {
-            value.updateIsActive(requestValues.contains(value.getSelectableValue()));
-            }
+        if (!clothesAttributeDef.getName().equalsIgnoreCase(newName) &&
+                clothesAttributeDefRepository.existsByNameIgnoreCaseAndIdNot(newName, definition_id)) {
+            throw new ClothesAttributeAlreadyExistsException();
+        }
 
-        Set<String> newValue = attributeValues.stream()
-                .map(ClothesAttributeValue::getSelectableValue)
+        clothesAttributeDef.updateClothesAttributeDefName(newName);
+
+        // 빈 문자열, 중복 검증
+        Set<String> requestSet = validateAndNormalize(request.selectableValues());
+
+        List<ClothesAttributeValue> existingValues
+                = clothesAttributeValueRepository.findByAttributeDefId(definition_id);
+
+        Set<String> existingNormalized = existingValues.stream()
+                .map(clothesAttributeValue -> normalize(clothesAttributeValue.getSelectableValue()))
                 .collect(Collectors.toSet());
 
-        List<ClothesAttributeValue> saveValue = request.selectableValues().stream()
-                .filter(name -> !newValue.contains(name))
-                .map(name -> clothesAttributeValueMapper
-                        .toClothesAttributeValue(name, clothesAttributeDef))
+        for(ClothesAttributeValue value : existingValues) {
+            String normalized = normalize(value.getSelectableValue());
+            if(requestSet.contains(normalized)) {
+                value.updateIsActive(true);
+            } else {
+                value.updateIsActive(false);
+            }
+        }
+
+        List<ClothesAttributeValue> newValue = request.selectableValues().stream()
+                .filter(value -> !existingNormalized.contains(normalize(value)))
+                .map(value -> clothesAttributeValueMapper
+                        .toClothesAttributeValue(format(value), clothesAttributeDef))
                 .toList();
 
-        clothesAttributeValueRepository.saveAll(saveValue);
+        clothesAttributeValueRepository.saveAll(newValue);
+
+        List<ClothesAttributeValue> allValues = new ArrayList<>(existingValues);
+        allValues.addAll(newValue);
+
+        List<String> list = allValues.stream()
+                .filter(ClothesAttributeValue::isActive)
+                .map(ClothesAttributeValue::getSelectableValue).toList();
 
         return clothesAttributeDefMapper
-                .toClothesAttributeDefResponse(clothesAttributeDef, request.selectableValues());
+                .toClothesAttributeDefResponse(clothesAttributeDef, list);
     }
 
     @Override
@@ -121,5 +155,37 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
 
         clothesAttributeDefRepository.delete(attributeDef);
+    }
+
+    // 입력값 정규화
+    private String normalize(String value) {
+        return value.trim().toLowerCase();
+    }
+
+    // 저장 시 첫글자 대문자, 두번째부터 소문자로 저장
+    private String format(String value) {
+        String trimmed = value.trim().toLowerCase();
+        if (trimmed.isEmpty()) {
+            throw new ClothesAttributeValueEmptyException();
+        }
+        return trimmed.toUpperCase();
+    }
+
+    private Set<String> validateAndNormalize(List<String> values) {
+        List<String> normalizedList = values.stream()
+                .map(this::normalize)
+                .toList();
+
+        // 빈 문자열 체크
+        if (normalizedList.stream().anyMatch(String::isEmpty)) {
+            throw new ClothesAttributeValueEmptyException();
+        }
+
+        // 중복 속성값 체크
+        Set<String> normalizedSet = new HashSet<>(normalizedList);
+        if (normalizedSet.size() != normalizedList.size()) {
+            throw new ClothesAttributeValueDuplicateExceptionException();
+        }
+        return normalizedSet;
     }
 }

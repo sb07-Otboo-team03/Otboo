@@ -15,7 +15,9 @@ import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.fixture.FeedFixture;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -33,6 +35,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -61,9 +64,12 @@ class FeedServiceImplTest {
     private LikeRepository likeRepository;
     @Mock
     private CommentRepository commentRepository;
-
+    @Mock
+    private FollowRepository followRepository;
     @Mock
     private FeedMapper feedMapper;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private FeedServiceImpl feedService;
@@ -75,15 +81,19 @@ class FeedServiceImplTest {
         UUID authorId = UUID.randomUUID();
         user = new User("otboo@a.a", "otboo123");
         ReflectionTestUtils.setField(user, "id", authorId);
+        new Profile(user, "user");
     }
 
     @Nested
     @DisplayName("피드 생성")
     class FeedCreate {
 
-        @Test
+        @ParameterizedTest
+        @CsvSource(value = {
+            "null", "6de3b7bc-b14c-4608-a343-111111111111"
+        }, nullValues = "null")
         @DisplayName("피드를 생성할 수 있다.")
-        void createFeed_Success() {
+        void createFeed_Success(UUID id) {
             // given
             UUID userId = user.getId();
             UUID weatherId = UUID.randomUUID();
@@ -97,10 +107,13 @@ class FeedServiceImplTest {
             Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
 
+            Set<UUID> receiverId = id == null ? Set.of() : Set.of(id);
+
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
             given(clothesRepository.findAllById(List.of(clothes.getId()))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
+            given(followRepository.findAllFollowerIdsByFolloweeId(userId)).willReturn(receiverId);
 
             // when
             FeedResponse response = feedService.createFeed(request);

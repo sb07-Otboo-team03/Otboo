@@ -8,6 +8,7 @@ import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -22,6 +23,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -52,6 +54,8 @@ class CommentServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private CommentMapper commentMapper;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     CommentServiceImpl commentService;
@@ -67,8 +71,13 @@ class CommentServiceImplTest {
             UUID feedId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            Feed feed = Feed.builder().build();
+            User author = new User("author@a.a", "otboo123");
+            ReflectionTestUtils.setField(author, "id", UUID.randomUUID());
+            Feed feed = Feed.builder().author(author).build();
+
             User user = new User("otboo@a.a", "otboo123");
+            ReflectionTestUtils.setField(user, "id", userId);
+            new Profile(user, "user");
 
             CommentCreateRequest request = new CommentCreateRequest("Test Comment");
             CommentResponse response = CommentResponse.builder().content("Test Comment").build();

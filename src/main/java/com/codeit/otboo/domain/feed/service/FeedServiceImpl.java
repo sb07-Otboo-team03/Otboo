@@ -13,25 +13,27 @@ import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.entity.FeedWeather;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
-import com.codeit.otboo.global.exception.ErrorCode;
-import com.codeit.otboo.global.exception.OtbooException;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,7 +41,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class FeedServiceImpl implements FeedService{
+public class FeedServiceImpl implements FeedService {
 
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
@@ -48,6 +50,8 @@ public class FeedServiceImpl implements FeedService{
     private final LikeRepository likeRepository;
     private final FeedMapper feedMapper;
     private final CommentRepository commentRepository;
+    private final FollowRepository followRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -63,7 +67,20 @@ public class FeedServiceImpl implements FeedService{
 
         Feed feed = new Feed(request.content(), author, weather, clothesList);
         feedRepository.save(feed);
-        log.debug("Feed 생성 완료 - feedId={}", feed.getId());
+
+        Set<UUID> followerIds = followRepository.findAllFollowerIdsByFolloweeId(author.getId());
+
+        if (!followerIds.isEmpty()) {
+            eventPublisher.publishEvent(
+                    FeedCreatedEvent.builder()
+                            .feedId(feed.getId())
+                            .authorName(author.getProfile().getName())
+                            .content(feed.getContent())
+                            .createdAt(feed.getCreatedAt())
+                            .receiverIds(followerIds)
+                            .build()
+            );
+        }
 
         return feedMapper.toDto(feed);
     }

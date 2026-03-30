@@ -1,7 +1,9 @@
 package com.codeit.otboo.domain.sse.listener;
 
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
+import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
 import java.util.Set;
@@ -34,5 +36,21 @@ public class SseRequiredEventListener {
         NotificationDto notification = event.getData();
         UUID receiverId = notification.receiverId();
         sseService.send(Set.of(receiverId), "notifications", notification);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedCreatedEvent event) {
+        for(UUID receiverId : event.receiverIds()) {
+            NotificationDto notification = NotificationDto.builder()
+                    .id(event.feedId())
+                    .createdAt(event.createdAt())
+                    .receiverId(receiverId)
+                    .title(event.authorName() + "님이 새로운 피드를 작성했어요.")
+                    .content(event.content())
+                    .level(NotificationLevel.INFO)
+                    .build();
+            sseService.send(Set.of(receiverId), "notifications", notification);
+        }
     }
 }
