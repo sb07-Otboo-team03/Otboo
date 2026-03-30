@@ -80,8 +80,9 @@ public class ClothesServiceImpl implements ClothesService{
         attributeValue -> attributeValue
                 ));
         Set<ClothesAttributeValue> selectedValueList =  requests.stream()
-                .map(request -> getAttributeValueOrThrowByRequest(request, selectableAttributeValueMap))
-                .collect(Collectors.toSet());
+                .map(request -> getAttributeValueOrThrowByRequest(
+                        request, selectableAttributeValueMap
+                )).collect(Collectors.toSet());
 
         return new ClothesAttributeSelection(selectedValueList, allSelectableValues);
     }

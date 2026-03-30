@@ -1,9 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.slice;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
-import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoResponse;
-import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.management.controller.ClothesController;
@@ -14,10 +10,14 @@ import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
+import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +37,7 @@ import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -68,6 +69,16 @@ public class ClothesControllerTest {
     @MockitoBean
     private BinaryContentService binaryContentService;
 
+    private User user;
+    private OtbooUserDetails userDetails;
+
+    @BeforeEach
+    void setUp() {
+        user = UserFixture.create();
+        UserResponse userDto = UserResponse.builder().id(user.getId()).role(Role.USER).build();
+        userDetails = new OtbooUserDetails(userDto, "otboo123");
+    }
+
     @Nested
     @DisplayName("옷 생성")
     class ClothesCreate {
@@ -75,7 +86,6 @@ public class ClothesControllerTest {
         @DisplayName("성공: 유효한 요청이 들어올 경우 201로 응답한다")
         void createClothes_Success() throws Exception {
             // given
-            User user = UserFixture.create();
             ClothesCreateRequest request = new ClothesCreateRequest(
                     user.getId(), "새 옷", ClothesType.ETC, List.of());
             Clothes clothes = ClothesFixture.create(request, null);
@@ -101,6 +111,7 @@ public class ClothesControllerTest {
                     multipart("/api/clothes")
                             .file(requestPart)
                             .with(csrf())
+                            .with(user(userDetails))
             )
                     .andDo(print())
                     .andExpect(status().isCreated())
@@ -113,10 +124,18 @@ public class ClothesControllerTest {
         @DisplayName("실패: ownerId가 null 로 들어올 경우 400 에러가 발생한다")
         void createClothes_Fail_NullOwnerId() throws Exception {
             // given
-            User user = UserFixture.create();
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), "새 옷", ClothesType.ETC, List.of());
+                    null, "새 옷", ClothesType.ETC, List.of());
 
+            // when & then
+            mockMvc.perform(post("/api/clothes")
+                            .with(csrf())
+                            .with(user(userDetails))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
         }
     }
 }
