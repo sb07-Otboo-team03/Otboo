@@ -13,11 +13,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -80,6 +82,13 @@ public class AuthController {
         response.addCookie(deleteCookie);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("csrf-token")
+    public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 
 }
