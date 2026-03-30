@@ -14,6 +14,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.exception.notification.DuplicateNotificationException;
+import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.notification.service.NotificationServiceImpl;
@@ -174,7 +175,7 @@ class NotificationServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> notificationService.deleteNotification(id))
-            .isInstanceOf(DuplicateNotificationException.class);
+            .isInstanceOf(NotificationNotFoundException.class);
 
         verify(notificationRepository, never()).delete(any(Notification.class));
     }

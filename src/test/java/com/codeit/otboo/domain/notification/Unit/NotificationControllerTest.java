@@ -13,6 +13,7 @@ import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.notification.controller.NotificationController;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.exception.notification.DuplicateNotificationException;
+import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.codeit.otboo.global.security.jwt.JwtProvider;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.test.web.servlet.MockMvc;
 
 @DisplayName("🎯Unit Test> NotificationController")
@@ -117,11 +119,11 @@ class NotificationControllerTest {
         // given
         UUID id = UUID.randomUUID();
 
-        doThrow(new DuplicateNotificationException(id))
+        doThrow(new NotificationNotFoundException(id))
             .when(notificationService).deleteNotification(id);
 
         // when & then
         mockMvc.perform(delete("/api/notifications/{id}", id))
-        .andExpect(status().isConflict());
+            .andExpect(status().isNotFound());
     }
 }
