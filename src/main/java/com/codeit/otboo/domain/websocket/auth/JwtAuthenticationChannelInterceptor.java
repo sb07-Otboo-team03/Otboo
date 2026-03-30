@@ -44,9 +44,9 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
 
                 String accessToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
 
-                JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
-                String sessionId = jwtProvider.getSessionId(accessToken);
                 String email = jwtProvider.getEmail(accessToken);
+                String sessionId = jwtProvider.getSessionId(accessToken);
+                JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
 
                 UUID userId = UUID.fromString(claims.getSubject());
 
