@@ -39,7 +39,6 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -126,13 +125,66 @@ public class ClothesControllerTest {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
                     null, "새 옷", ClothesType.ETC, List.of());
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(request)
+            );
 
             // when & then
-            mockMvc.perform(post("/api/clothes")
-                            .with(csrf())
-                            .with(user(userDetails))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request))
+            mockMvc.perform(
+                            multipart("/api/clothes")
+                                    .file(requestPart)
+                                    .with(csrf())
+                                    .with(user(userDetails))
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+
+        @Test
+        @DisplayName("실패: name이 blank로 들어올 경우 400 에러가 발생한다")
+        void createClothes_Fail_BlankName() throws Exception {
+            // given
+            ClothesCreateRequest request = new ClothesCreateRequest(
+                    user.getId(), " ", ClothesType.ETC, List.of());
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(request)
+            );
+
+            // when & then
+            mockMvc.perform(
+                            multipart("/api/clothes")
+                                    .file(requestPart)
+                                    .with(csrf())
+                                    .with(user(userDetails))
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+
+        @Test
+        @DisplayName("실패: type이 null로 들어올 경우 400 에러가 발생한다")
+        void createClothes_Fail_NullType() throws Exception {
+            ClothesCreateRequest request = new ClothesCreateRequest(
+                    user.getId(), "새 옷", null, List.of()
+            );
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(request)
+            );
+
+            mockMvc.perform(
+                            multipart("/api/clothes")
+                                    .file(requestPart)
+                                    .with(csrf())
+                                    .with(user(userDetails))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
