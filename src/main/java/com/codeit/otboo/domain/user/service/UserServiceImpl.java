@@ -52,10 +52,6 @@ public class UserServiceImpl implements UserService{
         return userMapper.toDto(savedUser);
     }
 
-    @Override
-    public CursorResponse<UserResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
-        return null;
-    }
 
     @Override
     public UserResponse updateUserRole(UUID userId, Role role) {
