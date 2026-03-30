@@ -2,13 +2,13 @@ package com.codeit.otboo.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
     // User
     USER_NOT_FOUND("사용자를 찾을 수 없습니다."),
+    USER_ALREADY_EXISTS_EMAIL("이미 존재하는 이메일입니다."),
 
     // Clothes
     CLOTHES_DUPLICATED_VALUE("하나의 속성에 여러 개의 값을 가질 수 없습니다."),
@@ -34,6 +34,7 @@ public enum ErrorCode {
     LIKE_ALREADY_EXISTS("좋아요가 이미 존재합니다."),
 
     // Notification
+    NOTIFICATION_NOT_FOUND("해당 알림을 찾을 수 없습니다."),
     DUPLICATE_NOTIFICATION("이미 존재하는 알림입니다."),
 
     // Weather
