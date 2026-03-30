@@ -84,10 +84,10 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("csrf-token")
+    @GetMapping("/csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
         return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
+                .noContent()
                 .build();
     }
 
