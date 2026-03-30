@@ -36,10 +36,6 @@ management:
       show-details: always
 
 otboo:
-  storage:
-    type: local
-    local:
-      root-path: ./storage
   jwt:
     secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
     access-token-expiration: 900000

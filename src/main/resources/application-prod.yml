@@ -18,15 +18,6 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
-  cloud:
-    aws:
-      credentials:
-        access-key: ${AWS_ACCESS_KEY_ID}
-        secret-key: ${AWS_SECRET_ACCESS_KEY}
-      region:
-        static: ${AWS_REGION}
-      s3:
-        bucket: ${AWS_S3_BUCKET}
 
 logging:
   level:
@@ -39,11 +30,6 @@ management:
       show-details: never
 
 otboo:
-  storage:
-    type: s3
-    s3:
-      path: binary
-
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiration: ${ACCESS_TOKEN_EXPIRATION}
