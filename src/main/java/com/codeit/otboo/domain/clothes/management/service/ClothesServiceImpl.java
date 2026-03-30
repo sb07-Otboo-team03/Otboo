@@ -88,13 +88,13 @@ public class ClothesServiceImpl implements ClothesService{
 
     // 해당 요청에 같은 속성 id 가 여러 개 들어왔는지 검증하는 메소드
     private Set<UUID> validateAndExtractDefinitionIds(List<ClothesAttributeRequest> requests){
-        Set<UUID> result = new HashSet<>();
+        Set<UUID> difinitionIdSet = new HashSet<>();
         for (ClothesAttributeRequest request : requests) {
-            if (!result.add(request.definitionId())) {
+            if (!difinitionIdSet.add(request.definitionId())) {
                 throw new DuplicateClothesAttributeDefinitionException(request.definitionId());
             }
         }
-        return result;
+        return difinitionIdSet;
     }
 
     // Map 에 존재하지 않으면 throws 를 던지는 메소드

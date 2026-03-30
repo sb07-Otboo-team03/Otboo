@@ -72,7 +72,7 @@ public class ClothesControllerTest {
     @DisplayName("옷 생성")
     class ClothesCreate {
         @Test
-        @DisplayName("성공: 유효한 요청이 들어올 경우 옷이 생성되")
+        @DisplayName("성공: 유효한 요청이 들어올 경우 201로 응답한다")
         void createClothes_Success() throws Exception {
             // given
             User user = UserFixture.create();
@@ -107,6 +107,16 @@ public class ClothesControllerTest {
                     .andExpect(header().string(HttpHeaders.LOCATION,
                             URI.create("/api/clothes/" + response.id()).toString()))
                     .andExpect(jsonPath("$.id").value(response.id().toString()));
+        }
+
+        @Test
+        @DisplayName("실패: ownerId가 null 로 들어올 경우 400 에러가 발생한다")
+        void createClothes_Fail_NullOwnerId() throws Exception {
+            // given
+            User user = UserFixture.create();
+            ClothesCreateRequest request = new ClothesCreateRequest(
+                    user.getId(), "새 옷", ClothesType.ETC, List.of());
+
         }
     }
 }

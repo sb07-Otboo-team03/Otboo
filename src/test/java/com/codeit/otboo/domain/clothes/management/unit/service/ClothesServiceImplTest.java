@@ -18,6 +18,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
@@ -195,12 +196,6 @@ public class ClothesServiceImplTest {
             );
 
             given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(any(UUID.class), anyString()))
-                    .willAnswer(invocation -> {
-                        UUID defId = invocation.getArgument(0);
-                        String value = invocation.getArgument(1);
-                        return Optional.of(ClothesAttributeValueFixture.create(defId, value));
-                    });
             given(clothesRepository.save(any(Clothes.class)))
                     .willReturn(clothes);
             given(clothesAttributeValueRepository.findByAttributeDefIdIn(
@@ -221,12 +216,9 @@ public class ClothesServiceImplTest {
             );
 
             then(userRepository).should().findById(user.getId());
-            then(clothesAttributeValueRepository).should(times(request.attributes().size()))
-                    .findByAttributeDefIdAndSelectableValue(any(UUID.class), anyString());
-            then(clothesAttributeValueRepository).should().findByAttributeDefIdIn(
-                    argThat(list -> list.size() == request.attributes().size() && list.containsAll(
-                                    List.of(definition1.getId(), definition2.getId())
-                            )
+            then(clothesAttributeValueRepository).should(times(1)).findByAttributeDefIdIn(
+                    argThat(list -> list.size() == request.attributes().size() &&
+                            list.containsAll(List.of(definition1.getId(), definition2.getId()))
                     )
             );
             then(clothesRepository).should().save(any(Clothes.class));
@@ -239,19 +231,40 @@ public class ClothesServiceImplTest {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
                     UUID.randomUUID(), "옷 이름", ClothesType.ETC, List.of());
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
             given(userRepository.findById(any(UUID.class)))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> clothesService.createClothes(imageRequest, request))
+            assertThatThrownBy(() -> clothesService.createClothes(null, request))
                     .isInstanceOf(UserNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
             then(clothesRepository).should(never()).save(any(Clothes.class));
         }
 
+        @Test
+        @DisplayName("실패: 옷 하나의 속성에 여러 개의 값이 요청으로 경우 예외가 발생한다")
+        void createClothes_Fail_MultipleAttributeValues() {
+            // given
+            User user = UserFixture.create();
+            ClothesAttributeDef definition = ClothesAttributeDefFixture.create();
+            ClothesCreateRequest request = new ClothesCreateRequest(
+                    user.getId(), "옷 이름", ClothesType.ETC,
+                    List.of(
+                            new ClothesAttributeRequest(definition.getId(), "기존값"),
+                            new ClothesAttributeRequest(definition.getId(), "중복값")
+                    )
+            );
+            given(userRepository.findById(user.getId()))
+                    .willReturn(Optional.of(user));
+
+            // when & then
+            assertThatThrownBy(() -> clothesService.createClothes(null, request))
+                    .isInstanceOf(DuplicateClothesAttributeDefinitionException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.CLOTHES_DUPLICATED_VALUE);
+            then(clothesRepository).should(never()).save(any(Clothes.class));
+        }
 
         @Test
         @DisplayName("실패: 존재하지 않는 옷 속성-값으로 요청할 경우 예외가 발생한다")
@@ -263,18 +276,11 @@ public class ClothesServiceImplTest {
                     user.getId(), "옷 이름", ClothesType.ETC,
                     List.of(new ClothesAttributeRequest(definition.getId(), "속성값"))
             );
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
             given(userRepository.findById(user.getId()))
                     .willReturn(Optional.of(user));
-            given(binaryContentService.upload(any(BinaryContentCreateRequest.class)))
-                    .willReturn(binaryContent);
-            given(clothesAttributeValueRepository.findByAttributeDefIdAndSelectableValue(any(UUID.class), anyString()))
-                    .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> clothesService.createClothes(imageRequest, request))
+            assertThatThrownBy(() -> clothesService.createClothes(null, request))
                     .isInstanceOf(ClothesAttributeValueNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CLOTHES_ATTRIBUTE_VALUES_NOT_FOUND);
