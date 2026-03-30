@@ -8,6 +8,9 @@ import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -15,6 +18,7 @@ import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,7 @@ public class CommentServiceImpl implements CommentService{
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -43,6 +48,21 @@ public class CommentServiceImpl implements CommentService{
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         Comment comment = new Comment(request.content(), feed, user);
+        commentRepository.save(comment);
+        feed.increaseComment();
+
+        NotificationDto eventData = NotificationDto.builder()
+                .id(comment.getId())
+                .createdAt(comment.getCreatedAt())
+                .receiverId(feed.getAuthor().getId())
+                .title(user.getProfile().getName() + "님이 댓글을 달았어요.")
+                .content(comment.getContent())
+                .level(NotificationLevel.INFO)
+                .build();
+
+        eventPublisher.publishEvent(
+                new SseEvent(eventData, comment.getCreatedAt())
+        );
 
         return commentMapper.toDto(comment);
     }

@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +19,9 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     int countByFollowerId(UUID followerId);
     int countByFolloweeId(UUID followeeId);
     boolean existsByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
+
+    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = ?1")
+    Set<UUID> findAllFollowerIdsByFolloweeId(UUID followeeId);
 
     @Query("""
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
