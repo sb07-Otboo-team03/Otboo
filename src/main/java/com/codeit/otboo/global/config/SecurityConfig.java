@@ -48,13 +48,15 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/auth/sign-in", "/api/auth/sign-out",
                                 "/api/auth/reset-password", "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll()
                         .requestMatchers("/actuator/**", "/actuator", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/", "/assets/**", "index.html", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/assets/**", "index.html", "/favicon.ico", "/*.svg").permitAll()
                         .anyRequest().authenticated()
                 )
-                .csrf(AbstractHttpConfigurer::disable
-                        //TODO csrf 엔드포인트 구현 이후, 활성화
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new Http401AuthenticationEntryPoint(objectMapper))
