@@ -12,8 +12,6 @@ import java.util.UUID;
 public interface UserService {
     UserResponse createUser(UserCreateRequest userCreateRequest);
 
-    CursorResponse<UserResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual);
-
     UserResponse updateUserRole(UUID userId, Role role);
 
     ProfileResponse getProfile(UUID userId);
