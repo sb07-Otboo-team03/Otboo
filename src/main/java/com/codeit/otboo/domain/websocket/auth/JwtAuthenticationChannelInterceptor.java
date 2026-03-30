@@ -1,10 +1,12 @@
 package com.codeit.otboo.domain.websocket.auth;
 
 import com.codeit.otboo.global.security.jwt.JwtProvider;
+import com.codeit.otboo.global.security.jwt.exception.JwtException;
 import com.codeit.otboo.global.security.jwt.exception.JwtInvalidTokenTypeException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +16,9 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
@@ -24,9 +28,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
 
+    private final RedisRegistry redisRegistry;
     private final UserDetailsService userDetailsService;
-    private final RedisRegistry jwtRegistry;
-    private final JwtProvider tokenProvider;
+    private final JwtProvider jwtProvider;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -35,14 +39,22 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
             StompHeaderAccessor.class
         );
 
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+        try {
+            if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
-            String jwtToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
+                String accessToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
 
-            JWTClaimsSet accessTokenClaimsSet = tokenProvider.validateAccessToken(jwtToken);
-            String username = accessTokenClaimsSet.getSubject();
-            if (username != null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
+
+                UUID userId = UUID.fromString(claims.getSubject());
+                String sessionId = jwtProvider.getSessionId(accessToken);
+                String email = jwtProvider.getEmail(accessToken);
+
+                if (!redisRegistry.isValidSession(userId, sessionId)) {
+                    throw new BadCredentialsException("유효하지 않은 세션입니다.");
+                }
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
@@ -53,12 +65,24 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
 
                 accessor.setUser(authentication);
 
-                log.debug("✅ Set authentication for user: {}", username);
+                log.debug("✅ Set authentication. email = {}", email);
             }
-            else {
-                log.debug("⚠️Invalid JWT token. username error");
-                throw new JwtInvalidTokenTypeException();
-            }
+        }
+        catch (JwtException | BadCredentialsException e) {
+            SecurityContextHolder.clearContext();
+            throw new BadCredentialsException("유효하지 않은 access token입니다.", e);
+        }
+        catch (NullPointerException e) {
+            SecurityContextHolder.clearContext();
+
+            log.debug("✅ StompHeaderAccessor null point exception err");
+            throw new IllegalArgumentException("✅ StompHeaderAccessor null point exception", e);
+        }
+        catch (Exception e) {
+            SecurityContextHolder.clearContext();
+
+            log.debug("✅ 그 밖의 errerr ", e);
+            throw new IllegalArgumentException("✅ Exception ", e);
         }
         return message;
     }
