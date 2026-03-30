@@ -13,6 +13,10 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
 
   cloud:
     aws:
