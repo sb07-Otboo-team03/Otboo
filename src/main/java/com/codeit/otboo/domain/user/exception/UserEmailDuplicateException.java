@@ -9,10 +9,10 @@ public class UserEmailDuplicateException extends UserException {
     public UserEmailDuplicateException(String email) {
         super(ErrorCode.USER_ALREADY_EXISTS_EMAIL,
                 Map.of("userEmail", email),
-                HttpStatus.NOT_FOUND);
+                HttpStatus.CONFLICT);
     }
 
     public UserEmailDuplicateException() {
-        super(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+        super(ErrorCode.USER_ALREADY_EXISTS_EMAIL, HttpStatus.CONFLICT);
     }
 }
