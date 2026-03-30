@@ -30,6 +30,7 @@ public enum ErrorCode {
     LIKE_ALREADY_EXISTS("좋아요가 이미 존재합니다."),
 
     // Notification
+    NOTIFICATION_NOT_FOUND("해당 알림을 찾을 수 없습니다."),
     DUPLICATE_NOTIFICATION("이미 존재하는 알림입니다."),
 
     // Weather

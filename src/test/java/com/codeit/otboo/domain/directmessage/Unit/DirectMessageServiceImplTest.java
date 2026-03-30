@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.Unit;
+package com.codeit.otboo.domain.directmessage.unit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
