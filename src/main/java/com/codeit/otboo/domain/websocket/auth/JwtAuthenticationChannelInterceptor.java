@@ -45,10 +45,10 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
                 String accessToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
 
                 JWTClaimsSet claims = jwtProvider.validateAccessToken(accessToken);
-
-                UUID userId = UUID.fromString(claims.getSubject());
                 String sessionId = jwtProvider.getSessionId(accessToken);
                 String email = jwtProvider.getEmail(accessToken);
+
+                UUID userId = UUID.fromString(claims.getSubject());
 
                 if (!redisRegistry.isValidSession(userId, sessionId)) {
                     throw new BadCredentialsException("유효하지 않은 세션입니다.");
