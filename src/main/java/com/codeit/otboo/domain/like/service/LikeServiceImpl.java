@@ -7,16 +7,21 @@ import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.exception.OtbooException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,6 +32,7 @@ public class LikeServiceImpl implements LikeService {
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -41,8 +47,22 @@ public class LikeServiceImpl implements LikeService {
             throw new LikeAlreadyExistsException(feedId, userId);
 
         Like like = new Like(user, feed);
+        LocalDateTime now = LocalDateTime.now();
         likeRepository.save(like);
         feed.increaseLike();
+
+        NotificationDto eventData = NotificationDto.builder()
+                .id(like.getId())
+                .createdAt(now)
+                .receiverId(feed.getAuthor().getId())
+                .title(user.getProfile().getName() + "님이 내 피드를 좋아합니다.")
+                .content(feed.getContent())
+                .level(NotificationLevel.INFO)
+                .build();
+
+        eventPublisher.publishEvent(
+                new SseEvent(eventData, now)
+        );
     }
 
     @Override
