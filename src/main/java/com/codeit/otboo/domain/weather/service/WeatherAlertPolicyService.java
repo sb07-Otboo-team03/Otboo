@@ -1,7 +1,10 @@
 package com.codeit.otboo.domain.weather.service;
 
+import com.codeit.otboo.domain.weather.dto.alert.HourlyPrecipitationStatus;
 import com.codeit.otboo.domain.weather.dto.alert.HourlyTemperature;
+import com.codeit.otboo.domain.weather.dto.alert.PrecipitationChangeSummary;
 import com.codeit.otboo.domain.weather.dto.alert.TemperatureGapSummary;
+import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -186,4 +189,103 @@ public class WeatherAlertPolicyService {
             LocalTime time,
             int gap
     ) {}
+
+    /**
+     * 비가 내리거나 그치는 알림 전달 여부 계산 로직
+     */
+    public PrecipitationChangeSummary summarizePrecipitationChanges(
+            List<HourlyPrecipitationStatus> statuses
+    ) {
+        if (statuses.isEmpty()) {
+            return PrecipitationChangeSummary.empty();
+        }
+
+        LocalTime startTime = null;
+        PrecipitationType startType = null;
+
+        LocalTime endTime = null;
+        PrecipitationType endType = null;
+
+        PrecipitationType previous = statuses.get(0).precipitationType();
+
+        for (int i = 1; i < statuses.size(); i++) {
+            HourlyPrecipitationStatus current = statuses.get(i);
+            PrecipitationType currentType = current.precipitationType();
+
+            // 강수 시작: 없음 -> 강수 있음
+            if (previous == PrecipitationType.NONE && currentType != PrecipitationType.NONE && startTime == null) {
+                startTime = current.time();
+                startType = currentType;
+            }
+
+            // 강수 종료: 강수 있음 -> 없음
+            if (previous != PrecipitationType.NONE && currentType == PrecipitationType.NONE && endTime == null) {
+                endTime = current.time();
+                endType = previous;
+            }
+
+            previous = currentType;
+        }
+
+        boolean shouldNotify = startTime != null || endTime != null;
+        if (!shouldNotify) {
+            return PrecipitationChangeSummary.empty();
+        }
+
+        return new PrecipitationChangeSummary(
+                startTime,
+                startType,
+                endTime,
+                endType,
+                true,
+                buildPrecipitationContent(startTime, startType, endTime, endType)
+        );
+    }
+
+    private String buildPrecipitationContent(
+            LocalTime startTime,
+            PrecipitationType startType,
+            LocalTime endTime,
+            PrecipitationType endType
+    ) {
+        if (startTime != null && endTime != null) {
+            return String.format(
+                    "오늘 %s부터 %s이(가) 오고, %s쯤 그칠 예정이에요.",
+                    formatHour(startTime),
+                    precipitationLabel(startType),
+                    formatHour(endTime)
+            );
+        }
+
+        if (startTime != null) {
+            return String.format(
+                    "오늘 %s부터 %s이(가) 올 예정이에요.",
+                    formatHour(startTime),
+                    precipitationLabel(startType)
+            );
+        }
+
+        return String.format(
+                "오늘 %s쯤 %s이(가) 그칠 예정이에요.",
+                formatHour(endTime),
+                precipitationLabel(endType)
+        );
+    }
+
+    private String precipitationLabel(PrecipitationType type) {
+        return switch (type) {
+            case RAIN -> "비";
+            case SNOW -> "눈";
+            case RAIN_SNOW -> "비/눈";
+            case SHOWER -> "소나기";
+            case NONE -> "강수";
+        };
+    }
+
+    private String formatHour(LocalTime time) {
+        int hour24 = time.getHour();
+        String meridiem = hour24 < 12 ? "오전" : "오후";
+        int hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+        return meridiem + " " + hour12 + "시";
+    }
 }

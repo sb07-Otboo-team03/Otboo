@@ -7,7 +7,9 @@ import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
 import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.weather.dto.alert.HourlyPrecipitationStatus;
 import com.codeit.otboo.domain.weather.dto.alert.HourlyTemperature;
+import com.codeit.otboo.domain.weather.dto.alert.PrecipitationChangeSummary;
 import com.codeit.otboo.domain.weather.dto.alert.TemperatureGapSummary;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
@@ -42,7 +44,7 @@ public class WeatherAlertService {
     private final TimeProvider timeProvider;
 
     @Transactional
-    public void sendDailyTemperatureGapAlerts() {
+    public void sendDailyWeatherAlerts() {
         List<Profile> profiles = profileRepository.findAllForWeatherAlert();
 
         // X, Y를 담은 RegionKey를 기준으로 지역별로 사용자들을 그룹핑
@@ -58,7 +60,6 @@ public class WeatherAlertService {
         LocalDate yesterday = today.minusDays(1);
 
         // START_TIME, END_TIME은 WeatherAlertPolicyService에서 정의
-        // 온도 비교를 위해 활발한 활동 시간의 시작과 끝인 6시와 21시의 시간을 저장
         LocalDateTime forecastedAt = today.atStartOfDay();
         LocalDateTime todayStart = today.atTime(START_TIME);
         LocalDateTime todayEnd = today.atTime(END_TIME);
@@ -66,7 +67,6 @@ public class WeatherAlertService {
         LocalTime yesterdayStart = START_TIME;
         LocalTime yesterdayEnd = END_TIME;
 
-        // 지역 별로 어제와 비교했을 때 온도 차가 큰 경우 사용자에게 알림을 전달
         for (Map.Entry<RegionKey, List<Profile>> entry : profilesByRegion.entrySet()) {
             RegionKey region = entry.getKey();
             List<Profile> regionProfiles = entry.getValue();
@@ -80,38 +80,83 @@ public class WeatherAlertService {
                             todayEnd
                     );
 
-            List<YesterdayHourlyWeather> yesterdayWeathers =
-                    yesterdayHourlyWeatherRepository.findYesterdayWeatherForAlertByRegion(
-                            yesterday,
-                            region.x(),
-                            region.y(),
-                            yesterdayStart,
-                            yesterdayEnd
-                    );
-
-            TemperatureGapSummary summary = weatherAlertPolicyService.summarize(
-                    toTodayHourlyTemperatures(todayWeathers),
-                    toYesterdayHourlyTemperatures(yesterdayWeathers)
-            );
-
-            // 알림이 필요 없다면 다음 지역으로
-            if (!summary.shouldNotify()) {
+            if (todayWeathers.isEmpty()) {
                 continue;
             }
 
-            List<Notification> notifications = regionProfiles.stream()
-                    .map(profile -> new Notification(
-                            "어제와 기온 차가 커요",
-                            summary.content(),
-                            NotificationLevel.INFO,
-                            profile.getUser()
-                    ))
-                    .toList();
+            sendTemperatureGapAlerts(
+                    regionProfiles,
+                    region,
+                    yesterday,
+                    yesterdayStart,
+                    yesterdayEnd,
+                    todayWeathers
+            );
 
-            List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
-
-            publishSseEvents(savedNotifications);
+            sendPrecipitationChangeAlerts(regionProfiles, todayWeathers);
         }
+    }
+
+    private void sendTemperatureGapAlerts(
+            List<Profile> regionProfiles,
+            RegionKey region,
+            LocalDate yesterday,
+            LocalTime yesterdayStart,
+            LocalTime yesterdayEnd,
+            List<Weather> todayWeathers
+    ) {
+        List<YesterdayHourlyWeather> yesterdayWeathers =
+                yesterdayHourlyWeatherRepository.findYesterdayWeatherForAlertByRegion(
+                        yesterday,
+                        region.x(),
+                        region.y(),
+                        yesterdayStart,
+                        yesterdayEnd
+                );
+
+        TemperatureGapSummary summary = weatherAlertPolicyService.summarize(
+                toTodayHourlyTemperatures(todayWeathers),
+                toYesterdayHourlyTemperatures(yesterdayWeathers)
+        );
+
+        // 알림이 필요 없다면 종료
+        if (!summary.shouldNotify()) {
+            return;
+        }
+
+        List<Notification> notifications = regionProfiles.stream()
+                .map(profile -> new Notification(
+                        "어제와 기온 차가 커요",
+                        summary.content(),
+                        NotificationLevel.INFO,
+                        profile.getUser()
+                ))
+                .toList();
+
+        List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
+        publishSseEvents(savedNotifications);
+    }
+
+    private void sendPrecipitationChangeAlerts(List<Profile> regionProfiles, List<Weather> todayWeathers) {
+        PrecipitationChangeSummary summary = weatherAlertPolicyService.summarizePrecipitationChanges(
+                toHourlyPrecipitationStatuses(todayWeathers)
+        );
+
+        if (!summary.shouldNotify()) {
+            return;
+        }
+
+        List<Notification> notifications = regionProfiles.stream()
+                .map(profile -> new Notification(
+                        "오늘 강수 예보가 바뀌어요",
+                        summary.content(),
+                        NotificationLevel.INFO,
+                        profile.getUser()
+                ))
+                .toList();
+
+        List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
+        publishSseEvents(savedNotifications);
     }
 
     // 날씨 엔티티에서 시간과, 온도 정보만 가지는 HourlyTemperature로 매핑
@@ -130,6 +175,15 @@ public class WeatherAlertService {
                 .map(weather -> new HourlyTemperature(
                         weather.getHour(),
                         weather.getTemperature()
+                ))
+                .toList();
+    }
+
+    private List<HourlyPrecipitationStatus> toHourlyPrecipitationStatuses(List<Weather> weathers) {
+        return weathers.stream()
+                .map(weather -> new HourlyPrecipitationStatus(
+                        weather.getForecastAt().toLocalTime(),
+                        weather.getPrecipitationType()
                 ))
                 .toList();
     }

@@ -13,6 +13,6 @@ public class WeatherAlertScheduler {
 
     @Scheduled(cron = "0 0 6 * * *")
     public void run() {
-        weatherAlertService.sendDailyTemperatureGapAlerts();
+        weatherAlertService.sendDailyWeatherAlerts();
     }
 }
