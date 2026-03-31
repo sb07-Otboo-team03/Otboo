@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.binarycontent.unit.service;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
+import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentServiceImpl;
@@ -60,6 +61,22 @@ public class BinaryContentServiceImplTest {
                     .save(any(BinaryContent.class));
             then(binaryContentStorage).should(times(1))
                     .put(eq(binaryContent.getId()), eq(data));
+        }
+
+        @Test
+        @DisplayName("실패: 최대 용량이 넘는 파일이 업로드되면 예외가 발생한다")
+        void fail_put_binary_content_exceed_max_size() {
+            // given
+            UUID binaryContentId = UUID.randomUUID();
+            byte[] data = "test".getBytes();
+            BinaryContentCreateRequest request = new BinaryContentCreateRequest(
+                    data, "test_file", "image/png", 1000L);
+
+            // when & then
+            assertThatThrownBy(() -> binaryContentService.upload(request))
+                    .isInstanceOf(FileUploadMaximumSizeException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FILE_UPLOAD_MAXIMUM_SIZE);
         }
     }
 
