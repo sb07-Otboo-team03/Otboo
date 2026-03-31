@@ -14,7 +14,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class BinaryContentRetryService {
-    private final BinaryContentStorage storage;
+    private final BinaryContentStorage binaryContentStorage;
     private final BinaryContentStatusService binaryContentStatusService;
 
     @Retryable(
@@ -24,7 +24,7 @@ public class BinaryContentRetryService {
     )
     public void upload(UUID binaryContentId, byte[] bytes) {
         log.info("파일 업로드 시도 id={}", binaryContentId);
-        storage.put(binaryContentId, bytes);
+        binaryContentStorage.put(binaryContentId, bytes);
         binaryContentStatusService.updateSuccess(binaryContentId);
     }
 
