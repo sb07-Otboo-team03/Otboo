@@ -379,3 +379,7 @@ CREATE TABLE location_name_map (
     -- 같은 위도 + 경도 데이터 중복 삽입 방지
     UNIQUE (latitude, longitude)
 );
+
+-- binary_contents 테이블에
+ALTER TABLE binary_contents ADD COLUMN upload_status varchar(30) NOT NULL DEFAULT 'PROCESSING';
+ALTER TABLE binary_contents ADD CONSTRAINT chk_binary_contents_upload_status CHECK (upload_status IN ('SUCCESS', 'PROCESSING', 'FAIL'));

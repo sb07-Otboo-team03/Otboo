@@ -1,11 +1,8 @@
 package com.codeit.otboo.domain.binarycontent.entity;
 
 import com.codeit.otboo.domain.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,9 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "binary_contents")
-@AllArgsConstructor
 public class BinaryContent extends BaseEntity {
-
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -24,4 +19,22 @@ public class BinaryContent extends BaseEntity {
 
     @Column(name = "size")
     private Long size;
+
+    @Column(name = "upload_status")
+    @Enumerated(EnumType.STRING)
+    private UploadStatus uploadStatus;
+
+    public BinaryContent(String name, String type, Long size){
+        this.name = name;
+        this.type = type;
+        this.size = size;
+        this.uploadStatus = UploadStatus.PROCESSING;
+    }
+
+    public void updateStatus(UploadStatus uploadStatus){
+        this.uploadStatus = uploadStatus;
+    }
 }
+
+
+

@@ -2,9 +2,9 @@ package com.codeit.otboo.domain.clothes.management.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
-import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
@@ -22,6 +22,7 @@ import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,10 +34,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ClothesServiceImpl implements ClothesService{
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final ClothesRepository clothesRepository;
     private final ClothesAttributeValueRepository clothesAttributeValueRepository;
-    private final BinaryContentStorage binaryContentStorage;
     private final BinaryContentService binaryContentService;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
@@ -51,11 +52,13 @@ public class ClothesServiceImpl implements ClothesService{
         BinaryContent binaryContent = null;
         if(imageRequest != null){
             binaryContent = binaryContentService.upload(imageRequest);
-            binaryContentStorage.put(binaryContent.getId(), imageRequest.data());
+            eventPublisher.publishEvent(
+                new BinaryContentCreatedEvent(binaryContent.getId(), imageRequest.data())
+            );
         }
         ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
-            new Clothes(request.name(), request.type(), owner, binaryContent,  clothesAttributeSelection.selectedValues())
+            new Clothes(request.name(), request.type(), owner, binaryContent, clothesAttributeSelection.selectedValues())
         );
         return clothesMapper.toDto(
                 savedClothes,
