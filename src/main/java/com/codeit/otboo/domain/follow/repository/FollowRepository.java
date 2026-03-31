@@ -42,10 +42,13 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
             LEFT JOIN ep.binaryContent epb
        WHERE e.id = :followeeId
            AND ep.name = '%:nameLike%'
-           AND ( :cursor IS NULL
-               OR f.createdAt < :cursor
-               OR (f.createdAt = :cursor
-                 AND (:idAfter IS NULL OR f.id < :idAfter)
+           AND ( CAST(:cursor AS timestamp) IS NULL
+               OR (
+                   f.createdAt < :cursor
+                   OR (
+                       f.createdAt = :cursor
+                      AND (CAST(:idAfter AS uuid) IS NULL OR f.id < :idAfter)
+                   )
                )
            )
        ORDER BY f.createdAt DESC, f.id DESC
