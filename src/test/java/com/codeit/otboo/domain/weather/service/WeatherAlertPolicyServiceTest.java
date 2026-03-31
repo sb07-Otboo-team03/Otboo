@@ -1,7 +1,10 @@
 package com.codeit.otboo.domain.weather.service;
 
+import com.codeit.otboo.domain.weather.dto.alert.HourlyPrecipitationStatus;
 import com.codeit.otboo.domain.weather.dto.alert.HourlyTemperature;
+import com.codeit.otboo.domain.weather.dto.alert.PrecipitationChangeSummary;
 import com.codeit.otboo.domain.weather.dto.alert.TemperatureGapSummary;
+import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -155,6 +158,103 @@ class WeatherAlertPolicyServiceTest {
             assertThat(result.maxAbsGap()).isEqualTo(5);
             assertThat(result.maxGap()).isEqualTo(-5);
             assertThat(result.maxGapTime()).isEqualTo(LocalTime.of(21, 0));
+        }
+    }
+
+    @Nested
+    @DisplayName("summarizePrecipitationChanges")
+    class SummarizePrecipitationChangesTest {
+
+        @Test
+        @DisplayName("강수가 없다가 비가 오기 시작하면 시작 시간과 타입을 반환한다")
+        void summarizePrecipitationChanges_returnsStartInfo_whenRainStarts() {
+            // given
+            List<HourlyPrecipitationStatus> statuses = List.of(
+                    new HourlyPrecipitationStatus(LocalTime.of(6, 0), PrecipitationType.NONE),
+                    new HourlyPrecipitationStatus(LocalTime.of(7, 0), PrecipitationType.NONE),
+                    new HourlyPrecipitationStatus(LocalTime.of(8, 0), PrecipitationType.RAIN),
+                    new HourlyPrecipitationStatus(LocalTime.of(9, 0), PrecipitationType.RAIN)
+            );
+
+            // when
+            PrecipitationChangeSummary result =
+                    weatherAlertPolicyService.summarizePrecipitationChanges(statuses);
+
+            // then
+            assertThat(result.startTime()).isEqualTo(LocalTime.of(8, 0));
+            assertThat(result.startType()).isEqualTo(PrecipitationType.RAIN);
+            assertThat(result.endTime()).isNull();
+            assertThat(result.endType()).isNull();
+            assertThat(result.shouldNotify()).isTrue();
+        }
+
+        @Test
+        @DisplayName("비가 오다가 그치면 종료 시간과 타입을 반환한다")
+        void summarizePrecipitationChanges_returnsEndInfo_whenRainEnds() {
+            // given
+            List<HourlyPrecipitationStatus> statuses = List.of(
+                    new HourlyPrecipitationStatus(LocalTime.of(6, 0), PrecipitationType.RAIN),
+                    new HourlyPrecipitationStatus(LocalTime.of(7, 0), PrecipitationType.RAIN),
+                    new HourlyPrecipitationStatus(LocalTime.of(8, 0), PrecipitationType.NONE)
+            );
+
+            // when
+            PrecipitationChangeSummary result =
+                    weatherAlertPolicyService.summarizePrecipitationChanges(statuses);
+
+            // then
+            assertThat(result.startTime()).isNull();
+            assertThat(result.startType()).isNull();
+            assertThat(result.endTime()).isEqualTo(LocalTime.of(8, 0));
+            assertThat(result.endType()).isEqualTo(PrecipitationType.RAIN);
+            assertThat(result.shouldNotify()).isTrue();
+        }
+
+        @Test
+        @DisplayName("강수가 시작됐다가 그치면 시작과 종료 정보를 모두 반환한다")
+        void summarizePrecipitationChanges_returnsStartAndEndInfo() {
+            // given
+            List<HourlyPrecipitationStatus> statuses = List.of(
+                    new HourlyPrecipitationStatus(LocalTime.of(6, 0), PrecipitationType.NONE),
+                    new HourlyPrecipitationStatus(LocalTime.of(7, 0), PrecipitationType.RAIN),
+                    new HourlyPrecipitationStatus(LocalTime.of(8, 0), PrecipitationType.RAIN),
+                    new HourlyPrecipitationStatus(LocalTime.of(9, 0), PrecipitationType.NONE)
+            );
+
+            // when
+            PrecipitationChangeSummary result =
+                    weatherAlertPolicyService.summarizePrecipitationChanges(statuses);
+
+            // then
+            assertThat(result.startTime()).isEqualTo(LocalTime.of(7, 0));
+            assertThat(result.startType()).isEqualTo(PrecipitationType.RAIN);
+            assertThat(result.endTime()).isEqualTo(LocalTime.of(9, 0));
+            assertThat(result.endType()).isEqualTo(PrecipitationType.RAIN);
+            assertThat(result.shouldNotify()).isTrue();
+            assertThat(result.content()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("하루 종일 강수 상태 변화가 없으면 empty summary를 반환한다")
+        void summarizePrecipitationChanges_returnsEmptySummary_whenNoChange() {
+            // given
+            List<HourlyPrecipitationStatus> statuses = List.of(
+                    new HourlyPrecipitationStatus(LocalTime.of(6, 0), PrecipitationType.NONE),
+                    new HourlyPrecipitationStatus(LocalTime.of(7, 0), PrecipitationType.NONE),
+                    new HourlyPrecipitationStatus(LocalTime.of(8, 0), PrecipitationType.NONE)
+            );
+
+            // when
+            PrecipitationChangeSummary result =
+                    weatherAlertPolicyService.summarizePrecipitationChanges(statuses);
+
+            // then
+            assertThat(result.startTime()).isNull();
+            assertThat(result.startType()).isNull();
+            assertThat(result.endTime()).isNull();
+            assertThat(result.endType()).isNull();
+            assertThat(result.shouldNotify()).isFalse();
+            assertThat(result.content()).isNull();
         }
     }
 }
