@@ -17,6 +17,10 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
+  servlet:
+    multipart:
+      maxFileSize: 10MB
+
   cloud:
     aws:
       credentials:
