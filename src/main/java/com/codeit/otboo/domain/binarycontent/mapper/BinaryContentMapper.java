@@ -3,7 +3,7 @@ package com.codeit.otboo.domain.binarycontent.mapper;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentInfoResponse;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.exception.FileConversionFail;
+import com.codeit.otboo.domain.binarycontent.exception.FileConversionException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +23,7 @@ public class BinaryContentMapper {
                     file.getSize()
             );
         } catch (IOException e) {
-            throw new FileConversionFail();
+            throw new FileConversionException();
         }
     }
 
