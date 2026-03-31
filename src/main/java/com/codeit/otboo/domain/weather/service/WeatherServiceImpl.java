@@ -19,6 +19,7 @@ import com.codeit.otboo.global.util.KmaGridConverter.GridResult;
 import com.codeit.otboo.global.util.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -173,6 +175,7 @@ public class WeatherServiceImpl implements WeatherService{
     @Scheduled(cron = "0 15 2,5,8,11,14,17,20,23 * * *")
     @Transactional
     public void updateCurrentWeather() {
+        // TODO: x, y를 기준으로 중복 필터링하고 반복문 들어가기
         List<LocationNameMap> locations = locationNameMapRepository.findAll();
 
         for(LocationNameMap location : locations) {

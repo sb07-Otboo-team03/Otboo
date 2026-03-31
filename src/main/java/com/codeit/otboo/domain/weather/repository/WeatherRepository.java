@@ -30,4 +30,21 @@ public interface WeatherRepository extends JpaRepository<Weather, UUID> {
     );
 
     void deleteByForecastedAtBefore(LocalDateTime forecastedAtBefore);
+
+    @Query("""
+        select w
+        from Weather w
+        where w.forecastedAt = :forecastedAt
+          and w.x = :x
+          and w.y = :y
+          and w.forecastAt between :start and :end
+        order by w.forecastAt asc
+    """)
+    List<Weather> findWeatherForAlertByRegion(
+            @Param("forecastedAt") LocalDateTime forecastedAt,
+            @Param("x") Integer x,
+            @Param("y") Integer y,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }
