@@ -31,13 +31,13 @@ import static org.mockito.Mockito.times;
 @ExtendWith(MockitoExtension.class)
 public class BinaryContentServiceImplTest {
     @Mock
-    BinaryContentRepository binaryContentRepository;
+    private BinaryContentRepository binaryContentRepository;
 
     @Mock
-    BinaryContentStorage binaryContentStorage;
+    private BinaryContentStorage binaryContentStorage;
 
     @InjectMocks
-    BinaryContentServiceImpl binaryContentService;
+    private BinaryContentServiceImpl binaryContentService;
 
     @Nested
     @DisplayName("바이너리 컨텐츠 업로드")
