@@ -6,6 +6,7 @@ import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
+import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
@@ -215,5 +216,18 @@ public class TestFixture {
             .title("test title")
             .content("test content")
             .level(NotificationLevel.INFO);
+    }
+
+    public FollowDto followDto() {
+        return new FollowDto(
+            UUID.randomUUID(),
+            LocalDateTime.now(),
+            UUID.randomUUID(),
+            "followerName",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "followeeName",
+            UUID.randomUUID()
+        );
     }
 }

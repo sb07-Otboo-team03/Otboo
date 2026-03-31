@@ -20,8 +20,8 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     int countByFolloweeId(UUID followeeId);
     boolean existsByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
 
-    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = ?1")
-    Set<UUID> findAllFollowerIdsByFolloweeId(UUID followeeId);
+    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId")
+    Set<UUID> findAllFollowerIdsByFolloweeId(@Param("followeeId") UUID followeeId);
 
     @Query("""
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
