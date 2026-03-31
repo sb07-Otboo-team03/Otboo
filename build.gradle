@@ -82,6 +82,9 @@ dependencies {
 
     // aop
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // retry
+    implementation 'org.springframework.retry:spring-retry'
 }
 
 tasks.named('test') {

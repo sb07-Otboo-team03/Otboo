@@ -17,10 +17,6 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
-  servlet:
-    multipart:
-      maxFileSize: 10MB
-
   cloud:
     aws:
       credentials:
@@ -53,3 +49,7 @@ sse:
   timeout: 300_000
 api:
   kma-api-key: ${KMA_API_KEY}
+
+servlet:
+  multipart:
+    maxFileSize: 10MB

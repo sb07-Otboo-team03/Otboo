@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.unit.DataSize;
 
 import java.util.UUID;
 
@@ -22,13 +23,14 @@ public class BinaryContentServiceImpl implements BinaryContentService {
     private final BinaryContentStorage binaryContentStorage;
 
     @Value("${servlet.multipart.maxFileSize}")
-    private long maxFileSize;
+    private DataSize maxFileSize;
 
     @Override
     @Transactional
     public BinaryContent upload(BinaryContentCreateRequest request) {
-        if(request.size() > maxFileSize){
-            throw new FileUploadMaximumSizeException(request.size(), maxFileSize);
+        long maxByteSize = maxFileSize.toBytes();
+        if(request.size() > maxByteSize){
+            throw new FileUploadMaximumSizeException(request.size(), maxByteSize);
         }
         BinaryContent binaryContent = new BinaryContent(request.name(), request.type(), request.size());
         BinaryContent infoSaved = binaryContentRepository.save(binaryContent);
