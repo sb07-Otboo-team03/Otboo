@@ -15,8 +15,20 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.Clothes
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.mapper.ClothesAttributeValueMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
+import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +43,12 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
     private final ClothesAttributeDefRepository clothesAttributeDefRepository;
     private final ClothesAttributeValueRepository clothesAttributeValueRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
     private final ClothesAttributeValueMapper clothesAttributeValueMapper;
     private final ClothesAttributeDefMapper clothesAttributeDefMapper;
+    private final NotificationMapper notificationMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -57,6 +73,11 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         clothesAttributeValueRepository.saveAll(valueList);
 
         List<String> list = valueList.stream().map(ClothesAttributeValue::getSelectableValue).toList();
+
+        notificationEvent(
+                "새로운 의상 속성이 추가되었어요.",
+                "내 의상에 [" + saveDef.getName() + "] 속성을 추가해보세요."
+        );
 
         return clothesAttributeDefMapper.toClothesAttributeDefResponse(saveDef, list);
     }
@@ -119,9 +140,9 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .map(clothesAttributeValue -> normalize(clothesAttributeValue.getSelectableValue()))
                 .collect(Collectors.toSet());
 
-        for(ClothesAttributeValue value : existingValues) {
+        for (ClothesAttributeValue value : existingValues) {
             String normalized = normalize(value.getSelectableValue());
-            if(requestSet.contains(normalized)) {
+            if (requestSet.contains(normalized)) {
                 value.updateIsActive(true);
             } else {
                 value.updateIsActive(false);
@@ -143,6 +164,11 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .filter(ClothesAttributeValue::isActive)
                 .map(ClothesAttributeValue::getSelectableValue).toList();
 
+        notificationEvent(
+                "의상 속성이 변경되었어요",
+                "[" + clothesAttributeDef.getName() + "] 속성을 확인해보세요."
+        );
+
         return clothesAttributeDefMapper
                 .toClothesAttributeDefResponse(clothesAttributeDef, list);
     }
@@ -154,6 +180,10 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         ClothesAttributeDef attributeDef = clothesAttributeDefRepository.findById(definition_id)
                 .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
 
+        notificationEvent(
+                "의상 속성이 삭제되었어요.",
+                "[" + attributeDef.getName() + "] 속성이 삭제되었어요."
+        );
         clothesAttributeDefRepository.delete(attributeDef);
     }
 
@@ -187,5 +217,30 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
             throw new ClothesAttributeValueDuplicateExceptionException();
         }
         return normalizedSet;
+    }
+
+    private void notificationEvent(String title, String content) {
+        List<User> allUsers = userRepository.findAll();
+
+        // receiver에 각 유저 지정
+        List<Notification> notifications = allUsers.stream()
+                .map(user -> Notification.builder()
+                        .title(title)
+                        .content(content)
+                        .level(NotificationLevel.INFO)
+                        .receiver(user)
+                        .build())
+                .toList();
+
+        notificationRepository.saveAll(notifications);
+
+        // 알림 이벤트 발행
+        for(Notification notification : notifications) {
+            eventPublisher.publishEvent(new SseEvent(
+                    notificationMapper.toEventDto(notification),
+                    notification.getCreatedAt()
+            ));
+        }
+
     }
 }

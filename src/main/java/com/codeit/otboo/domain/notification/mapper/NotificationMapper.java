@@ -5,6 +5,8 @@ import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 public class NotificationMapper {
 
@@ -17,5 +19,16 @@ public class NotificationMapper {
             notification.content(),
             notification.level()
         );
+    }
+
+    public NotificationDto toEventDto(Notification notification) {
+        return NotificationDto.builder()
+                .id(notification.getId())
+                .createdAt(notification.getCreatedAt())
+                .receiverId(notification.getReceiver().getId())
+                .title(notification.getTitle())
+                .content(notification.getContent())
+                .level(notification.getLevel())
+                .build();
     }
 }
