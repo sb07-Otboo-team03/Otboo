@@ -16,9 +16,6 @@ spring:
     init:
       mode: never
 
-api:
-  kma-api-key: dummyKey
-
 otboo:
   storage:
     type: mock
@@ -30,6 +27,10 @@ otboo:
     refresh-token-expiration: 1209600000
     issuer: codeit
 
+api:
+  kma-api-key: dummyKey
+  kakao-rest-api-key: dummyKey
+  
 servlet:
   multipart:
     maxFileSize: 10MB

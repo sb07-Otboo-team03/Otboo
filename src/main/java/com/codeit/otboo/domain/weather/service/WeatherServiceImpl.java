@@ -46,6 +46,8 @@ public class WeatherServiceImpl implements WeatherService{
     private final KmaWeatherMapper kmaWeatherMapper;
 
     private final TimeProvider timeProvider;
+    private final KakaoLocalUtil kakaoLocalUtil;
+    private final KmaGridConverter kmaGridConverter;
 
     @Override
     @Transactional
@@ -58,8 +60,8 @@ public class WeatherServiceImpl implements WeatherService{
         // 레포지토리에 저장되어 있지 않은 경우 KAKAO API를 사용
         // 레포지토리에 위도, 경도와 지역명을 매핑한 데이터 저장
         if (location == null) {
-            GridResult gridResult = KmaGridConverter.convertToGrid(latitude, longitude);
-            List<String> addressLevels = KakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H);
+            GridResult gridResult = kmaGridConverter.convertToGrid(latitude, longitude);
+            List<String> addressLevels = kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H);
 
             LocationNameMap locationNameMap = new LocationNameMap(
                     gridResult.nx(),
@@ -160,14 +162,14 @@ public class WeatherServiceImpl implements WeatherService{
     @Transactional(readOnly = true)
     public WeatherAPILocationResponse getLocation(double longitude, double latitude) {
 
-        GridResult gridResult = KmaGridConverter.convertToGrid(latitude, longitude);
+        GridResult gridResult = kmaGridConverter.convertToGrid(latitude, longitude);
 
         return new WeatherAPILocationResponse(
                 latitude,
                 longitude,
                 gridResult.nx(),
                 gridResult.ny(),
-                KakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H)
+                kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H)
         );
     }
 

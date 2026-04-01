@@ -25,7 +25,7 @@ public class KmaWeatherClient {
     public List<KmaWeatherItem> callWeatherApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
         KmaWeatherApiResponse response = restClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .scheme("http")
+                        .scheme("https")
                         .host("apis.data.go.kr")
                         .path("/1360000/VilageFcstInfoService_2.0/getVilageFcst")
                         .queryParam("serviceKey", kmaApiKey)
