@@ -4,7 +4,6 @@ import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequ
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
-import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
@@ -108,7 +107,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     // 옷 속성값 request DTO 들을 받아 DB 에 있는지 확인하고 있으면 엔티티 Set 으로 반환하는 메소드
     private ClothesAttributeSelection getClothesAttributeValues(List<ClothesAttributeRequest> requests){
-        if(requests.isEmpty()) return new ClothesAttributeSelection(Set.of(), List.of());
+        if(requests.isEmpty()) return new ClothesAttributeSelection(List.of(), List.of());
         Set<UUID> requestDefinitionIds = validateAndExtractDefinitionIds(requests);
         List<ClothesAttributeValue> allSelectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
                 new ArrayList<>(requestDefinitionIds));
@@ -121,10 +120,10 @@ public class ClothesServiceImpl implements ClothesService{
                         ),
         attributeValue -> attributeValue
                 ));
-        Set<ClothesAttributeValue> selectedValueList =  requests.stream()
+        List<ClothesAttributeValue> selectedValueList =  requests.stream()
                 .map(request -> getAttributeValueOrThrowByRequest(
                         request, selectableAttributeValueMap
-                )).collect(Collectors.toSet());
+                )).collect(Collectors.toList());
 
         return new ClothesAttributeSelection(selectedValueList, allSelectableValues);
     }
