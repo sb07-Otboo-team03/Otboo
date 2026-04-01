@@ -17,6 +17,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.Clothe
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.fixture.ClothesAttributeValueFixture;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
@@ -41,6 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -302,7 +304,7 @@ public class ClothesServiceImplTest {
                     ClothesType.ETC,
                     UserFixture.create(),
                     null,
-                    Set.of()
+                    List.of()
             );
             given(clothesRepository.findById(clothes.getId()))
                     .willReturn(Optional.of(clothes));
@@ -335,7 +337,7 @@ public class ClothesServiceImplTest {
 
         @Test
         @DisplayName("실패: 존재하지 않는 ID가 들어올 경우 예외가 발생한다")
-        void  deleteClothes_Fail_NotFound() {
+        void deleteClothes_Fail_NotFound() {
             // given
             UUID clothesId = UUID.randomUUID();
             given(clothesRepository.findById(clothesId))
@@ -347,6 +349,243 @@ public class ClothesServiceImplTest {
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CLOTHES_NOT_FOUND);
             then(clothesRepository).should(never()).deleteById(clothesId);
+        }
+    }
+
+    @Nested
+    @DisplayName("옷 수정")
+    class ClothesUpdate {
+        @Test
+        @DisplayName("성공: 유효한 파라미터가 name, type가 들어올 경우 옷 속성이 변경된다")
+        void update_clothes_Success(){
+            // given
+            Clothes clothes = ClothesFixture.create(
+                    "옷", ClothesType.ETC, UserFixture.create(), null, List.of());
+            ClothesUpdateRequest request = new ClothesUpdateRequest(
+                    clothes.getName(), clothes.getType(), List.of());
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(),
+                    clothes.getOwner().getId(),
+                    request.name(),
+                    null,
+                    request.type(),
+                    List.of()
+            );
+            given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
+            given(clothesMapper.toDto(clothes, null, Map.of())).willReturn(response);
+
+            // when
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.name()).isEqualTo(request.name());
+            assertThat(result.type()).isEqualTo(request.type());
+            assertThat(result.imageUrl()).isNull();
+            assertThat(result.attributes()).isEmpty();
+
+            then(clothesRepository).should().findById(clothes.getId());
+            then(clothesMapper).should().toDto(clothes, null, Map.of());
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentCreatedEvent.class));
+            then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
+            then(binaryContentService).should(never()).delete(any(UUID.class));
+            then(binaryContentUrlResolver).should(never()).resolve(any(UUID.class));
+        }
+
+        @Test
+        @DisplayName("성공: 이미지가 없는 옷에 이미지를 업로드 할 경우 새로운 이미지로 업로드 된다.")
+        void update_clothes_no_image_Success_with_image(){
+            // given
+            Clothes clothes = ClothesFixture.create(
+                    "옷", ClothesType.ETC, UserFixture.create(), null, List.of());
+            ClothesUpdateRequest request = new ClothesUpdateRequest(
+                    clothes.getName(), clothes.getType(), List.of());
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
+            String binaryContentUrl = "http://example.com/binary/test.png";
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(),
+                    clothes.getOwner().getId(),
+                    request.name(),
+                    binaryContentUrl,
+                    request.type(),
+                    List.of()
+            );
+            given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
+            given(binaryContentService.upload(imageRequest)).willReturn(binaryContent);
+            given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(binaryContentUrl);
+            given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
+
+            // when
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), imageRequest, request);
+
+            // then
+            assertThat(result.imageUrl()).isNotNull();
+            assertThat(result.attributes()).isEmpty();
+
+            then(clothesRepository).should().findById(clothes.getId());
+            then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
+            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
+            then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
+            then(binaryContentService).should(never()).delete(any(UUID.class));
+            then(binaryContentUrlResolver).should().resolve(any(UUID.class));
+        }
+
+        @Test
+        @DisplayName("성공: 이미지가 있는 옷에 이미지를 업로드 하지 않을 경우 기존 이미지가 유지된다.")
+        void update_clothes_no_image_Success_keep_image(){
+            // given
+            Clothes clothes = ClothesFixture.create(
+                    "옷", ClothesType.ETC, UserFixture.create(), BinaryContentFixture.create(), List.of());
+            ClothesUpdateRequest request = new ClothesUpdateRequest(
+                    clothes.getName(), clothes.getType(), List.of());
+            String binaryContentUrl = "http://example.com/binary/test.png";
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(),
+                    clothes.getOwner().getId(),
+                    request.name(),
+                    binaryContentUrl,
+                    request.type(),
+                    List.of()
+            );
+            given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
+            given(binaryContentUrlResolver.resolve(clothes.getBinaryContent().getId())).willReturn(binaryContentUrl);
+            given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
+
+            // when
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+
+            // then
+            assertThat(result.imageUrl()).isNotNull();
+            assertThat(result.attributes()).isEmpty();
+
+            then(clothesRepository).should().findById(clothes.getId());
+            then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentCreatedEvent.class));
+            then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
+            then(binaryContentService).should(never()).delete(any(UUID.class));
+            then(binaryContentUrlResolver).should().resolve(any(UUID.class));
+        }
+
+        @Test
+        @DisplayName("""
+            성공: 이미지가 있는 옷에 이미지가 업로드될 경우
+            기존 이미지가 삭제되고 요청 이미지로 업로드 된다
+        """)
+        void update_clothes_had_image_Success_with_image(){
+            // given
+            Clothes clothes = ClothesFixture.create(
+                    "옷", ClothesType.ETC, UserFixture.create(), BinaryContentFixture.create(), List.of());
+            ClothesUpdateRequest request = new ClothesUpdateRequest(
+                    clothes.getName(), clothes.getType(), List.of());
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
+            String binaryContentUrl = "http://example.com/binary/test.png";
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(),
+                    clothes.getOwner().getId(),
+                    request.name(),
+                    binaryContentUrl,
+                    request.type(),
+                    List.of()
+            );
+            given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
+            given(binaryContentService.upload(imageRequest)).willReturn(binaryContent);
+            given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(binaryContentUrl);
+            given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
+
+            // when
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), imageRequest, request);
+
+            // then
+            assertThat(result.imageUrl()).isNotNull();
+            assertThat(result.attributes()).isEmpty();
+
+            then(clothesRepository).should().findById(clothes.getId());
+            then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
+            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
+            then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
+            then(eventPublisher).should().publishEvent(any(BinaryContentDeletedEvent.class));
+            then(binaryContentService).should().delete(any(UUID.class));
+            then(binaryContentUrlResolver).should().resolve(any(UUID.class));
+        }
+
+        @Test
+        @DisplayName("성공: 유효한 UUID와 name, type, attributes가 들어올 경우 옷 속성이 변경된다")
+        void update_clothes_Success_with_attribute(){
+            // given
+            User user = UserFixture.create();
+            Clothes clothes = ClothesFixture.create(
+                    "옷",
+                    ClothesType.ETC,
+                    UserFixture.create(),
+                    null,
+                    List.of(
+                            ClothesAttributeValueFixture.create(UUID.randomUUID(), "선택값1"),
+                            ClothesAttributeValueFixture.create(UUID.randomUUID(), "선택값2"),
+                            ClothesAttributeValueFixture.create(UUID.randomUUID(), "선택값3")
+                    )
+            );
+            ClothesAttributeDef definition1 = ClothesAttributeDefFixture.create();
+            List<ClothesAttributeValue> selectableList1 = ClothesAttributeValueFixture.createList(definition1);
+            ClothesAttributeDef definition2 = ClothesAttributeDefFixture.create();
+            List<ClothesAttributeValue> selectableList2 = ClothesAttributeValueFixture.createList(definition2);
+            ClothesUpdateRequest request = new ClothesUpdateRequest(
+                    "옷 이름",
+                    ClothesType.ETC,
+                    List.of(new ClothesAttributeRequest(
+                                    definition1.getId(), selectableList1.get(0).getSelectableValue()),
+                            new ClothesAttributeRequest(
+                                    definition2.getId(), selectableList2.get(1).getSelectableValue())
+                    )
+            );
+            Map<UUID, List<String>> expectedGrouping = Map.of(
+                    definition1.getId(),
+                    selectableList1.stream().map(ClothesAttributeValue::getSelectableValue).toList(),
+                    definition2.getId(),
+                    selectableList2.stream().map(ClothesAttributeValue::getSelectableValue).toList()
+            );
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(),
+                    clothes.getOwner().getId(),
+                    clothes.getName(),
+                    null,
+                    clothes.getType(),
+                    request.attributes().stream().map(
+                            attributeValueRequest -> new ClothesAttributeWithDefResponse(
+                                    attributeValueRequest.definitionId(),
+                                    "속성",
+                                    expectedGrouping.get(attributeValueRequest.definitionId()),
+                                    attributeValueRequest.value()
+                            )
+                    ).toList()
+            );
+
+            given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
+            given(clothesAttributeValueRepository.findByAttributeDefIdIn(anyList()))
+                    .willReturn(Stream.concat(selectableList1.stream(), selectableList2.stream()).toList());
+            given(clothesMapper.toDto(clothes, null, expectedGrouping))
+                    .willReturn(response);
+
+            // when
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+
+            // then
+            assertThat(result.attributes()).hasSize(2);
+            result.attributes().forEach(depResponse ->
+                    assertThat(depResponse.selectableValue()).isEqualTo(expectedGrouping.get(depResponse.definitionId()))
+            );
+            then(clothesAttributeValueRepository).should(times(1)).findByAttributeDefIdIn(
+                    argThat(list -> list.size() == request.attributes().size() &&
+                            list.containsAll(List.of(definition1.getId(), definition2.getId()))
+                    )
+            );
+            then(clothesMapper).should().toDto(clothes, null, expectedGrouping);
         }
     }
 }
