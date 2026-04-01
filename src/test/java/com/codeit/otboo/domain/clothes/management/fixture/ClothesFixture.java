@@ -11,7 +11,7 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,7 +25,7 @@ public class ClothesFixture {
                 ClothesType.ETC,
                 UserFixture.create(),
                 BinaryContentFixture.create(),
-                Set.of(
+                List.of(
                         ClothesAttributeValueFixture.create(),
                         ClothesAttributeValueFixture.create(),
                         ClothesAttributeValueFixture.create()
@@ -40,7 +40,7 @@ public class ClothesFixture {
             ClothesType type,
             User user,
             BinaryContent binaryContent,
-            Set<ClothesAttributeValue> values){
+            List<ClothesAttributeValue> values){
         Clothes newClothes = new Clothes(
                 name,
                 type,
@@ -64,7 +64,7 @@ public class ClothesFixture {
                         .map(attributeRequest ->
                                 ClothesAttributeValueFixture.create(
                                         attributeRequest.definitionId(), attributeRequest.value())
-                        ).collect(Collectors.toSet())
+                        ).collect(Collectors.toList())
         );
         ReflectionTestUtils.setField(newClothes, "id", UUID.randomUUID());
         return newClothes;
@@ -84,7 +84,7 @@ public class ClothesFixture {
                     .map(attributeRequest ->
                         ClothesAttributeValueFixture.create(
                                 attributeRequest.definitionId(), attributeRequest.value())
-                    ).collect(Collectors.toSet())
+                    ).collect(Collectors.toList())
         );
         ReflectionTestUtils.setField(newClothes, "id", UUID.randomUUID());
         return newClothes;

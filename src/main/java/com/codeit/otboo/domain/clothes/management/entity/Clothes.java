@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -47,12 +48,11 @@ public class Clothes extends BaseUpdatableEntity {
            BinaryContent binaryContent,
            List<ClothesAttributeValue> values
     ) {
-        sortValues();
         this.name = name;
         this.type = type;
         this.owner = owner;
         this.binaryContent = binaryContent;
-        this.values = values;
+        this.values = sortValues(values);
     }
 
     public void updateClothes(
@@ -61,16 +61,18 @@ public class Clothes extends BaseUpdatableEntity {
             BinaryContent binaryContent,
             List<ClothesAttributeValue> values){
         super.touch();
-        sortValues();
         this.name = name;
         this.type = type;
         this.binaryContent = binaryContent;
         this.values.clear();
-        this.values.addAll(values);
+        this.values.addAll(sortValues(values));
     }
-    private void sortValues(){
-        values.sort(Comparator.comparing(
+    private List<ClothesAttributeValue> sortValues(List<ClothesAttributeValue> sortBeforeValues){
+        if(sortBeforeValues == null) return List.of();
+        List<ClothesAttributeValue> sortList = new ArrayList<>(sortBeforeValues);
+        sortList.sort(Comparator.comparing(
                 attributeValue -> attributeValue.getAttributeDef().getName())
         );
+        return sortList;
     }
 }
