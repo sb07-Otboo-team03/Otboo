@@ -334,7 +334,7 @@ public class ClothesServiceImplTest {
         }
 
         @Test
-        @DisplayName("실패: DB존재하지 않는 ID가 들어올 경우 예외가 발생한다")
+        @DisplayName("실패: 존재하지 않는 ID가 들어올 경우 예외가 발생한다")
         void  deleteClothes_Fail_NotFound() {
             // given
             UUID clothesId = UUID.randomUUID();
