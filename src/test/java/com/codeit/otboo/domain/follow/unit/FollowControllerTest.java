@@ -1,11 +1,10 @@
-package com.codeit.otboo.domain.follow.Unit;
+package com.codeit.otboo.domain.follow.unit;
 
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.follow.controller.FollowController;
 import com.codeit.otboo.domain.follow.service.FollowService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

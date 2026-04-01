@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.follow.Unit;
+package com.codeit.otboo.domain.follow.unit;
 
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
