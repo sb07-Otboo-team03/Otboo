@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
@@ -34,10 +35,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -188,6 +194,40 @@ public class ClothesControllerTest {
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+    }
+
+    @Nested
+    @DisplayName("옷 삭제")
+    class ClothesDelete {
+        @Test
+        @DisplayName("성공: 유효한 UUID 가 들어올경우 204로 응답한다")
+        void deleteClothes_Success() throws Exception {
+            // given
+            UUID clothesId = UUID.randomUUID();
+
+            // when & then
+            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId)
+                            .with(csrf())
+                            .with(user(userDetails)))
+                    .andExpect(status().isNoContent());
+            then(clothesService).should().deleteClothes(eq(clothesId));
+        }
+
+        @Test
+        @DisplayName("실패: 존재하지 않는 UUID 가 들어올 경우 404 에러가 발생한다")
+        void deleteClothes_Fail_NotFound() throws Exception {
+            // given
+            UUID clothesId = UUID.randomUUID();
+            willThrow(new ClothesNotFoundException(clothesId))
+                    .given(clothesService)
+                    .deleteClothes(clothesId);
+
+            // when & then
+            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId)
+                            .with(csrf())
+                            .with(user(userDetails)))
+                    .andExpect(status().isNotFound());
         }
     }
 }
