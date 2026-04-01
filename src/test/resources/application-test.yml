@@ -29,3 +29,4 @@ otboo:
 
 api:
   kma-api-key: dummyKey
+  kakao-rest-api-key: dummyKey
