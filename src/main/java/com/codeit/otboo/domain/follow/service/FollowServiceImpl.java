@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.follow.service;
 
-import static com.codeit.otboo.domain.user.entity.QUser.user;
-
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowDto;
