@@ -21,6 +21,7 @@ import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -76,7 +77,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         notificationEvent(
                 "새로운 의상 속성이 추가되었어요.",
                 "내 의상에 [" + saveDef.getName() + "] 속성을 추가해보세요."
-                );
+        );
 
         return clothesAttributeDefMapper.toClothesAttributeDefResponse(saveDef, list);
     }
@@ -165,7 +166,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
         notificationEvent(
                 "의상 속성이 변경되었어요",
-                "[" +clothesAttributeDef.getName()+ "] 속성을 확인해보세요."
+                "[" + clothesAttributeDef.getName() + "] 속성을 확인해보세요."
         );
 
         return clothesAttributeDefMapper
@@ -218,27 +219,28 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         return normalizedSet;
     }
 
-    private void notificationEvent(String title, String content){
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(UserNotFoundException::new);
+    private void notificationEvent(String title, String content) {
+        List<User> allUsers = userRepository.findAll();
 
-        Notification notification = Notification.builder()
-                .title(title)
-                .content(content)
-                .level(NotificationLevel.INFO)
-                .receiver(currentUser)
-                .build();
-        notificationRepository.save(notification);
+        // receiver에 각 유저 지정
+        List<Notification> notifications = allUsers.stream()
+                .map(user -> Notification.builder()
+                        .title(title)
+                        .content(content)
+                        .level(NotificationLevel.INFO)
+                        .receiver(user)
+                        .build())
+                .toList();
 
-        NotificationDto eventDto = notificationMapper.toEventDto(notification);
+        notificationRepository.saveAll(notifications);
 
-        log.debug("eventId: " + notification.getId());
-        log.debug("eventReceiverId: " + notification.getReceiver().getId());
+        // 알림 이벤트 발행
+        for(Notification notification : notifications) {
+            eventPublisher.publishEvent(new SseEvent(
+                    notificationMapper.toEventDto(notification),
+                    notification.getCreatedAt()
+            ));
+        }
 
-        eventPublisher.publishEvent(new ClothesAttributeCreateEvent(
-                eventDto,
-                notification.getCreatedAt()
-        ));
     }
 }
