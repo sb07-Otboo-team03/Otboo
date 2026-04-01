@@ -24,3 +24,13 @@ spring:
 
 api:
   kma-api-key: dummyKey
+
+otboo:
+  storage:
+    type: mock
+    s3:
+      path: binary
+
+servlet:
+  multipart:
+    maxFileSize: 10MB
