@@ -13,6 +13,5 @@ public interface ClothesAttributeValueRepository extends JpaRepository<ClothesAt
 
     List<ClothesAttributeValue> findByAttributeDefId(UUID definitionId);
 
-    Optional<ClothesAttributeValue> findByAttributeDefIdAndSelectableValue(UUID definitionId, String value);
     List<ClothesAttributeValue> findByAttributeDefIdIn(List<UUID> definitionIds);
 }
