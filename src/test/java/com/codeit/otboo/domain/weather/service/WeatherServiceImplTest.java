@@ -55,6 +55,10 @@ class WeatherServiceImplTest {
     private KmaWeatherMapper kmaWeatherMapper;
     @Mock
     private TimeProvider timeProvider;
+    @Mock
+    private KmaGridConverter kmaGridConverter;
+    @Mock
+    private KakaoLocalUtil kakaoLocalUtil;
 
     private LocalDateTime setFixedTime(int year, int month, int day, int hour, int minute) {
         LocalDateTime fixedNow = LocalDateTime.of(year, month, day, hour, minute);
@@ -82,7 +86,6 @@ class WeatherServiceImplTest {
                     .thenReturn(Optional.empty());
 
             LocationNameMap savedLocation = mock(LocationNameMap.class);
-
             when(locationNameMapRepository.save(any(LocationNameMap.class)))
                     .thenReturn(savedLocation);
 
@@ -90,9 +93,14 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
-            // addWeathers()
-            // 처음에는 새로운 지역이 들어와서 값이 없으므로 빈 값을 전달
-            // 두번째는 날씨 데이터를 추가한 뒤에 호출되어 날씨 객체 값을 전달
+            // Grid & 지역 정보
+            when(kmaGridConverter.convertToGrid(latitude, longitude))
+                    .thenReturn(new GridResult(x, y));
+
+            when(kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H))
+                    .thenReturn(List.of("경기도", "부천시 오정구", "고강본동", ""));
+
+            // 날씨 조회 여부 (처음 없음 → 이후 존재)
             for (int i = 0; i < 4; i++) {
                 when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
                         eq(forecastedAt),
@@ -115,52 +123,44 @@ class WeatherServiceImplTest {
             when(kmaWeatherMapper.toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false)))
                     .thenReturn(mappedWeathers);
 
-            // 어제 습도, 온도 값 저장
+            // 어제 날씨
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
             when(yesterdayHourlyWeatherRepository.findByDateAndHour(any(), any()))
                     .thenReturn(Optional.of(yesterdayHourlyWeather));
 
-            // 반환 값 dto 변환
+            // DTO 변환
             List<WeatherResponse> expected = List.of(mock(WeatherResponse.class));
             when(weatherMapper.toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather)))
                     .thenReturn(expected);
 
-            // 유틸 클래스의 스태틱 메서드를 MockStatic으로 호출
-            try (MockedStatic<KmaGridConverter> gridMock = mockStatic(KmaGridConverter.class);
-                 MockedStatic<KakaoLocalUtil> kakaoMock = mockStatic(KakaoLocalUtil.class)) {
+            // when
+            List<WeatherResponse> result = weatherService.getAll(longitude, latitude);
 
-                gridMock.when(() -> KmaGridConverter.convertToGrid(latitude, longitude))
-                        .thenReturn(new GridResult(57, 126));
+            // then
+            assertThat(result).isEqualTo(expected);
 
-                kakaoMock.when(() -> KakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H))
-                        .thenReturn(List.of("경기도", "부천시 오정구", "고강본동", ""));
+            verify(kmaGridConverter, times(1)).convertToGrid(latitude, longitude);
+            verify(kakaoLocalUtil, times(1)).getAddressLevels(longitude, latitude, KakaoRegionType.H);
 
-                // when
-                List<WeatherResponse> result = weatherService.getAll(longitude, latitude);
+            verify(locationNameMapRepository, times(1)).findByLongitudeAndLatitude(longitude, latitude);
+            verify(locationNameMapRepository, times(1)).save(any(LocationNameMap.class));
 
-                // then
-                assertThat(result).isEqualTo(expected);
-
-                verify(locationNameMapRepository, times(1)).findByLongitudeAndLatitude(longitude, latitude);
-                verify(locationNameMapRepository, times(1)).save(any(LocationNameMap.class));
-
-                for (int i = 0; i < 4; i++) {
-                    verify(weatherRepository, times(2))
-                            .findByForecastedAtAndForecastAtAndXAndY(
-                                    eq(forecastedAt),
-                                    eq(forecastAt.plusDays(i)),
-                                    eq(x),
-                                    eq(y)
-                            );
-                }
-
-                verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
-                verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
-                verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
-
-                verify(yesterdayHourlyWeatherRepository, times(1)).findByDateAndHour(any(), any());
-                verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
+            for (int i = 0; i < 4; i++) {
+                verify(weatherRepository, times(2))
+                        .findByForecastedAtAndForecastAtAndXAndY(
+                                eq(forecastedAt),
+                                eq(forecastAt.plusDays(i)),
+                                eq(x),
+                                eq(y)
+                        );
             }
+
+            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
+            verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
+            verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
+
+            verify(yesterdayHourlyWeatherRepository, times(1)).findByDateAndHour(any(), any());
+            verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
         }
 
         @Test
@@ -424,27 +424,24 @@ class WeatherServiceImplTest {
         GridResult gridResult = new GridResult(57, 126);
         List<String> addressLevels = List.of("경기도", "부천시 오정구", "고강본동", "");
 
-        try (MockedStatic<KmaGridConverter> gridMock = mockStatic(KmaGridConverter.class);
-             MockedStatic<KakaoLocalUtil> kakaoMock = mockStatic(KakaoLocalUtil.class)) {
+        // Grid & 주소 mock
+        when(kmaGridConverter.convertToGrid(latitude, longitude))
+                .thenReturn(gridResult);
 
-            gridMock.when(() -> KmaGridConverter.convertToGrid(latitude, longitude))
-                    .thenReturn(gridResult);
+        when(kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H))
+                .thenReturn(addressLevels);
 
-            kakaoMock.when(() -> KakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H))
-                    .thenReturn(addressLevels);
+        // when
+        WeatherAPILocationResponse result = weatherService.getLocation(longitude, latitude);
 
-            // when
-            WeatherAPILocationResponse result = weatherService.getLocation(longitude, latitude);
+        // then
+        assertThat(result.latitude()).isEqualTo(latitude);
+        assertThat(result.longitude()).isEqualTo(longitude);
+        assertThat(result.x()).isEqualTo(57);
+        assertThat(result.y()).isEqualTo(126);
 
-            // then
-            assertThat(result.latitude()).isEqualTo(latitude);
-            assertThat(result.longitude()).isEqualTo(longitude);
-            assertThat(result.x()).isEqualTo(57);
-            assertThat(result.y()).isEqualTo(126);
-
-            gridMock.verify(() -> KmaGridConverter.convertToGrid(latitude, longitude));
-            kakaoMock.verify(() -> KakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H));
-        }
+        verify(kmaGridConverter).convertToGrid(latitude, longitude);
+        verify(kakaoLocalUtil).getAddressLevels(longitude, latitude, KakaoRegionType.H);
     }
 
     @Nested
