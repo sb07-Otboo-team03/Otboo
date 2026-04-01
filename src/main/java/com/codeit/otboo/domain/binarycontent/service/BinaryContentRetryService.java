@@ -23,14 +23,12 @@ public class BinaryContentRetryService {
             backoff = @Backoff(delay = 2000) // 2초 간격
     )
     public void upload(UUID binaryContentId, byte[] bytes) {
-        log.info("파일 업로드 시도 id={}", binaryContentId);
         binaryContentStorage.put(binaryContentId, bytes);
         binaryContentStatusService.updateSuccess(binaryContentId);
     }
 
     @Recover
     public void recover(Exception e, UUID binaryContentId) {
-        log.error("파일 업로드 최종 실패 id={}", binaryContentId, e);
         log.error(
                 "Upload Fail | BinaryContentId={} | Error={}",
                 binaryContentId,
