@@ -51,8 +51,10 @@ class FollowServiceImplTest {
 
     private final TestFixture fixture = new TestFixture();
 
-    @DisplayName("팔로우 생성 성공")
-    FollowCreateRequest createFollow() {
+    @Test
+    @DisplayName("팔로우 생성 실패")
+    void createFollow_fail() {
+
         // given
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
@@ -67,20 +69,6 @@ class FollowServiceImplTest {
 
         Follow follow = new Follow(follower, followee);
 
-        return request;
-    }
-
-    private FollowCreateRequest createRequest() {
-        return new FollowCreateRequest(
-            UUID.randomUUID(),
-            UUID.randomUUID()
-        );
-    }
-
-    @Test
-    void createFollow_fail() {
-        FollowCreateRequest request = createFollow();
-
         // given
         when(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
             .thenReturn(Optional.of(mock(Follow.class)));
@@ -91,8 +79,12 @@ class FollowServiceImplTest {
     }
 
     @Test
+    @DisplayName("팔로우 생성 성공")
     void createFollow_success() {
-        FollowCreateRequest request = createRequest();
+        FollowCreateRequest request = new FollowCreateRequest(
+            UUID.randomUUID(),
+            UUID.randomUUID()
+        );
 
         User user = fixture.mockUserWithProfile(LocalDateTime.now());
 
