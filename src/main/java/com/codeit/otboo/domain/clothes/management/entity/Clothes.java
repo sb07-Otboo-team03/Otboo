@@ -40,4 +40,17 @@ public class Clothes extends BaseUpdatableEntity {
             inverseJoinColumns = @JoinColumn(name = "attribute_value_id")
     )
     private Set<ClothesAttributeValue> values;
+
+    public void updateClothes(
+            String name,
+            ClothesType type,
+            BinaryContent binaryContent,
+            Set<ClothesAttributeValue> values){
+        super.touch();
+        this.name = name;
+        this.type = type;
+        this.binaryContent = binaryContent;
+        this.values.clear();
+        this.values.addAll(values);
+    }
 }

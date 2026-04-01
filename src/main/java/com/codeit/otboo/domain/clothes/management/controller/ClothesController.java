@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.management.controller;
 import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
 import jakarta.validation.Valid;
@@ -40,5 +41,19 @@ public class ClothesController {
     public ResponseEntity<Void> deleteClothes(@PathVariable UUID clothesId){
         clothesService.deleteClothes(clothesId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{clothesId}")
+    public ResponseEntity<ClothesResponse> updateClothes(
+            @PathVariable UUID clothesId,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @Valid @RequestPart ClothesUpdateRequest request){
+        System.out.println("이번엔 수정된 속성만 들어오는지 전부 들어오는지 확인"+request.attributes());
+        ClothesResponse response = clothesService.updateClothes(
+                clothesId,
+                binaryContentMapper.toRequestDto(image),
+                request
+        );
+        return ResponseEntity.ok(response);
     }
 }

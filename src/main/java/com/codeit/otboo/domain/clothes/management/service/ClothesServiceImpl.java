@@ -12,6 +12,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAt
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
@@ -65,6 +66,41 @@ public class ClothesServiceImpl implements ClothesService{
         );
         return clothesMapper.toDto(
                 savedClothes,
+                binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
+                groupSelectableValuesByAttributeId(clothesAttributeSelection.allSelectableValues())
+        );
+    }
+
+    @Override
+    @Transactional
+    public ClothesResponse updateClothes(
+            UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
+        Clothes clothes = getById(clothesId);
+        BinaryContent oldBinaryContent = clothes.getBinaryContent();
+        BinaryContent newBinaryContent;
+        BinaryContent binaryContent = oldBinaryContent;
+
+        if(imageRequest != null){
+            if(oldBinaryContent != null){
+                binaryContentService.delete(oldBinaryContent.getId());
+                eventPublisher.publishEvent(
+                    new BinaryContentDeletedEvent(oldBinaryContent.getId())
+                );
+            }
+            newBinaryContent = binaryContentService.upload(imageRequest);
+            eventPublisher.publishEvent(
+                new BinaryContentCreatedEvent(newBinaryContent.getId(), imageRequest.data())
+            );
+            binaryContent = newBinaryContent;
+        }
+
+        ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
+        clothes.updateClothes(
+            request.name(), request.type(), binaryContent, clothesAttributeSelection.selectedValues()
+        );
+
+        return clothesMapper.toDto(
+                clothes,
                 binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
                 groupSelectableValuesByAttributeId(clothesAttributeSelection.allSelectableValues())
         );
