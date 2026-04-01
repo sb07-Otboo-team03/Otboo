@@ -16,9 +16,6 @@ spring:
     init:
       mode: never
 
-api:
-  kma-api-key: dummyKey
-
 otboo:
   storage:
     type: mock
