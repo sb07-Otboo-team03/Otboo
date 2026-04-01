@@ -13,7 +13,6 @@ import com.codeit.otboo.domain.directmessage.util.TestFixture;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
-import com.codeit.otboo.domain.notification.exception.notification.DuplicateNotificationException;
 import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
