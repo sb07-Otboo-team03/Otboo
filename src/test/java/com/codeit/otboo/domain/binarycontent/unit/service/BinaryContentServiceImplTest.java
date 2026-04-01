@@ -131,7 +131,7 @@ public class BinaryContentServiceImplTest {
             assertThatThrownBy(() -> binaryContentService.download(binaryContentId))
                     .isInstanceOf(BinaryContentNotFoundException.class)
                     .extracting("errorCode")
-                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUNT);
+                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
             then(binaryContentStorage).should(never())
                     .download(any());
         }
@@ -169,7 +169,7 @@ public class BinaryContentServiceImplTest {
             assertThatThrownBy(() -> binaryContentService.getInfo(binaryContentId))
                     .isInstanceOf(BinaryContentNotFoundException.class)
                     .extracting("errorCode")
-                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUNT);
+                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
         }
     }
 
@@ -208,7 +208,7 @@ public class BinaryContentServiceImplTest {
             assertThatThrownBy(() -> binaryContentService.delete(binaryContentId))
                     .isInstanceOf(BinaryContentNotFoundException.class)
                     .extracting("errorCode")
-                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUNT);
+                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
             then(binaryContentStorage).should(never())
                     .delete(any());
             then(binaryContentRepository).should(never())

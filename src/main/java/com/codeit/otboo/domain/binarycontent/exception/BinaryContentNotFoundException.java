@@ -9,11 +9,11 @@ import java.util.UUID;
 
 public class BinaryContentNotFoundException extends BinaryContentException {
     public BinaryContentNotFoundException(){
-        super(ErrorCode.BINARY_CONTENT_NOT_FOUNT, HttpStatus.NOT_FOUND);
+        super(ErrorCode.BINARY_CONTENT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     public BinaryContentNotFoundException(UUID binaryContentId) {
         super(
-            ErrorCode.BINARY_CONTENT_NOT_FOUNT,
+            ErrorCode.BINARY_CONTENT_NOT_FOUND,
             Map.of("binaryContentId", binaryContentId.toString()),
             HttpStatus.NOT_FOUND
         );
