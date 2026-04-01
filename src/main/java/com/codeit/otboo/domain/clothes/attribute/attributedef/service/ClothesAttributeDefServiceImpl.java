@@ -22,6 +22,7 @@ import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -220,7 +221,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     private void notificationEvent(String title, String content){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(()->new RuntimeException("User Not Fount"));
+                .orElseThrow(UserNotFoundException::new);
 
         Notification notification = Notification.builder()
                 .title(title)
