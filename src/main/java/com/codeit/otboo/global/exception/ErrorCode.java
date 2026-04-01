@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS_EMAIL("이미 존재하는 이메일입니다."),
 
     // Clothes
+    CLOTHES_NOT_FOUND("옷을 찾을 수 없습니다."),
     CLOTHES_DUPLICATED_VALUE("하나의 속성에 여러 개의 값을 가질 수 없습니다."),
 
     // ClothesAttribute

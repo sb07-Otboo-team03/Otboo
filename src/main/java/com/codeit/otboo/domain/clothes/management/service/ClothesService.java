@@ -4,9 +4,13 @@ import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequ
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 
+import java.util.UUID;
+
 public interface ClothesService {
     ClothesResponse createClothes(
             BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest clothesCreateRequest
     );
+
+    void deleteClothes(UUID clothesId);
 }

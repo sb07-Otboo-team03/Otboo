@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.management.unit.service;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -19,6 +20,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
 import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
@@ -38,10 +40,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -288,6 +287,66 @@ public class ClothesServiceImplTest {
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CLOTHES_ATTRIBUTE_VALUES_NOT_FOUND);
             then(clothesRepository).should(never()).save(any(Clothes.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("옷 삭제")
+    class ClothesDelete {
+        @Test
+        @DisplayName("성공: 이미지가 없는 옷의 ID가 들어올 경우 옷이 삭제된다")
+        void deleteClothes_Success() {
+            // given
+            Clothes clothes = ClothesFixture.create(
+                    "옷",
+                    ClothesType.ETC,
+                    UserFixture.create(),
+                    null,
+                    Set.of()
+            );
+            given(clothesRepository.findById(clothes.getId()))
+                    .willReturn(Optional.of(clothes));
+
+            // when
+            clothesService.deleteClothes(clothes.getId());
+
+            // then
+            then(clothesRepository).should().deleteById(clothes.getId());
+            then(binaryContentService).should(never()).delete(any(UUID.class));
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
+        }
+
+        @Test
+        @DisplayName("성공: 옷의 ID 가 들어올 경우 옷과 옷의 이미지가 삭제된다")
+        void deleteClothes_Success_with_image() {
+            // given
+            Clothes clothes = ClothesFixture.create();
+            given(clothesRepository.findById(clothes.getId()))
+                    .willReturn(Optional.of(clothes));
+
+            // when
+            clothesService.deleteClothes(clothes.getId());
+
+            // then
+            then(clothesRepository).should().deleteById(clothes.getId());
+            then(binaryContentService).should().delete(any(UUID.class));
+            then(eventPublisher).should().publishEvent(any(BinaryContentDeletedEvent.class));
+        }
+
+        @Test
+        @DisplayName("실패: 존재하지 않는 ID가 들어올 경우 예외가 발생한다")
+        void  deleteClothes_Fail_NotFound() {
+            // given
+            UUID clothesId = UUID.randomUUID();
+            given(clothesRepository.findById(clothesId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> clothesService.deleteClothes(clothesId))
+                    .isInstanceOf(ClothesNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.CLOTHES_NOT_FOUND);
+            then(clothesRepository).should(never()).deleteById(clothesId);
         }
     }
 }

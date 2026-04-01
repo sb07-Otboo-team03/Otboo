@@ -19,4 +19,10 @@ public class BinaryContentEventListener {
     public void handleCreated(BinaryContentCreatedEvent event){
         binaryContentRetryService.upload(event.binaryContentId(), event.bytes());
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleDeleted(BinaryContentDeletedEvent event){
+        binaryContentRetryService.delete(event.binaryContentId());
+    }
 }
