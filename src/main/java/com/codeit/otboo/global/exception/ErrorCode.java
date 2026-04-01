@@ -30,6 +30,7 @@ public enum ErrorCode {
     FEED_NOT_FOUND("해당 피드를 찾을 수 없습니다."),
 
     // Follow
+    FOLLOW_NOT_FOUND("팔로우를 찾을 수 없습니다."),
     DUPLICATE_FOLLOW("이미 존재하는 팔로우입니다."),
 
     // Like

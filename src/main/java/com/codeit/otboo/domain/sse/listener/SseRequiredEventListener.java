@@ -42,15 +42,8 @@ public class SseRequiredEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedCreatedEvent event) {
         for(UUID receiverId : event.receiverIds()) {
-            NotificationDto notification = NotificationDto.builder()
-                    .id(event.feedId())
-                    .createdAt(event.createdAt())
-                    .receiverId(receiverId)
-                    .title(event.authorName() + "님이 새로운 피드를 작성했어요.")
-                    .content(event.content())
-                    .level(NotificationLevel.INFO)
-                    .build();
-            sseService.send(Set.of(receiverId), "notifications", notification);
+            NotificationDto notificationDto = NotificationDto.from(event, receiverId);
+            sseService.send(Set.of(receiverId), "notifications", notificationDto);
         }
     }
 }

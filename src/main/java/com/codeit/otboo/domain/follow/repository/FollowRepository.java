@@ -20,8 +20,8 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     int countByFolloweeId(UUID followeeId);
     boolean existsByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
 
-    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = ?1")
-    Set<UUID> findAllFollowerIdsByFolloweeId(UUID followeeId);
+    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId")
+    Set<UUID> findAllFollowerIdsByFolloweeId(@Param("followeeId") UUID followeeId);
 
     @Query("""
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
@@ -42,10 +42,13 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
             LEFT JOIN ep.binaryContent epb
        WHERE e.id = :followeeId
            AND ep.name = '%:nameLike%'
-           AND ( :cursor IS NULL
-               OR f.createdAt < :cursor
-               OR (f.createdAt = :cursor
-                 AND (:idAfter IS NULL OR f.id < :idAfter)
+           AND ( CAST(:cursor AS timestamp) IS NULL
+               OR (
+                   f.createdAt < :cursor
+                   OR (
+                       f.createdAt = :cursor
+                      AND (CAST(:idAfter AS uuid) IS NULL OR f.id < :idAfter)
+                   )
                )
            )
        ORDER BY f.createdAt DESC, f.id DESC
