@@ -28,12 +28,30 @@ public class BinaryContentRetryService {
     }
 
     @Recover
-    public void recover(Exception e, UUID binaryContentId) {
+    public void recoverUpload(Exception e, UUID binaryContentId, byte[] bytes) {
         log.error(
                 "Upload Fail | BinaryContentId={} | Error={}",
                 binaryContentId,
                 e.getMessage()
         );
         binaryContentStatusService.updateFail(binaryContentId);
+    }
+
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // 2초 간격
+    )
+    public void delete(UUID binaryContentId) {
+        binaryContentStorage.delete(binaryContentId);
+    }
+
+    @Recover
+    public void recoverDelete(Exception e, UUID binaryContentId) {
+        log.error(
+                "Delete Fail | BinaryContentId={} | Error={}",
+                binaryContentId,
+                e.getMessage()
+        );
     }
 }
