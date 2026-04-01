@@ -14,6 +14,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.Cloth
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
+import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
 import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
@@ -146,6 +147,6 @@ public class ClothesServiceImpl implements ClothesService{
 
     private Clothes getById(UUID clothesId){
         return clothesRepository.findById(clothesId).orElseThrow(
-                () -> new BinaryContentNotFoundException(clothesId));
+                () -> new ClothesNotFoundException(clothesId));
     }
 }

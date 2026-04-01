@@ -8,12 +8,12 @@ import java.util.UUID;
 
 public class ClothesNotFoundException extends ClothesException{
     public ClothesNotFoundException(){
-        super(ErrorCode.BINARY_CONTENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        super(ErrorCode.CLOTHES_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     public ClothesNotFoundException(UUID clothesId) {
         super(
-                ErrorCode.BINARY_CONTENT_NOT_FOUND,
-                Map.of("binaryContentId", clothesId.toString()),
+                ErrorCode.CLOTHES_NOT_FOUND,
+                Map.of("clothesId", clothesId.toString()),
                 HttpStatus.NOT_FOUND
         );
     }
