@@ -17,6 +17,21 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      region:
+        static: ${AWS_REGION}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+
+otboo:
+  storage:
+    type: s3
+    s3:
+      path: binary
 
 management:
   endpoints:
@@ -34,3 +49,7 @@ sse:
   timeout: 300_000
 api:
   kma-api-key: ${KMA_API_KEY}
+
+servlet:
+  multipart:
+    maxFileSize: 10MB

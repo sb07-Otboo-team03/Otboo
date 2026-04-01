@@ -1,0 +1,46 @@
+package com.codeit.otboo.domain.binarycontent.unit.event;
+
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentEventListener;
+import com.codeit.otboo.domain.binarycontent.service.BinaryContentRetryService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.UUID;
+
+import static org.mockito.BDDMockito.then;
+
+@ExtendWith(MockitoExtension.class)
+public class BinaryContentEventListenerTest {
+    @Mock
+    private BinaryContentRetryService binaryContentRetryService;
+
+    @InjectMocks
+    private BinaryContentEventListener binaryContentEventListener;
+
+    @Nested
+    @DisplayName("upload 이벤트 수신")
+    class BinaryContentEventListenerUploadEvent {
+        @Test
+        @DisplayName("성공: 업로드 이벤트가 수신되면 upload가 호출된다")
+        void success_upload_event(){
+            // given
+            BinaryContentCreatedEvent event = new BinaryContentCreatedEvent(
+                    UUID.randomUUID(),
+                    "test".getBytes()
+            );
+
+            // when
+            binaryContentEventListener.handleCreated(event);
+
+            // then
+            then(binaryContentRetryService).should()
+                    .upload(event.binaryContentId(), event.bytes());
+        }
+    }
+}

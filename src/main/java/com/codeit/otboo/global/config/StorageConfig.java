@@ -11,14 +11,6 @@ import java.nio.file.Path;
 
 @Configuration
 public class StorageConfig {
-
-    // 로컬 파일 저장 시 사용할 루트 디렉토리 경로를 Bean으로 등록
-    @Bean
-    @ConditionalOnProperty(value = "otboo.storage.type", havingValue = "local")
-    public Path localStoragePath(@Value("${otboo.storage.local.root-path}") String rootPath) {
-        return Path.of(rootPath);
-    }
-
     // S3 Presigned URL 생성을 위한 Presigner Bean 등록
     @Bean
     @ConditionalOnProperty(value = "otboo.storage.type", havingValue = "s3")

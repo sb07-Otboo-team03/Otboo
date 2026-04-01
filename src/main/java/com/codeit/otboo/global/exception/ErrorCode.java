@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS_EMAIL("이미 존재하는 이메일입니다."),
 
     // Clothes
+    CLOTHES_DUPLICATED_VALUE("하나의 속성에 여러 개의 값을 가질 수 없습니다."),
 
     // ClothesAttribute
     CLOTHES_ATTRIBUTE_NAME_MISSING("속성 이름은 필수입력입니다."),
@@ -19,6 +20,9 @@ public enum ErrorCode {
     CLOTHES_ATTRIBUTE_ALREADY_EXISTS("이미 존재하는 속성 정의입니다."),
     CLOTHES_ATTRIBUTE_VALUE_DUPLICATE("중복된 속성값입니다."),
     CLOTHES_ATTRIBUTE_VALUE_IS_EMPTY("빈 문자열은 속성으로 입력할 수 없습니다."),
+
+    // ClothesAttributeValue
+    CLOTHES_ATTRIBUTE_VALUES_NOT_FOUND("해당 속성값을 찾을 수 없습니다"),
 
     // Comment
 
@@ -44,9 +48,10 @@ public enum ErrorCode {
     // Profile
 
     // BinaryContent
-    BINARY_CONTENT_NOT_FOUNT("해당 UUID를 가진 바이너리 컨텐츠가 존재하지 않습니다."),
+    BINARY_CONTENT_NOT_FOUND("해당 UUID를 가진 바이너리 컨텐츠가 존재하지 않습니다."),
     FILE_CONVERSION_FAILED("파일 변환 중 오류가 발생했습니다."),
     INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
+    FILE_UPLOAD_MAXIMUM_SIZE("파일이 너무 큽니다."),
 
     // JWT
     INVALID_SIGNATURE("JWT 서명 검증 실패"),

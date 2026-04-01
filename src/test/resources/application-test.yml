@@ -16,16 +16,20 @@ spring:
     init:
       mode: never
 
+api:
+  kma-api-key: dummyKey
+
 otboo:
   storage:
-    type: local
-    local:
-      root-path: ./storage
+    type: mock
+    s3:
+      path: binary
   jwt:
     secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
     access-token-expiration: 900000
     refresh-token-expiration: 1209600000
     issuer: codeit
 
-api:
-  kma-api-key: dummyKey
+servlet:
+  multipart:
+    maxFileSize: 10MB
