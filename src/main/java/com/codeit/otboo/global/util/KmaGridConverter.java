@@ -1,7 +1,10 @@
 package com.codeit.otboo.global.util;
 
+import org.springframework.stereotype.Component;
+
 // 기상청 참고 자료 기반 작성
 // https://apihub.kma.go.kr/getAttachFile.do?fileName=8.%EC%9C%84%EC%84%B1%EC%9E%90%EB%A3%8C%20%EA%B8%B0%EB%B3%B8%20%EA%B4%80%EC%B8%A1%EC%9E%90%EB%A3%8C%20%EA%B2%BD%EB%9F%89%ED%99%94%20%EC%A1%B0%ED%9A%8C%EC%84%9C%EB%B9%84%EC%8A%A4%20API%20%ED%99%9C%EC%9A%A9%EA%B0%80%EC%9D%B4%EB%93%9C.docx
+@Component
 public class KmaGridConverter {
     private static final double RE     = 6371.00877;
     private static final double GRID   = 5.0;
@@ -18,7 +21,7 @@ public class KmaGridConverter {
      * @param lon 경도 (예: 126.8216)
      * @return GridResult (nx, ny)
      */
-    public static GridResult convertToGrid(double lat, double lon) {
+    public GridResult convertToGrid(double lat, double lon) {
         double DEGRAD = Math.PI / 180.0;
 
         double re = RE / GRID;

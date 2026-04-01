@@ -3,24 +3,26 @@ package com.codeit.otboo.global.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class KakaoLocalUtil {
 
-    private static final String KAKAO_REST_API_KEY = System.getenv("KAKAO_REST_API_KEY");
-    private static final String COORD2REGION_URL = "https://dapi.kakao.com/v2/local/geo/coord2regioncode.json";
+    private final RestClient restClient;
+
+    @Value( "${api.kakao-rest-api-key}")
+    private String kakaoApiKey;
 
     /**
      * 위경도 → 행정동/법정동 주소 4단계 리스트 반환
@@ -31,7 +33,7 @@ public class KakaoLocalUtil {
      * @param regionType 행정동(H) 또는 법정동(B) 우선순위
      * @return List<String> - 4개 요소 (없으면 빈 문자열 "")
      */
-    public static List<String> getAddressLevels(double longitude, double latitude, KakaoRegionType regionType) {
+    public List<String> getAddressLevels(double longitude, double latitude, KakaoRegionType regionType) {
         Optional<JsonObject> regionOpt = getRegionInfo(longitude, latitude, regionType);
 
         if (regionOpt.isEmpty()) {
@@ -52,63 +54,38 @@ public class KakaoLocalUtil {
     /**
      * 내부 헬퍼 - 실제 API 호출 및 파싱
      */
-    private static Optional<JsonObject> getRegionInfo(double x, double y, KakaoRegionType regionType) {
-        try {
-            StringBuilder urlBuilder = new StringBuilder(COORD2REGION_URL);
-            urlBuilder.append("?x=").append(URLEncoder.encode(String.valueOf(x), StandardCharsets.UTF_8));
-            urlBuilder.append("&y=").append(URLEncoder.encode(String.valueOf(y), StandardCharsets.UTF_8));
+    private Optional<JsonObject> getRegionInfo(double x, double y, KakaoRegionType regionType) {
+        String response = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .scheme("https")
+                        .host("dapi.kakao.com")
+                        .path("/v2/local/geo/coord2regioncode.json")
+                        .queryParam("x", x)
+                        .queryParam("y", y)
+                        .build())
+                .header("Authorization", "KakaoAK " + kakaoApiKey)
+                .retrieve()
+                .body(String.class);
 
-            URL url = new URL(urlBuilder.toString());
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
+        JsonArray docs = root.getAsJsonArray("documents");
 
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Authorization", "KakaoAK " + KAKAO_REST_API_KEY);
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                System.err.println("카카오 API 응답 코드: " + responseCode);
-                return Optional.empty();
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                response.append(line);
-            }
-            br.close();
-            conn.disconnect();
-
-            // JSON 파싱
-            JsonObject root = JsonParser.parseString(response.toString()).getAsJsonObject();
-            JsonArray documents = root.getAsJsonArray("documents");
-
-            if (documents == null || documents.isEmpty()) {
-                return Optional.empty();
-            }
-
-            String targetCode = regionType != null ? regionType.getCode() : null;
-
-            if (targetCode != null) {
-                for (int i = 0; i < documents.size(); i++) {
-                    JsonObject doc = documents.get(i).getAsJsonObject();
-                    String docType = doc.get("region_type").getAsString();
-                    if (targetCode.equals(docType)) {
-                        return Optional.of(doc);
-                    }
-                }
-            }
-
-            // 기본: 행정동 결과 값 반환
-            return Optional.of(documents.get(1).getAsJsonObject());
-
-        } catch (Exception e) {
-            System.err.println("카카오 지역 조회 실패: " + e.getMessage());
+        if (docs == null || docs.isEmpty()) {
             return Optional.empty();
         }
+
+        String targetCode = regionType != null ? regionType.getCode() : null;
+
+        if (targetCode != null) {
+            for (int i = 0; i < docs.size(); i++) {
+                JsonObject doc = docs.get(i).getAsJsonObject();
+                if (targetCode.equals(doc.get("region_type").getAsString())) {
+                    return Optional.of(doc);
+                }
+            }
+        }
+
+        return Optional.of(docs.get(0).getAsJsonObject());
     }
 
     /**
