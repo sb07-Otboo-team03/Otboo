@@ -6,12 +6,11 @@ import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundExce
 import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
+import com.codeit.otboo.global.properties.MultipartProperties;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.unit.DataSize;
 
 import java.util.UUID;
 
@@ -21,14 +20,12 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
-
-    @Value("${servlet.multipart.maxFileSize}")
-    private DataSize maxFileSize;
+    private final MultipartProperties multipartProperties;
 
     @Override
     @Transactional
     public BinaryContent upload(BinaryContentCreateRequest request) {
-        long maxByteSize = maxFileSize.toBytes();
+        long maxByteSize = multipartProperties.maxFileSize().toBytes();
         if(request.size() > maxByteSize){
             throw new FileUploadMaximumSizeException(request.size(), maxByteSize);
         }

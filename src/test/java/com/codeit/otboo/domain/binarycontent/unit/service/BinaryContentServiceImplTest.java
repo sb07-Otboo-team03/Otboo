@@ -9,6 +9,8 @@ import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentServiceImpl;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.properties.MultipartProperties;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.unit.DataSize;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +42,17 @@ public class BinaryContentServiceImplTest {
 
     @InjectMocks
     private BinaryContentServiceImpl binaryContentService;
+
+    @BeforeEach
+    void setUp() {
+        MultipartProperties props = new MultipartProperties(DataSize.ofMegabytes(10));
+
+        binaryContentService = new BinaryContentServiceImpl(
+                binaryContentRepository,
+                binaryContentStorage,
+                props
+        );
+    }
 
     @Nested
     @DisplayName("바이너리 컨텐츠 업로드")
@@ -67,10 +82,9 @@ public class BinaryContentServiceImplTest {
         @DisplayName("실패: 최대 용량이 넘는 파일이 업로드되면 예외가 발생한다")
         void fail_put_binary_content_exceed_max_size() {
             // given
-            UUID binaryContentId = UUID.randomUUID();
-            byte[] data = "test".getBytes();
-            BinaryContentCreateRequest request = new BinaryContentCreateRequest(
-                    data, "test_file", "image/png", 1000L);
+            byte[] data = new byte[20 * 1024 * 1024]; // 20 MB
+            BinaryContentCreateRequest request =
+                    new BinaryContentCreateRequest(data, "test_file", "image/png", data.length);
 
             // when & then
             assertThatThrownBy(() -> binaryContentService.upload(request))

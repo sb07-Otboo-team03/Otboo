@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.clothes.management.unit.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,10 @@ import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ClothesServiceImplTest {
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @Mock
     UserRepository userRepository;
 
@@ -148,7 +154,7 @@ public class ClothesServiceImplTest {
             assertThat(result.imageUrl()).isEqualTo(binaryContentUrl);
             then(userRepository).should().findById(user.getId());
             then(binaryContentService).should().upload(imageRequest);
-            then(binaryContentStorage).should().put(binaryContent.getId(), imageRequest.data());
+            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentUrlResolver).should().resolve(binaryContent.getId());
             then(clothesRepository).should().save(any(Clothes.class));
         }
@@ -198,10 +204,7 @@ public class ClothesServiceImplTest {
             given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
             given(clothesRepository.save(any(Clothes.class)))
                     .willReturn(clothes);
-            given(clothesAttributeValueRepository.findByAttributeDefIdIn(
-                    clothes.getValues().stream()
-                            .map(value -> value.getAttributeDef().getId())
-                            .toList()))
+            given(clothesAttributeValueRepository.findByAttributeDefIdIn(anyList()))
                     .willReturn(Stream.concat(selectableList1.stream(), selectableList2.stream()).toList());
             given(clothesMapper.toDto(clothes, null, expectedGrouping))
                     .willReturn(response);
