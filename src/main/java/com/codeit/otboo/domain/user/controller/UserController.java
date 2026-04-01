@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -8,10 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,4 +26,11 @@ public class UserController {
         UserResponse userResponse = userService.createUser(userCreateRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
+
+    @GetMapping("{userId}/profiles")
+    public ResponseEntity<ProfileResponse> getProfile(@PathVariable("userId") UUID userId) {
+        userService.getProfile(userId);
+        return ResponseEntity.ok(userService.getProfile(userId));
+    }
+
 }

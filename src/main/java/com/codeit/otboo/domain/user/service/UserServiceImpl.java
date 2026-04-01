@@ -1,17 +1,17 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
+import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
-import com.codeit.otboo.domain.profile.repository.ProfileRepository;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserEmailDuplicateException;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.slice.dto.CursorResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,9 +24,10 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
-    private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final ProfileMapper profileMapper;
+    private final BinaryContentUrlResolver binaryContentUrlResolver;
 
     @Override
     @Transactional
@@ -59,7 +60,17 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProfileResponse getProfile(UUID userId) {
-        return null;
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException(userId));
+        String imageUrl = null;
+        if (user.getProfile().getBinaryContent() != null) {
+            UUID binaryContentId = user.getProfile().getBinaryContent().getId();
+            if (binaryContentId != null) {
+                imageUrl = binaryContentUrlResolver.resolve(binaryContentId);
+            }
+        }
+        return profileMapper.toDto(user, imageUrl);
     }
 }
