@@ -5,7 +5,7 @@ import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public record ClothesCreateRequest (
@@ -15,5 +15,5 @@ public record ClothesCreateRequest (
     String name,
     @NotNull
     ClothesType type,
-    ArrayList<ClothesAttributeRequest> attributes
+    List<ClothesAttributeRequest> attributes
 ){}

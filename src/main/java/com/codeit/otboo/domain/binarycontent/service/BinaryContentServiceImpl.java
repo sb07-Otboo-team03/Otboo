@@ -3,9 +3,10 @@ package com.codeit.otboo.domain.binarycontent.service;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
+import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
-import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.properties.MultipartProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,15 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
+    private final MultipartProperties multipartProperties;
 
     @Override
     @Transactional
     public BinaryContent upload(BinaryContentCreateRequest request) {
+        long maxByteSize = multipartProperties.maxFileSize().toBytes();
+        if(request.size() > maxByteSize){
+            throw new FileUploadMaximumSizeException(request.size(), maxByteSize);
+        }
         BinaryContent binaryContent = new BinaryContent(request.name(), request.type(), request.size());
         BinaryContent infoSaved = binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(infoSaved.getId(), request.data());
@@ -51,7 +57,7 @@ public class BinaryContentServiceImpl implements BinaryContentService {
 
     private BinaryContent find(UUID id) {
         return binaryContentRepository.findById(id).orElseThrow(
-                () -> new BinaryContentNotFoundException(ErrorCode.BINARY_CONTENT_NOT_FOUNT)
+                () -> new BinaryContentNotFoundException(id)
         );
     }
 }

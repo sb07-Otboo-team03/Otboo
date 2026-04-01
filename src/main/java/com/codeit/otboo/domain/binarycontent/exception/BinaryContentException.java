@@ -9,11 +9,12 @@ import java.util.Map;
 public class BinaryContentException extends OtbooException {
 
     public BinaryContentException(ErrorCode errorCode,
-                                  Map<String, String> details) {
-        super(errorCode, details, HttpStatus.INTERNAL_SERVER_ERROR);
+                                  Map<String, String> details,
+                                  HttpStatus status) {
+        super(errorCode, details, status);
     }
 
-    public BinaryContentException(ErrorCode errorCode) {
-        super(errorCode, HttpStatus.INTERNAL_SERVER_ERROR);
+    public BinaryContentException(ErrorCode errorCode, HttpStatus status) {
+        super(errorCode, status);
     }
 }

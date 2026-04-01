@@ -24,12 +24,12 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         )
         FROM Notification n
         WHERE (
-                :cursor IS NULL
+            CAST(:cursor AS timestamp) IS NULL
                 OR (
                     n.createdAt < :cursor
                     OR (
                         n.createdAt = :cursor
-                        AND (:idAfter IS NULL OR n.id < :idAfter)
+                            AND (CAST(:idAfter AS uuid) IS NULL OR n.id < :idAfter)
                     )
                 )
             )

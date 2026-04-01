@@ -1,13 +1,12 @@
 package com.codeit.otboo.domain.follow.service;
 
-import static com.codeit.otboo.domain.user.entity.QUser.user;
-
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
+import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
@@ -126,7 +125,7 @@ public class FollowServiceImpl implements FollowService {
     public void cancelFollow(UUID followId) {
 
         Follow follow = followRepository.findById(followId)
-            .orElseThrow(() -> new UserNotFoundException(followId));
+            .orElseThrow(() -> new FollowNotFoundException(followId));
         followRepository.delete(follow);
     }
 

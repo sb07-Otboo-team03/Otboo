@@ -2,11 +2,14 @@ package com.codeit.otboo.domain.clothes.management.entity;
 
 import com.codeit.otboo.domain.BaseUpdatableEntity;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.Set;
 
 @Entity
 @Table(name = "clothes")
@@ -26,8 +29,15 @@ public class Clothes extends BaseUpdatableEntity {
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    // JoinTable
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="image_id")
     BinaryContent binaryContent;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "clothes_attribute_mappings",
+            joinColumns = @JoinColumn(name = "clothes_id"),
+            inverseJoinColumns = @JoinColumn(name = "attribute_value_id")
+    )
+    private Set<ClothesAttributeValue> values;
 }
