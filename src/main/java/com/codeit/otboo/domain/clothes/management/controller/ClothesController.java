@@ -9,13 +9,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/clothes")
@@ -36,5 +34,11 @@ public class ClothesController {
         return ResponseEntity
                 .created(URI.create("/api/clothes/" + response.id()))
                 .body(response);
+    }
+
+    @DeleteMapping("/{clothesId}")
+    public ResponseEntity<Void> deleteClothes(@PathVariable UUID clothesId){
+        clothesService.deleteClothes(clothesId);
+        return ResponseEntity.noContent().build();
     }
 }

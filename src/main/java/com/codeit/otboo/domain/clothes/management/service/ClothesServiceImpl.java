@@ -3,6 +3,8 @@ package com.codeit.otboo.domain.clothes.management.service;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
+import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
@@ -127,5 +129,23 @@ public class ClothesServiceImpl implements ClothesService{
                         attributeValue -> attributeValue.getAttributeDef().getId(),
                         Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())
                 ));
+    }
+
+    @Transactional
+    public void deleteClothes(UUID clothesId){
+        Clothes clothes = getById(clothesId);
+        BinaryContent binaryContent = clothes.getBinaryContent();
+        if(binaryContent != null){
+            binaryContentService.delete(clothes.getBinaryContent().getId());
+            eventPublisher.publishEvent(
+                    new BinaryContentDeletedEvent(binaryContent.getId())
+            );
+        }
+        clothesRepository.deleteById(clothesId);
+    }
+
+    private Clothes getById(UUID clothesId){
+        return clothesRepository.findById(clothesId).orElseThrow(
+                () -> new BinaryContentNotFoundException(clothesId));
     }
 }
