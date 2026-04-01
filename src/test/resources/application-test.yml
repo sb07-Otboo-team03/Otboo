@@ -16,12 +16,6 @@ spring:
     init:
       mode: never
 
-  jwt:
-    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-    access-token-expiration: 900000
-    refresh-token-expiration: 1209600000
-    issuer: codeit
-
 api:
   kma-api-key: dummyKey
 
@@ -30,6 +24,11 @@ otboo:
     type: mock
     s3:
       path: binary
+  jwt:
+    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    access-token-expiration: 900000
+    refresh-token-expiration: 1209600000
+    issuer: codeit
 
 servlet:
   multipart:
