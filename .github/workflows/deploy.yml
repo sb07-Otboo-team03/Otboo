@@ -1,0 +1,82 @@
+name: Deploy to Amazon ECR
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ "release-test2" ] #NOTE: release-test2에 배포
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  IMAGE_PREFIX: release-test2
+
+jobs:
+  deploy:
+    name: Build and Push to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_SHA_TAG: ${{ env.IMAGE_PREFIX }}-${{ github.sha }}
+          IMAGE_LATEST_TAG: ${{ env.IMAGE_PREFIX }}-latest
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_LATEST_TAG \
+            .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_LATEST_TAG
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition otboo-task \
+            --query taskDefinition > task-definition.json
+
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy
+          )' task-definition.json > task-definition-clean.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-clean.json
+          container-name: otboo-container
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: otboo-task-service-qacgs3b2
+          cluster: otboo-v1
+          wait-for-service-stability: true
