@@ -32,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -235,12 +236,10 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         notificationRepository.saveAll(notifications);
 
         // 알림 이벤트 발행
-        for(Notification notification : notifications) {
-            eventPublisher.publishEvent(new SseEvent(
-                    notificationMapper.toEventDto(notification),
-                    notification.getCreatedAt()
-            ));
-        }
+        eventPublisher.publishEvent(new ClothesAttributeCreateEvent(
+                notificationMapper.toEventDto(notifications.get(0)),
+                notificationMapper.toEventDto(notifications.get(0)).createdAt()
+        ));
 
     }
 }
