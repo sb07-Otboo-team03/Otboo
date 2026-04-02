@@ -60,9 +60,7 @@ public class CommentServiceImpl implements CommentService{
                 .level(NotificationLevel.INFO)
                 .build();
 
-        eventPublisher.publishEvent(
-                new SseEvent(eventData, comment.getCreatedAt())
-        );
+        eventPublisher.publishEvent(new SseEvent(eventData));
 
         return commentMapper.toDto(comment);
     }

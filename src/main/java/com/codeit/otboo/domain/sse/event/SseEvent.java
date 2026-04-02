@@ -8,10 +8,8 @@ import lombok.Getter;
 public class SseEvent {
 
     private final NotificationDto data;
-    private final LocalDateTime createdAt;
 
-    public SseEvent(final NotificationDto data, final LocalDateTime createdAt) {
+    public SseEvent(final NotificationDto data) {
         this.data = data;
-        this.createdAt = createdAt;
     }
 }
