@@ -19,7 +19,7 @@ public class OtbooUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + userResponse.role().name()));
+        return List.of(new SimpleGrantedAuthority(userResponse.role().name()));
     }
 
     @Override
@@ -30,5 +30,10 @@ public class OtbooUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         return userResponse.email();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !userResponse.locked(); // boolean locked 필드 필요
     }
 }
