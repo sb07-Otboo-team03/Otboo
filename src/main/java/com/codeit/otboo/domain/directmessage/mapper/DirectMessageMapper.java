@@ -3,10 +3,11 @@ package com.codeit.otboo.domain.directmessage.mapper;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
-import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -14,6 +15,14 @@ public class DirectMessageMapper {
     private final UserMapper userMapper;
 
     public DirectMessageResponse toDto(DirectMessage directMessage) {
+        UUID senderBinaryContentId = null;
+        if(directMessage.getSender().getProfile().getBinaryContent() != null) {
+            senderBinaryContentId = directMessage.getSender().getProfile().getBinaryContent().getId();
+        }
+        UUID receiverBinaryContentId = null;
+        if(directMessage.getSender().getProfile().getBinaryContent() != null) {
+            receiverBinaryContentId = directMessage.getSender().getProfile().getBinaryContent().getId();
+        }
 
         return new DirectMessageResponse(
             directMessage.getId(),
@@ -21,16 +30,15 @@ public class DirectMessageMapper {
             userMapper.toSummaryDto(
                 directMessage.getSender().getId(),
                 directMessage.getSender().getProfile().getName(),
-                directMessage.getSender().getProfile().getBinaryContent().getId()),
+                    senderBinaryContentId),
             userMapper.toSummaryDto(
                 directMessage.getReceiver().getId(),
                 directMessage.getReceiver().getProfile().getName(),
-                directMessage.getReceiver().getProfile().getBinaryContent().getId()),
+                    receiverBinaryContentId),
             directMessage.getContent());
     }
 
     public DirectMessageResponse toDto(DirectMessageDto directMessageDto) {
-
         return new DirectMessageResponse(
             directMessageDto.id(),
             directMessageDto.createdAt(),
