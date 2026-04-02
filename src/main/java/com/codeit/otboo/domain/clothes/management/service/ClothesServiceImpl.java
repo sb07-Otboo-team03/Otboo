@@ -2,9 +2,6 @@ package com.codeit.otboo.domain.clothes.management.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
-import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
@@ -12,6 +9,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAt
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
@@ -25,7 +23,7 @@ import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +35,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ClothesServiceImpl implements ClothesService{
-    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final ClothesRepository clothesRepository;
     private final ClothesAttributeValueRepository clothesAttributeValueRepository;
@@ -45,7 +42,9 @@ public class ClothesServiceImpl implements ClothesService{
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
 
+    @Override
     @Transactional
+    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public ClothesResponse createClothes(
             BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest request
@@ -55,9 +54,6 @@ public class ClothesServiceImpl implements ClothesService{
         BinaryContent binaryContent = null;
         if(imageRequest != null){
             binaryContent = binaryContentService.upload(imageRequest);
-            eventPublisher.publishEvent(
-                new BinaryContentCreatedEvent(binaryContent.getId(), imageRequest.data())
-            );
         }
         ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
@@ -70,9 +66,39 @@ public class ClothesServiceImpl implements ClothesService{
         );
     }
 
-    // 옷 속성값 request DTO 들을 받아 DB 에 있는지 확인하고 있으면 엔티티 Set 으로 반환하는 메소드
+    @Override
+    @Transactional
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
+    public ClothesResponse updateClothes(
+            UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
+        Clothes clothes = getById(clothesId);
+        BinaryContent oldBinaryContent = clothes.getBinaryContent();
+        BinaryContent newBinaryContent;
+        BinaryContent binaryContent = oldBinaryContent;
+
+        if(imageRequest != null){
+            if(oldBinaryContent != null){
+                binaryContentService.delete(oldBinaryContent.getId());
+            }
+            newBinaryContent = binaryContentService.upload(imageRequest);
+            binaryContent = newBinaryContent;
+        }
+
+        ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
+        clothes.updateClothes(
+            request.name(), request.type(), binaryContent, clothesAttributeSelection.selectedValues()
+        );
+
+        return clothesMapper.toDto(
+                clothes,
+                binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
+                groupSelectableValuesByAttributeId(clothesAttributeSelection.allSelectableValues())
+        );
+    }
+
+    // 옷 속성값 request DTO 들을 받아 DB에 있는지 확인하고 있으면 선택된 속성-값들과 선택 가능한 속성-값 리스트를 반환하는 메소드 
     private ClothesAttributeSelection getClothesAttributeValues(List<ClothesAttributeRequest> requests){
-        if(requests.isEmpty()) return new ClothesAttributeSelection(Set.of(), List.of());
+        if(requests.isEmpty()) return new ClothesAttributeSelection(List.of(), List.of());
         Set<UUID> requestDefinitionIds = validateAndExtractDefinitionIds(requests);
         List<ClothesAttributeValue> allSelectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
                 new ArrayList<>(requestDefinitionIds));
@@ -85,10 +111,10 @@ public class ClothesServiceImpl implements ClothesService{
                         ),
         attributeValue -> attributeValue
                 ));
-        Set<ClothesAttributeValue> selectedValueList =  requests.stream()
+        List<ClothesAttributeValue> selectedValueList =  requests.stream()
                 .map(request -> getAttributeValueOrThrowByRequest(
                         request, selectableAttributeValueMap
-                )).collect(Collectors.toSet());
+                )).collect(Collectors.toList());
 
         return new ClothesAttributeSelection(selectedValueList, allSelectableValues);
     }
@@ -132,15 +158,14 @@ public class ClothesServiceImpl implements ClothesService{
                 ));
     }
 
+    @Override
     @Transactional
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
     public void deleteClothes(UUID clothesId){
         Clothes clothes = getById(clothesId);
         BinaryContent binaryContent = clothes.getBinaryContent();
         if(binaryContent != null){
             binaryContentService.delete(clothes.getBinaryContent().getId());
-            eventPublisher.publishEvent(
-                    new BinaryContentDeletedEvent(binaryContent.getId())
-            );
         }
         clothesRepository.deleteById(clothesId);
     }
@@ -148,5 +173,10 @@ public class ClothesServiceImpl implements ClothesService{
     private Clothes getById(UUID clothesId){
         return clothesRepository.findById(clothesId).orElseThrow(
                 () -> new ClothesNotFoundException(clothesId));
+    }
+
+    // 작성자와 같은지 확인
+    public boolean isOwner(UUID clothesId, UUID ownerId){
+        return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
     }
 }
