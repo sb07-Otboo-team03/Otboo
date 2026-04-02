@@ -26,6 +26,7 @@ import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +46,9 @@ public class ClothesServiceImpl implements ClothesService{
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
 
+    @Override
     @Transactional
+    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public ClothesResponse createClothes(
             BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest request
@@ -72,6 +75,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     @Override
     @Transactional
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
     public ClothesResponse updateClothes(
             UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
         Clothes clothes = getById(clothesId);
@@ -167,7 +171,9 @@ public class ClothesServiceImpl implements ClothesService{
                 ));
     }
 
+    @Override
     @Transactional
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
     public void deleteClothes(UUID clothesId){
         Clothes clothes = getById(clothesId);
         BinaryContent binaryContent = clothes.getBinaryContent();
@@ -183,5 +189,11 @@ public class ClothesServiceImpl implements ClothesService{
     private Clothes getById(UUID clothesId){
         return clothesRepository.findById(clothesId).orElseThrow(
                 () -> new ClothesNotFoundException(clothesId));
+    }
+
+    // 작성자와 같은지 확인
+    public boolean isOwner(UUID clothesId, UUID ownerId){
+        Clothes clothes = getById(clothesId);
+        return  clothes.getOwner().getId().equals(ownerId);
     }
 }
