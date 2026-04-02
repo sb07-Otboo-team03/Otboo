@@ -177,7 +177,6 @@ public class ClothesServiceImpl implements ClothesService{
 
     // 작성자와 같은지 확인
     public boolean isOwner(UUID clothesId, UUID ownerId){
-        Clothes clothes = getById(clothesId);
-        return  clothes.getOwner().getId().equals(ownerId);
+        return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
     }
 }
