@@ -41,9 +41,9 @@ public class Profile extends BaseUpdatableEntity {
     @Min(1)
     @Max(5)
     @Column(name = "temperature_sensitivity", nullable = false)
-    private Integer temperatureSensitivity = 3;
+    private int temperatureSensitivity = 3;
 
-    @OneToOne(fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="profile_image_id")
     private BinaryContent binaryContent;
 
