@@ -8,6 +8,9 @@ import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -36,6 +39,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageMapper directMessageMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -61,18 +66,20 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             )
         );
 
-        NotificationDto eventData = NotificationDto.builder()
-            .id(response.id())
-            .createdAt(response.createdAt())
-            .receiverId(receiver.getId())
+        Notification notification = Notification.builder()
             .title("[DM]" + response.sender().name())
             .content(response.content())
             .level(NotificationLevel.INFO)
+            .receiver(receiver)
             .build();
 
+        notificationRepository.save(notification);
+
         eventPublisher.publishEvent(
-            new SseEvent(eventData, response.createdAt())
-        );
+            new SseEvent(
+                notificationMapper.toEventDto(notification),
+                notification.getCreatedAt()
+        ));
 
         return response;
     }
