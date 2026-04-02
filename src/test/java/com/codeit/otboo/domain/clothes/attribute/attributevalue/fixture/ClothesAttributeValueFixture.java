@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.clothes.attribute.attributevalue.fixture;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.fixture.ClothesAttributeDefFixture;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,16 @@ public class ClothesAttributeValueFixture {
         return ClothesAttributeValue.builder()
                 .id(UUID.randomUUID())
                 .selectableValue("속성 선택지" + num++)
+                .attributeDef(newDef)
+                .build();
+    }
+
+    public static ClothesAttributeValue create(String attributeName, String selectableValue){
+        ClothesAttributeDef newDef = new ClothesAttributeDef(attributeName);
+        ReflectionTestUtils.setField(newDef, "id", UUID.randomUUID());
+        return ClothesAttributeValue.builder()
+                .id(UUID.randomUUID())
+                .selectableValue("속성 선택" + num++)
                 .attributeDef(newDef)
                 .build();
     }
