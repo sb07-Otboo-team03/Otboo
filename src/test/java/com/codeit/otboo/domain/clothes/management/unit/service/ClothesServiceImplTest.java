@@ -358,7 +358,7 @@ public class ClothesServiceImplTest {
     @DisplayName("옷 수정")
     class ClothesUpdate {
         @Test
-        @DisplayName("성공: 유효한 파라미터가 name, type가 들어올 경우 옷 속성이 변경된다")
+        @DisplayName("성공: 유효한 옷ID, name, type가 들어올 경우 옷 속성이 변경된다")
         void update_clothes_Success(){
             // given
             Clothes clothes = ClothesFixture.create(
