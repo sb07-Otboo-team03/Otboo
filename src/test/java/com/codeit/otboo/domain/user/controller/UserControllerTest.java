@@ -1,8 +1,15 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
+import com.codeit.otboo.domain.profile.ProfileFixture;
+import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserCreateRequestFixture;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
@@ -32,8 +39,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = UserController.class,
@@ -96,4 +103,40 @@ class UserControllerTest {
             then(userService).should(never()).createUser(userCreateRequest);
         }
     }
+
+    @Nested
+    @DisplayName("프로필 조회")
+    class GetProfile {
+        @Test
+        @DisplayName("프로필 조회 성공")
+        public void getProfile_success() throws Exception {
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, "test@codeit.com", "password123!");
+            Profile profile = ProfileFixture.create(user);
+            user.setProfile(profile);
+            profile.update(null, null, null, null, null, null);
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user,  null);
+
+            given(userService.getProfile(userId)).willReturn(profileResponse);
+
+            mockMvc.perform(get("/api/users/{userId}/profiles", userId)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.userId").value(userId.toString()));
+        }
+
+        @Test
+        @DisplayName("프로필 조회 실패 - 존재하지 않는 유저")
+        public void getProfile_fail_notFound() throws Exception {
+            UUID userId = UUID.randomUUID();
+
+            given(userService.getProfile(userId)).willThrow(new UserNotFoundException(userId));
+
+            mockMvc.perform(get("/api/users/{userId}/profiles", userId)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+
 }
