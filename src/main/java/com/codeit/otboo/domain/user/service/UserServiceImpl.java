@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
@@ -13,6 +14,7 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,13 +66,12 @@ public class UserServiceImpl implements UserService{
     public ProfileResponse getProfile(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException(userId));
-        String imageUrl = null;
-        if (user.getProfile().getBinaryContent() != null) {
-            UUID binaryContentId = user.getProfile().getBinaryContent().getId();
-            if (binaryContentId != null) {
-                imageUrl = binaryContentUrlResolver.resolve(binaryContentId);
-            }
+        String profileImageUrl = null;
+        BinaryContent binaryContent = user.getProfile().getBinaryContent();
+        if (binaryContent!= null) {
+            UUID binaryContentId = binaryContent.getId();
+                profileImageUrl = binaryContentUrlResolver.resolve(binaryContentId);
         }
-        return profileMapper.toDto(user, imageUrl);
+        return profileMapper.toDto(user, profileImageUrl);
     }
 }
