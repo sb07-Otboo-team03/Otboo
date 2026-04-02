@@ -25,7 +25,6 @@ import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +44,6 @@ public class FollowServiceImpl implements FollowService {
     private final FollowMapper followMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final NotificationRepository notificationRepository;
-    private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -79,7 +77,7 @@ public class FollowServiceImpl implements FollowService {
 
         notificationRepository.save(notification);
 
-        NotificationDto notificationDto = notificationMapper.toEventDto(notification);
+        NotificationDto notificationDto = NotificationMapper.toEventDto(notification);
         eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
 
         return followMapper.toDto(saveFollow);

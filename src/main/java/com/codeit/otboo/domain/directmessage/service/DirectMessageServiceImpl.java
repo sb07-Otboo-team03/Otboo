@@ -42,7 +42,6 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);

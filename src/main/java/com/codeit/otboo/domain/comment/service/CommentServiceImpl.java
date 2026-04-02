@@ -39,7 +39,6 @@ public class CommentServiceImpl implements CommentService{
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final NotificationMapper notificationMapper;
     private final NotificationRepository notificationRepository;
 
     @Override
@@ -64,7 +63,7 @@ public class CommentServiceImpl implements CommentService{
 
         notificationRepository.save(notification);
 
-        NotificationDto notificationDto = notificationMapper.toEventDto(notification);
+        NotificationDto notificationDto = NotificationMapper.toEventDto(notification);
         eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
 
         return commentMapper.toDto(comment);

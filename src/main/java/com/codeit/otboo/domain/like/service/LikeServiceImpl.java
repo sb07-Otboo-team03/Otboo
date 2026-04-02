@@ -32,7 +32,6 @@ public class LikeServiceImpl implements LikeService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final NotificationMapper notificationMapper;
     private final NotificationRepository notificationRepository;
 
     @Override
@@ -61,7 +60,7 @@ public class LikeServiceImpl implements LikeService {
 
         notificationRepository.save(notification);
 
-        NotificationDto notificationDto = notificationMapper.toEventDto(notification);
+        NotificationDto notificationDto = NotificationMapper.toEventDto(notification);
         eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
 
     }
