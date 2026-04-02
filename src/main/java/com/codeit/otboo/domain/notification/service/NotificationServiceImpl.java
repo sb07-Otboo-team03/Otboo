@@ -32,12 +32,14 @@ public class NotificationServiceImpl implements NotificationService{
     }
 
     @Override
-    public CursorResponse<NotificationResponse> getNotifications(CursorRequest cursorRequest) {
+    public CursorResponse<NotificationResponse> getNotifications(
+        UUID authPrincipalId, CursorRequest cursorRequest) {
 
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
-        List<NotificationDto> results = notificationRepository.findAll(
+        List<NotificationDto> results = notificationRepository.findAllByReceiverId(
+            authPrincipalId,
             cursor,
             cursorRequest.idAfter(),
             pageable
@@ -74,8 +76,8 @@ public class NotificationServiceImpl implements NotificationService{
 
     @Override
     @Transactional
-    public void deleteNotification(UUID notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public void deleteNotification(UUID authPrincipalId, UUID notificationId) {
+        Notification notification = notificationRepository.findByIdAndReceiverId(notificationId, authPrincipalId)
             .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         notificationRepository.delete(notification);

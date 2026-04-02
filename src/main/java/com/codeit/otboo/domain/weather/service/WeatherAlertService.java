@@ -200,8 +200,7 @@ public class WeatherAlertService {
                             notification.getTitle(),
                             notification.getContent(),
                             notification.getLevel()
-                    ),
-                    publishedAt
+                    )
             ));
         }
     }

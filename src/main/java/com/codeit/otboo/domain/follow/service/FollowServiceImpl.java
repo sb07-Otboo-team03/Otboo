@@ -11,6 +11,9 @@ import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
@@ -40,6 +43,8 @@ public class FollowServiceImpl implements FollowService {
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationRepository notificationRepository;
+    private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -63,18 +68,18 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = new Follow(follower, followee);
         Follow saveFollow = followRepository.save(follow);
 
-        NotificationDto eventData = NotificationDto.builder()
-            .id(saveFollow.getId())
-            .createdAt(saveFollow.getCreatedAt())
-            .receiverId(followee.getId())
+
+        Notification notification = Notification.builder()
             .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
             .content("")
             .level(NotificationLevel.INFO)
+            .receiver(followee)
             .build();
 
+        notificationRepository.save(notification);
+
         eventPublisher.publishEvent(
-            new SseEvent(eventData, saveFollow.getCreatedAt())
-        );
+            new SseEvent(notificationMapper.toEventDto(notification)));
 
         return followMapper.toDto(saveFollow);
     }
