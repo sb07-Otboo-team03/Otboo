@@ -192,7 +192,7 @@ public class WeatherAlertService {
         LocalDateTime publishedAt = timeProvider.nowDateTime();
 
         for (Notification notification : notifications) {
-            eventPublisher.publishEvent(new SseEvent(
+            eventPublisher.publishEvent( SseEvent.of(
                     new NotificationDto(
                             notification.getId(),
                             notification.getCreatedAt(),

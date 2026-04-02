@@ -60,7 +60,7 @@ public class LikeServiceImpl implements LikeService {
                 .level(NotificationLevel.INFO)
                 .build();
 
-        eventPublisher.publishEvent(new SseEvent(eventData));
+        eventPublisher.publishEvent( SseEvent.of(eventData));
     }
 
     @Override
