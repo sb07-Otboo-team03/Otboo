@@ -96,7 +96,7 @@ public class ClothesServiceImpl implements ClothesService{
         );
     }
 
-    // 옷 속성값 request DTO 들을 받아 DB 에 있는지 확인하고 있으면 엔티티 Set 으로 반환하는 메소드
+    // 옷 속성값 request DTO 들을 받아 DB에 있는지 확인하고 있으면 선택된 속성-값들과 선택 가능한 속성-값 리스트를 반환하는 메소드 
     private ClothesAttributeSelection getClothesAttributeValues(List<ClothesAttributeRequest> requests){
         if(requests.isEmpty()) return new ClothesAttributeSelection(List.of(), List.of());
         Set<UUID> requestDefinitionIds = validateAndExtractDefinitionIds(requests);
