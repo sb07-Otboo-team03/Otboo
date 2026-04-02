@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record ClothesUpdateRequest(
-        @NotNull
+        @NotBlank
         String name,
         @NotNull
         ClothesType type,

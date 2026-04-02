@@ -48,7 +48,6 @@ public class ClothesController {
             @PathVariable UUID clothesId,
             @RequestPart(value = "image", required = false) MultipartFile image,
             @Valid @RequestPart ClothesUpdateRequest request){
-        System.out.println("이번엔 수정된 속성만 들어오는지 전부 들어오는지 확인"+request.attributes());
         ClothesResponse response = clothesService.updateClothes(
                 clothesId,
                 binaryContentMapper.toRequestDto(image),
