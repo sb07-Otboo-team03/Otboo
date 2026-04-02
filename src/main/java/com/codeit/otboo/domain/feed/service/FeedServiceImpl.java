@@ -15,15 +15,16 @@ import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
-import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
+import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
+import com.codeit.otboo.domain.weather.exception.WeatherNotFoundException;
+import com.codeit.otboo.domain.weather.exception.YesterdayWeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
+import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +56,7 @@ public class FeedServiceImpl implements FeedService {
     private final CommentRepository commentRepository;
     private final FollowRepository followRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final YesterdayHourlyWeatherRepository yesterdayHourlyWeatherRepository;
 
     @Override
     @Transactional
@@ -162,7 +167,16 @@ public class FeedServiceImpl implements FeedService {
 
     private FeedWeather getWeatherInformation(UUID weatherId) {
         Weather weather = weatherRepository.findById(weatherId)
-                .orElseThrow(() -> new IllegalArgumentException("weatherId is invalid"));
+                .orElseThrow(() -> new WeatherNotFoundException(weatherId));
+
+        LocalDateTime forecastAt = weather.getForecastAt();
+        LocalDate date = forecastAt.toLocalDate().minusDays(1);
+        LocalTime time = forecastAt.toLocalTime().withMinute(0).withSecond(0).withNano(0);
+
+        // 현재 시간의 오늘 날씨 정보에 대응하는 어제 날씨 정보 저장
+        YesterdayHourlyWeather yesterdayWeather =
+                yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(weather.getX(), weather.getY(), date, time)
+                .orElseThrow(() -> new YesterdayWeatherNotFoundException(weather.getX(), weather.getY(), date, time));
 
         return FeedWeather.builder()
                 .weatherId(weather.getId())
@@ -171,7 +185,7 @@ public class FeedServiceImpl implements FeedService {
                 .precipitationAmount(weather.getPrecipitationAmount())
                 .precipitationProbability(weather.getPrecipitationProbability())
                 .temperatureCurrent(weather.getTemperatureCurrent())
-                //.temperatureComparedToDayBefore(weather.getTemperatureCurrent() - weather.getTemperatureYesterday())
+                .temperatureComparedToDayBefore(weather.getTemperatureCurrent() - yesterdayWeather.getTemperature())
                 .temperatureMin(weather.getTemperatureMin())
                 .temperatureMax(weather.getTemperatureMax())
                 .build();

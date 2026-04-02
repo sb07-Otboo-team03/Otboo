@@ -30,4 +30,6 @@ public interface YesterdayHourlyWeatherRepository extends JpaRepository<Yesterda
             @Param("start") LocalTime start,
             @Param("end") LocalTime end
     );
+
+    Optional<YesterdayHourlyWeather> findByXAndYAndDateAndHour(Integer x, Integer y, LocalDate date, LocalTime hour);
 }
