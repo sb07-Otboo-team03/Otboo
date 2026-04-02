@@ -2,8 +2,6 @@ package com.codeit.otboo.domain.clothes.management.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
@@ -25,7 +23,6 @@ import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +35,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ClothesServiceImpl implements ClothesService{
-    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final ClothesRepository clothesRepository;
     private final ClothesAttributeValueRepository clothesAttributeValueRepository;
@@ -58,9 +54,6 @@ public class ClothesServiceImpl implements ClothesService{
         BinaryContent binaryContent = null;
         if(imageRequest != null){
             binaryContent = binaryContentService.upload(imageRequest);
-            eventPublisher.publishEvent(
-                new BinaryContentCreatedEvent(binaryContent.getId(), imageRequest.data())
-            );
         }
         ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
@@ -86,14 +79,8 @@ public class ClothesServiceImpl implements ClothesService{
         if(imageRequest != null){
             if(oldBinaryContent != null){
                 binaryContentService.delete(oldBinaryContent.getId());
-                eventPublisher.publishEvent(
-                    new BinaryContentDeletedEvent(oldBinaryContent.getId())
-                );
             }
             newBinaryContent = binaryContentService.upload(imageRequest);
-            eventPublisher.publishEvent(
-                new BinaryContentCreatedEvent(newBinaryContent.getId(), imageRequest.data())
-            );
             binaryContent = newBinaryContent;
         }
 
@@ -179,9 +166,6 @@ public class ClothesServiceImpl implements ClothesService{
         BinaryContent binaryContent = clothes.getBinaryContent();
         if(binaryContent != null){
             binaryContentService.delete(clothes.getBinaryContent().getId());
-            eventPublisher.publishEvent(
-                    new BinaryContentDeletedEvent(binaryContent.getId())
-            );
         }
         clothesRepository.deleteById(clothesId);
     }

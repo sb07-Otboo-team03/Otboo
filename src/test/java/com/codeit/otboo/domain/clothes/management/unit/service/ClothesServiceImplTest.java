@@ -2,12 +2,9 @@ package com.codeit.otboo.domain.clothes.management.unit.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
-import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.response.ClothesAttributeWithDefResponse;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.entity.ClothesAttributeDef;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.fixture.ClothesAttributeDefFixture;
@@ -39,7 +36,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Map;
@@ -56,9 +52,6 @@ import static org.mockito.BDDMockito.*;
 public class ClothesServiceImplTest {
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
-
-    @Mock
     UserRepository userRepository;
 
     @Mock
@@ -66,9 +59,6 @@ public class ClothesServiceImplTest {
 
     @Mock
     ClothesAttributeValueRepository clothesAttributeValueRepository;
-
-    @Mock
-    BinaryContentStorage binaryContentStorage;
 
     @Mock
     BinaryContentService binaryContentService;
@@ -157,7 +147,6 @@ public class ClothesServiceImplTest {
             assertThat(result.imageUrl()).isEqualTo(binaryContentUrl);
             then(userRepository).should().findById(user.getId());
             then(binaryContentService).should().upload(imageRequest);
-            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentUrlResolver).should().resolve(binaryContent.getId());
             then(clothesRepository).should().save(any(Clothes.class));
         }
@@ -317,7 +306,7 @@ public class ClothesServiceImplTest {
             // then
             then(clothesRepository).should().deleteById(clothes.getId());
             then(binaryContentService).should(never()).delete(any(UUID.class));
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
+
         }
 
         @Test
@@ -334,7 +323,6 @@ public class ClothesServiceImplTest {
             // then
             then(clothesRepository).should().deleteById(clothes.getId());
             then(binaryContentService).should().delete(any(UUID.class));
-            then(eventPublisher).should().publishEvent(any(BinaryContentDeletedEvent.class));
         }
 
         @Test
@@ -388,9 +376,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, null, Map.of());
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should(never()).resolve(any(UUID.class));
         }
@@ -429,9 +415,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
@@ -466,9 +450,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
-            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
@@ -510,9 +492,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
             then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
-            then(eventPublisher).should().publishEvent(any(BinaryContentDeletedEvent.class));
             then(binaryContentService).should().delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
