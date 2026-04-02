@@ -26,7 +26,10 @@ public class SseRequiredEventListener {
         event.notificationDtoList()
             .forEach(notificationDto -> {
                 UUID receiverId = notificationDto.receiverId();
-                sseService.send(Set.of(receiverId), "notifications", notificationDto);
+                sseService.send(
+                    Set.of(receiverId),
+                    event.eventName(),
+                    notificationDto);
         });
     }
 

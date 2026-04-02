@@ -6,5 +6,6 @@ import lombok.Builder;
 
 @Builder
 public record SseEvent(
+    String eventName,
     List<NotificationDto> notificationDtoList
 ) { }

@@ -79,7 +79,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         NotificationDto notificationDto = NotificationMapper.toEventDto(savedNotification);
 
-        eventPublisher.publishEvent( new SseEvent(List.of((notificationDto))));
+        eventPublisher.publishEvent( new SseEvent("directMessage.create", List.of((notificationDto))));
 
         return response;
     }

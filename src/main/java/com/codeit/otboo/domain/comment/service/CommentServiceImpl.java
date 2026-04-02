@@ -64,7 +64,7 @@ public class CommentServiceImpl implements CommentService{
         notificationRepository.save(notification);
 
         NotificationDto notificationDto = NotificationMapper.toEventDto(notification);
-        eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
+        eventPublisher.publishEvent( new SseEvent("comment.createComment", List.of(notificationDto)));
 
         return commentMapper.toDto(comment);
     }

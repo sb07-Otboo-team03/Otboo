@@ -71,6 +71,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         List<String> list = valueList.stream().map(ClothesAttributeValue::getSelectableValue).toList();
 
         notificationEvent(
+            "clothesAttributeDef.createAttributeDef",
                 "새로운 의상 속성이 추가되었어요.",
                 "내 의상에 [" + saveDef.getName() + "] 속성을 추가해보세요."
         );
@@ -161,6 +162,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .map(ClothesAttributeValue::getSelectableValue).toList();
 
         notificationEvent(
+            "clothesAttributeDef.updateAttributeDef",
                 "의상 속성이 변경되었어요",
                 "[" + clothesAttributeDef.getName() + "] 속성을 확인해보세요."
         );
@@ -177,6 +179,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                 .orElseThrow(() -> new ClothesAttributeDefNotFoundException(definition_id));
 
         notificationEvent(
+            "clothesAttributeDef.deleteAttributeDef",
                 "의상 속성이 삭제되었어요.",
                 "[" + attributeDef.getName() + "] 속성이 삭제되었어요."
         );
@@ -215,7 +218,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         return normalizedSet;
     }
 
-    private void notificationEvent(String title, String content) {
+    private void notificationEvent(String eventName, String title, String content) {
         List<User> allUsers = userRepository.findAll();
 
         // receiver에 각 유저 지정
@@ -235,6 +238,6 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
             .toList();
 
         // 알림 이벤트 발행
-        eventPublisher.publishEvent( new SseEvent(notificationDtos));
+        eventPublisher.publishEvent( new SseEvent(eventName, notificationDtos));
     }
 }

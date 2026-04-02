@@ -134,7 +134,7 @@ public class WeatherAlertService {
                 .toList();
 
         List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
-        publishSseEvents(savedNotifications);
+        publishSseEvents("weather.sendTemperatureGapAlerts", savedNotifications);
     }
 
     private void sendPrecipitationChangeAlerts(List<Profile> regionProfiles, List<Weather> todayWeathers) {
@@ -156,7 +156,7 @@ public class WeatherAlertService {
                 .toList();
 
         List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
-        publishSseEvents(savedNotifications);
+        publishSseEvents("weather.sendPrecipitationChangeAlerts", savedNotifications);
     }
 
     // 날씨 엔티티에서 시간과, 온도 정보만 가지는 HourlyTemperature로 매핑
@@ -188,13 +188,13 @@ public class WeatherAlertService {
                 .toList();
     }
 
-    private void publishSseEvents(List<Notification> notifications) {
+    private void publishSseEvents(String eventName, List<Notification> notifications) {
         LocalDateTime publishedAt = timeProvider.nowDateTime();
 
         List<NotificationDto> notificationDtos = notifications.stream()
             .map(NotificationMapper::toEventDto).toList();
 
-        eventPublisher.publishEvent( new SseEvent(notificationDtos));
+        eventPublisher.publishEvent( new SseEvent(eventName, notificationDtos));
     }
 
     public record RegionKey(
