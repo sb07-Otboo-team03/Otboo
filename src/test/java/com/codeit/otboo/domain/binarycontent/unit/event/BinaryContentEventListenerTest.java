@@ -33,7 +33,8 @@ public class BinaryContentEventListenerTest {
             // given
             BinaryContentCreatedEvent event = new BinaryContentCreatedEvent(
                     UUID.randomUUID(),
-                    "test".getBytes()
+                    "test".getBytes(),
+                    "image/jpeg"
             );
 
             // when
@@ -41,7 +42,7 @@ public class BinaryContentEventListenerTest {
 
             // then
             then(binaryContentRetryService).should()
-                    .upload(event.binaryContentId(), event.bytes());
+                    .upload(event.binaryContentId(), event.bytes(), event.contentType());
         }
     }
 

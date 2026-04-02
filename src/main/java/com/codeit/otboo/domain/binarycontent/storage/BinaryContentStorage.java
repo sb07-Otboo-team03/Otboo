@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface BinaryContentStorage {
 
-    UUID put(UUID binaryId, byte[] data);
+    UUID put(UUID binaryId, byte[] data, String contentType);
 
     InputStream get(UUID binaryId);
 
