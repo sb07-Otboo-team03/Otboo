@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -32,12 +33,14 @@ public class NotificationServiceImpl implements NotificationService{
     }
 
     @Override
-    public CursorResponse<NotificationResponse> getNotifications(CursorRequest cursorRequest) {
+    public CursorResponse<NotificationResponse> getNotifications(
+        OtbooUserDetails authPrincipal, CursorRequest cursorRequest) {
 
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
         List<NotificationDto> results = notificationRepository.findAll(
+            authPrincipal.getUserResponse().id(),
             cursor,
             cursorRequest.idAfter(),
             pageable
@@ -74,8 +77,8 @@ public class NotificationServiceImpl implements NotificationService{
 
     @Override
     @Transactional
-    public void deleteNotification(UUID notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public void deleteNotification(OtbooUserDetails authPrincipal, UUID notificationId) {
+        Notification notification = notificationRepository.findByIdAndReceiver_Id(notificationId, authPrincipal.getUserResponse().id())
             .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         notificationRepository.delete(notification);

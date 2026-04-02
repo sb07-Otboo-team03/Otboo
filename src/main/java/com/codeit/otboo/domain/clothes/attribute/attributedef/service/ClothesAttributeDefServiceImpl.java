@@ -19,7 +19,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
-import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -231,10 +231,11 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         notificationRepository.saveAll(notifications);
 
         // 알림 이벤트 발행
-        eventPublisher.publishEvent(new ClothesAttributeCreateEvent(
-                notificationMapper.toEventDto(notifications.get(0)),
-                notificationMapper.toEventDto(notifications.get(0)).createdAt()
-        ));
-
+        for(Notification notification : notifications) {
+            eventPublisher.publishEvent(new SseEvent(
+                notificationMapper.toEventDto(notification),
+                notification.getCreatedAt()
+            ));
+        }
     }
 }

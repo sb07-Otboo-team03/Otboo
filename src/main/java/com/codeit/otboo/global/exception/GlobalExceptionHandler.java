@@ -1,5 +1,6 @@
 package com.codeit.otboo.global.exception;
 
+import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,23 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationNotFound(NotificationNotFoundException e) {
+
+        ErrorCode errorCode = e.getErrorCode();
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .exceptionName(errorCode.name())
+            .message(errorCode.getMessage())
+            .details(e.getDetails())
+            .build();
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(errorResponse);
+    }
+
     @ExceptionHandler(OtbooException.class)
     public ResponseEntity<ErrorResponse> OtbooException(OtbooException e) {
         ErrorCode errorCode = e.getErrorCode();

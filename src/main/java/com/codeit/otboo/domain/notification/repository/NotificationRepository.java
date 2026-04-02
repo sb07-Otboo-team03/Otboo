@@ -47,19 +47,4 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         @Param("idAfter") UUID idAfter,
         Pageable pageable
     );
-
-//    @Modifying(clearAutomatically = true)
-//    @Query("""
-//        INSERT INTO Notification (title, content, level, receiver, batchId)
-//        SELECT :title, :content, :level, u, :batchId
-//        FROM User u
-//        WHERE u.locked = true
-//    """)
-//    int insertNotificationsToLockedUsers(
-//        @Param("title") String title,
-//        @Param("content") String content,
-//        @Param("level") NotificationLevel level,
-//        @Param("batchId") UUID batchId
-//    );
-
 }
