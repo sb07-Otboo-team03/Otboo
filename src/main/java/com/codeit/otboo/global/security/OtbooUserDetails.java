@@ -34,6 +34,6 @@ public class OtbooUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !userResponse.locked(); // boolean locked 필드 필요
+        return !userResponse.locked();
     }
 }
