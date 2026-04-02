@@ -31,8 +31,10 @@ public class NotificationController {
         @AuthenticationPrincipal OtbooUserDetails authPrincipal,
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     ) {
+        UUID id = authPrincipal.getUserResponse().id();
+
         CursorResponse<NotificationResponse> response =
-            notificationService.getNotifications(authPrincipal, cursorRequest);
+            notificationService.getNotifications(id, cursorRequest);
 
         return ResponseEntity
             .status(HttpStatus.OK)
@@ -45,7 +47,9 @@ public class NotificationController {
         @AuthenticationPrincipal OtbooUserDetails authPrincipal,
         @PathVariable UUID notificationId
     ) {
-        notificationService.deleteNotification(authPrincipal, notificationId);
+
+        UUID id = authPrincipal.getUserResponse().id();
+        notificationService.deleteNotification(id, notificationId);
 
         return ResponseEntity
             .status(HttpStatus.NO_CONTENT)

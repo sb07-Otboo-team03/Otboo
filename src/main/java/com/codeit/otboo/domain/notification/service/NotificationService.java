@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface NotificationService {
 
     CursorResponse<NotificationResponse> getNotifications(
-        OtbooUserDetails authPrincipal, CursorRequest cursorRequest);
+        UUID userId, CursorRequest cursorRequest);
 
-    void deleteNotification(OtbooUserDetails authPrincipal, UUID notificationId);
+    void deleteNotification(UUID userId, UUID notificationId);
 }

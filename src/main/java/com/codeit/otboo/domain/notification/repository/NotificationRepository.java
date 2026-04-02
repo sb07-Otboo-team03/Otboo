@@ -1,7 +1,6 @@
 package com.codeit.otboo.domain.notification.repository;
 
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,13 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
-    Optional<Notification> findByIdAndReceiver_Id(UUID id, UUID receiverId);
+    Optional<Notification> findByIdAndReceiverId(UUID id, UUID receiverId);
 
     @Query("""
         SELECT new com.codeit.otboo.domain.notification.dto.NotificationDto(
@@ -41,7 +39,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             )
         ORDER BY n.createdAt DESC, n.id DESC
     """)
-    List<NotificationDto> findAll(
+    List<NotificationDto> findAllByReceiverId(
         @Param("receiverId") UUID receiverId,
         @Param("cursor") LocalDateTime cursor,
         @Param("idAfter") UUID idAfter,

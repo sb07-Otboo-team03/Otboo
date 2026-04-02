@@ -3,11 +3,11 @@ package com.codeit.otboo.domain.notification.unit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
@@ -18,8 +18,6 @@ import com.codeit.otboo.domain.notification.exception.notification.NotificationN
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.notification.service.NotificationServiceImpl;
-import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,49 +56,32 @@ class NotificationServiceImplTest {
         // given
         int limit = 2;
         CursorRequest request = new CursorRequest(null, null, limit);
+        UUID authPrincipalId = UUID.randomUUID();
 
         LocalDateTime now = LocalDateTime.now();
 
-        NotificationDto dto1 = fixture.notificationDtoBuilder()
-            .createdAt(now.minusSeconds(1))
-            .build();
-
-        NotificationDto dto2 = fixture.notificationDtoBuilder()
-            .createdAt(now.minusSeconds(2))
-            .build();
-
-        NotificationDto dto3 = fixture.notificationDtoBuilder()
-            .createdAt(now.minusSeconds(3))
-            .build();
+        NotificationDto dto1 = fixture.notificationDtoBuilder().createdAt(now.minusSeconds(1)).build();
+        NotificationDto dto2 = fixture.notificationDtoBuilder().createdAt(now.minusSeconds(2)).build();
+        NotificationDto dto3 = fixture.notificationDtoBuilder().createdAt(now.minusSeconds(3)).build();
 
         List<NotificationDto> mockResults = List.of(dto1, dto2, dto3);
 
-        when(notificationRepository.findAll(
-            any(UUID.class),
+        when(notificationRepository.findAllByReceiverId(
+            eq(authPrincipalId),
             nullable(LocalDateTime.class),
             nullable(UUID.class),
-            any(Pageable.class)
-        )).thenReturn(mockResults);
+            any(Pageable.class))
+        ).thenReturn(mockResults);
 
-        when(notificationMapper.toDto(any()))
+        when(notificationMapper.toDto(any(NotificationDto.class)))
             .thenAnswer(invocation -> {
                 NotificationDto dto = invocation.getArgument(0);
-                return NotificationResponse.builder()
-                    .id(dto.id())
-                    .build();
+                return NotificationResponse.builder().id(dto.id()).build();
             });
-
-        // 🔥 user mock (핵심)
-        OtbooUserDetails user = mock(OtbooUserDetails.class);
-        UserResponse userResponse = mock(UserResponse.class);
-        UUID userId = UUID.randomUUID();
-
-        when(user.getUserResponse()).thenReturn(userResponse);
-        when(userResponse.id()).thenReturn(userId);
 
         // when
         CursorResponse<NotificationResponse> result =
-            notificationService.getNotifications(user, request);
+            notificationService.getNotifications(authPrincipalId, request);
 
         // then
         assertThat(result.data()).hasSize(limit);
@@ -110,16 +91,13 @@ class NotificationServiceImplTest {
         assertThat(result.nextCursor()).isEqualTo(last.createdAt().toString());
         assertThat(result.nextIdAfter()).isEqualTo(last.id());
 
-        // Pageable 검증
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-
-        verify(notificationRepository).findAll(
-            any(UUID.class),
+        verify(notificationRepository).findAllByReceiverId(
+            eq(authPrincipalId),
             nullable(LocalDateTime.class),
             nullable(UUID.class),
             captor.capture()
         );
-
         assertThat(captor.getValue().getPageSize()).isEqualTo(limit + 1);
     }
 
@@ -129,59 +107,39 @@ class NotificationServiceImplTest {
     @Test
     @DisplayName("알림 조회 - 마지막 페이지 (hasNext = false)")
     void getNotifications_hasNext_false() {
-        // given
         int limit = 3;
         CursorRequest request = new CursorRequest(null, null, limit);
+        UUID authPrincipalId = UUID.randomUUID();
 
         LocalDateTime now = LocalDateTime.now();
-
-        NotificationDto dto1 = fixture.notificationDtoBuilder()
-            .createdAt(now.minusSeconds(1))
-            .build();
-
-        NotificationDto dto2 = fixture.notificationDtoBuilder()
-            .createdAt(now.minusSeconds(2))
-            .build();
-
+        NotificationDto dto1 = fixture.notificationDtoBuilder().createdAt(now.minusSeconds(1)).build();
+        NotificationDto dto2 = fixture.notificationDtoBuilder().createdAt(now.minusSeconds(2)).build();
         List<NotificationDto> mockResults = List.of(dto1, dto2);
 
-        when(notificationRepository.findAll(
-            any(UUID.class),
+        when(notificationRepository.findAllByReceiverId(
+            eq(authPrincipalId),
             nullable(LocalDateTime.class),
             nullable(UUID.class),
-            any(Pageable.class)
-        )).thenReturn(mockResults);
+            any(Pageable.class))
+        ).thenReturn(mockResults);
 
-        when(notificationMapper.toDto(any()))
+        when(notificationMapper.toDto(any(NotificationDto.class)))
             .thenAnswer(invocation -> {
                 NotificationDto dto = invocation.getArgument(0);
-                return NotificationResponse.builder()
-                    .id(dto.id())
-                    .build();
+                return NotificationResponse.builder().id(dto.id()).build();
             });
-
-        // 🔥 user mock
-        OtbooUserDetails user = mock(OtbooUserDetails.class);
-        UserResponse userResponse = mock(UserResponse.class);
-        UUID userId = UUID.randomUUID();
-
-        when(user.getUserResponse()).thenReturn(userResponse);
-        when(userResponse.id()).thenReturn(userId);
 
         // when
         CursorResponse<NotificationResponse> result =
-            notificationService.getNotifications(user, request);
+            notificationService.getNotifications(authPrincipalId, request);
 
         // then
         assertThat(result.data()).hasSize(2);
         assertThat(result.hasNext()).isFalse();
 
         NotificationDto last = mockResults.get(mockResults.size() - 1);
-
-        assertThat(LocalDateTime.parse(result.nextCursor()))
-            .isEqualTo(last.createdAt());
-        assertThat(result.nextIdAfter())
-            .isEqualTo(last.id());
+        assertThat(LocalDateTime.parse(result.nextCursor())).isEqualTo(last.createdAt());
+        assertThat(result.nextIdAfter()).isEqualTo(last.id());
     }
 
     /**
@@ -190,23 +148,15 @@ class NotificationServiceImplTest {
     @Test
     @DisplayName("알림 삭제 성공 ⭕️")
     void deleteNotification_success() {
-        // given
-        UUID id = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-
-        OtbooUserDetails user = mock(OtbooUserDetails.class);
-        UserResponse userResponse = mock(UserResponse.class);
-
-        when(user.getUserResponse()).thenReturn(userResponse);
-        when(userResponse.id()).thenReturn(userId);
+        UUID notificationId = UUID.randomUUID();
+        UUID authPrincipalId = UUID.randomUUID();
 
         Notification notification = mock(Notification.class);
-
-        when(notificationRepository.findByIdAndReceiver_Id(id, userId))
+        when(notificationRepository.findByIdAndReceiverId(notificationId, authPrincipalId))
             .thenReturn(Optional.of(notification));
 
         // when
-        notificationService.deleteNotification(user, id);
+        notificationService.deleteNotification(authPrincipalId, notificationId);
 
         // then
         verify(notificationRepository).delete(notification);
@@ -218,22 +168,14 @@ class NotificationServiceImplTest {
     @Test
     @DisplayName("알림 삭제 실패 ❌ - 존재하지 않음")
     void deleteNotification_notFound() {
-        // given
-        UUID id = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+        UUID notificationId = UUID.randomUUID();
+        UUID authPrincipalId = UUID.randomUUID();
 
-        OtbooUserDetails user = mock(OtbooUserDetails.class);
-        UserResponse userResponse = mock(UserResponse.class);
-
-        when(user.getUserResponse()).thenReturn(userResponse);
-        when(userResponse.id()).thenReturn(userId);
-
-        when(notificationRepository.findByIdAndReceiver_Id(id, userId))
+        when(notificationRepository.findByIdAndReceiverId(notificationId, authPrincipalId))
             .thenReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() ->
-            notificationService.deleteNotification(user, id)
+            notificationService.deleteNotification(authPrincipalId, notificationId)
         ).isInstanceOf(NotificationNotFoundException.class);
     }
 }
