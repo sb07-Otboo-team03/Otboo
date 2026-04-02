@@ -25,7 +25,7 @@ public class WebSocketRequiredEventListener {
         String senderId = directMessageResponse.sender().userId().toString();
         String receiverId = directMessageResponse.receiver().userId().toString();
 
-        String directMessageKey = (senderId.compareTo(receiverId) > 0) ?
+        String directMessageKey = (senderId.compareTo(receiverId) < 0) ?
             senderId + "_" + receiverId :
             receiverId + "_" + senderId;
 
