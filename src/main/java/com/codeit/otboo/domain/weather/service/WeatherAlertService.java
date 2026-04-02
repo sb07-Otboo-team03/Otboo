@@ -1,8 +1,12 @@
 package com.codeit.otboo.domain.weather.service;
 
+import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.END_TIME;
+import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.START_TIME;
+
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
@@ -16,20 +20,16 @@ import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;
 import com.codeit.otboo.global.util.TimeProvider;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.END_TIME;
-import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.START_TIME;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -191,18 +191,10 @@ public class WeatherAlertService {
     private void publishSseEvents(List<Notification> notifications) {
         LocalDateTime publishedAt = timeProvider.nowDateTime();
 
-        for (Notification notification : notifications) {
-            eventPublisher.publishEvent( SseEvent.of(
-                    new NotificationDto(
-                            notification.getId(),
-                            notification.getCreatedAt(),
-                            notification.getReceiver().getId(),
-                            notification.getTitle(),
-                            notification.getContent(),
-                            notification.getLevel()
-                    )
-            ));
-        }
+        List<NotificationDto> notificationDtos = notifications.stream()
+            .map(NotificationMapper::toEventDto).toList();
+
+        eventPublisher.publishEvent( new SseEvent(notificationDtos));
     }
 
     public record RegionKey(

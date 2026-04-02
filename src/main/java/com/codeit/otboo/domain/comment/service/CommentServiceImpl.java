@@ -10,21 +10,23 @@ import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,8 @@ public class CommentServiceImpl implements CommentService{
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationMapper notificationMapper;
+    private final NotificationRepository notificationRepository;
 
     @Override
     @Transactional
@@ -51,16 +55,17 @@ public class CommentServiceImpl implements CommentService{
         commentRepository.save(comment);
         feed.increaseComment();
 
-        NotificationDto eventData = NotificationDto.builder()
-                .id(comment.getId())
-                .createdAt(comment.getCreatedAt())
-                .receiverId(feed.getAuthor().getId())
-                .title(user.getProfile().getName() + "님이 댓글을 달았어요.")
-                .content(comment.getContent())
-                .level(NotificationLevel.INFO)
-                .build();
+        Notification notification = Notification.builder()
+            .title(user.getProfile().getName() + "님이 댓글을 달았어요.")
+            .content(comment.getContent())
+            .level(NotificationLevel.INFO)
+            .receiver(feed.getAuthor())
+            .build();
 
-        eventPublisher.publishEvent( SseEvent.of(eventData));
+        notificationRepository.save(notification);
+
+        NotificationDto notificationDto = notificationMapper.toEventDto(notification);
+        eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
 
         return commentMapper.toDto(comment);
     }

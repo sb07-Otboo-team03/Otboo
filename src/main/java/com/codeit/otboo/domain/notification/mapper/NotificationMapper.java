@@ -21,7 +21,7 @@ public class NotificationMapper {
         );
     }
 
-    public NotificationDto toEventDto(Notification notification) {
+    public static NotificationDto toEventDto(Notification notification) {
         return NotificationDto.builder()
                 .id(notification.getId())
                 .createdAt(notification.getCreatedAt())

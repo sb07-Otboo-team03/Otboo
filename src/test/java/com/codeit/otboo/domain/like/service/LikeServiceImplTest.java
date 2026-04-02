@@ -7,16 +7,23 @@ import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,16 +44,21 @@ import static org.mockito.Mockito.verify;
 class LikeServiceImplTest {
 
     @Mock
-    LikeRepository likeRepository;
+    private LikeRepository likeRepository;
     @Mock
-    UserRepository userRepository;
+    private UserRepository userRepository;
     @Mock
-    FeedRepository feedRepository;
+    private FeedRepository feedRepository;
     @Mock
-    ApplicationEventPublisher eventPublisher;
+    private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private NotificationRepository notificationRepository;
+
+    // ❌ mapper는 mock 필요 없음 (static이라)
+    // @Mock private NotificationMapper notificationMapper;
 
     @InjectMocks
-    LikeServiceImpl likeService;
+    private LikeServiceImpl likeService;
 
     private Feed feed;
     private User user;
@@ -56,13 +68,16 @@ class LikeServiceImplTest {
         User author = User.builder().build();
         ReflectionTestUtils.setField(author, "id", UUID.randomUUID());
 
-        feed = Feed.builder().author(author).build();
+        feed = Feed.builder()
+            .author(author)
+            .content("피드 내용")
+            .build();
         ReflectionTestUtils.setField(feed, "id", UUID.randomUUID());
 
         user = User.builder().build();
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
-        new Profile(user, "user");
 
+        new Profile(user, "user");
     }
 
     @Nested
@@ -80,11 +95,38 @@ class LikeServiceImplTest {
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(likeRepository.existsByFeedIdAndUserId(feedId, userId)).willReturn(false);
 
+            // 🔥 Notification 저장 시 값 세팅 (핵심)
+            given(notificationRepository.save(any(Notification.class)))
+                .willAnswer(invocation -> {
+                    Notification n = invocation.getArgument(0);
+
+                    ReflectionTestUtils.setField(n, "id", UUID.randomUUID());
+                    ReflectionTestUtils.setField(n, "createdAt", LocalDateTime.now());
+
+                    return n;
+                });
+
             // when
             likeService.feedLike(feedId, userId);
 
             // then
-            verify(likeRepository, times(1)).save(any(Like.class));
+            verify(likeRepository).save(any(Like.class));
+            verify(notificationRepository).save(any(Notification.class));
+
+            // 🔥 SSE 검증
+            ArgumentCaptor<SseEvent> captor = ArgumentCaptor.forClass(SseEvent.class);
+            verify(eventPublisher).publishEvent(captor.capture());
+
+            SseEvent event = captor.getValue();
+            List<NotificationDto> dtos = event.notificationDtoList();
+
+            assertThat(dtos).hasSize(1);
+
+            NotificationDto dto = dtos.get(0);
+            assertThat(dto.title()).contains("좋아합니다");
+            assertThat(dto.content()).isEqualTo(feed.getContent());
+            assertThat(dto.receiverId()).isEqualTo(feed.getAuthor().getId());
+
             assertThat(feed.getLikeCount()).isEqualTo(1);
         }
 
@@ -99,9 +141,9 @@ class LikeServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> likeService.feedLike(feedId, userId))
-                    .isInstanceOf(FeedNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.FEED_NOT_FOUND);
+                .isInstanceOf(FeedNotFoundException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FEED_NOT_FOUND);
         }
 
         @Test
@@ -116,9 +158,9 @@ class LikeServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> likeService.feedLike(feedId, userId))
-                    .isInstanceOf(UserNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+                .isInstanceOf(UserNotFoundException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
         }
 
         @Test
@@ -134,9 +176,9 @@ class LikeServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> likeService.feedLike(feedId, userId))
-                    .isInstanceOf(LikeAlreadyExistsException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.LIKE_ALREADY_EXISTS);
+                .isInstanceOf(LikeAlreadyExistsException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.LIKE_ALREADY_EXISTS);
         }
     }
 
@@ -154,7 +196,8 @@ class LikeServiceImplTest {
             Like like = Like.builder().feed(feed).user(user).build();
             feed.increaseLike();
 
-            given(likeRepository.findByFeedIdAndUserId(feedId, userId)).willReturn(Optional.of(like));
+            given(likeRepository.findByFeedIdAndUserId(feedId, userId)).willReturn(
+                Optional.of(like));
             // when
             likeService.feedUnlike(feedId, userId);
 
@@ -170,14 +213,14 @@ class LikeServiceImplTest {
             UUID feedId = feed.getId();
             UUID userId = user.getId();
 
-            given(likeRepository.findByFeedIdAndUserId(feedId, userId)).willReturn(Optional.empty());
+            given(likeRepository.findByFeedIdAndUserId(feedId, userId)).willReturn(
+                Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> likeService.feedUnlike(feedId, userId))
-                    .isInstanceOf(LikeNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.LIKE_NOT_FOUND);
+                .isInstanceOf(LikeNotFoundException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.LIKE_NOT_FOUND);
         }
     }
-
 }

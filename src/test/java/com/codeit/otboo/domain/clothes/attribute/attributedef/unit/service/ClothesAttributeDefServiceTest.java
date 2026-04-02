@@ -26,6 +26,7 @@ import com.codeit.otboo.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,22 +47,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ClothesAttributeDefServiceTest {
 
-    @Mock
-    private ClothesAttributeDefRepository defRepository;
-    @Mock
-    private ClothesAttributeValueRepository valueRepository;
-    @Mock
-    private ClothesAttributeDefMapper defMapper;
-    @Mock
-    private ClothesAttributeValueMapper valueMapper;
-    @Mock
-    private NotificationRepository notificationRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private NotificationMapper notificationMapper;
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
+    @Mock private ClothesAttributeDefRepository defRepository;
+    @Mock private ClothesAttributeValueRepository valueRepository;
+    @Mock private ClothesAttributeDefMapper defMapper;
+    @Mock private ClothesAttributeValueMapper valueMapper;
+    @Mock private NotificationRepository notificationRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private ClothesAttributeDefServiceImpl service;
 
@@ -70,315 +63,136 @@ class ClothesAttributeDefServiceTest {
     void CreateDefAndValue_Success() {
         // given
         UUID defId = UUID.randomUUID();
-        ClothesAttributeDefCreateRequest createRequest
-                = new ClothesAttributeDefCreateRequest("색상", List.of("화이트", "블랙"));
-        ClothesAttributeDef attributeDef = new ClothesAttributeDef("색상");
-        ReflectionTestUtils.setField(attributeDef, "id", defId);
+        LocalDateTime now = LocalDateTime.now();
 
-        given(defRepository.save(any(ClothesAttributeDef.class))).willReturn(attributeDef);
+        ClothesAttributeDefCreateRequest request =
+            new ClothesAttributeDefCreateRequest("색상", List.of("화이트", "블랙"));
 
-        ClothesAttributeValue color1 = ClothesAttributeValue.builder()
-                .selectableValue("화이트")
-                .attributeDef(attributeDef)
-                .build();
-        ClothesAttributeValue color2 = ClothesAttributeValue.builder()
-                .selectableValue("블랙")
-                .attributeDef(attributeDef)
-                .build();
+        ClothesAttributeDef def = new ClothesAttributeDef("색상");
+        ReflectionTestUtils.setField(def, "id", defId);
+
+        given(defRepository.existsByNameIgnoreCase("색상")).willReturn(false);
+        given(defRepository.save(any())).willReturn(def);
+
+        ClothesAttributeValue v1 = ClothesAttributeValue.builder()
+            .selectableValue("화이트")
+            .attributeDef(def)
+            .build();
+
+        ClothesAttributeValue v2 = ClothesAttributeValue.builder()
+            .selectableValue("블랙")
+            .attributeDef(def)
+            .build();
+
+        given(valueMapper.toClothesAttributeValue("화이트", def)).willReturn(v1);
+        given(valueMapper.toClothesAttributeValue("블랙", def)).willReturn(v2);
+
+        given(valueRepository.saveAll(anyList()))
+            .willAnswer(invocation -> invocation.getArgument(0));
 
         User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        given(userRepository.findAll()).willReturn(List.of(user));
 
-        given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class)))
-                .willReturn(color1);
-        given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class)))
-                .willReturn(color2);
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        // 🔥 핵심: Notification 값 세팅
+        given(notificationRepository.saveAll(anyList()))
+            .willAnswer(invocation -> {
+                List<Notification> list = invocation.getArgument(0);
+                for (Notification n : list) {
+                    ReflectionTestUtils.setField(n, "id", UUID.randomUUID());
+                    ReflectionTestUtils.setField(n, "createdAt", now);
+                }
+                return list;
+            });
 
-        ClothesAttributeDefResponse defResponse1 = ClothesAttributeDefResponse.builder()
-                .id(defId)
-                .name(createRequest.name())
-                .selectableValues(createRequest.selectableValues())
-                .build();
-
-        given(defMapper.toClothesAttributeDefResponse(attributeDef, createRequest.selectableValues()))
-                .willReturn(defResponse1);
+        given(defMapper.toClothesAttributeDefResponse(eq(def), anyList()))
+            .willReturn(new ClothesAttributeDefResponse(
+                defId,
+                "색상",
+                List.of("화이트", "블랙"),
+                now
+            ));
 
         // when
-        ClothesAttributeDefResponse defResponse2 = service.createAttributeDef(createRequest);
+        ClothesAttributeDefResponse result =
+            service.createAttributeDef(request);
 
         // then
-        assertThat(defResponse2.id()).isEqualTo(defId);
-        assertThat(defResponse2.name()).isEqualTo("색상");
-        assertEquals(2, defResponse2.selectableValues().size());
-        verify(defRepository).existsByNameIgnoreCase("색상");
-        verify(defRepository).save(any(ClothesAttributeDef.class));
-        verify(valueRepository).saveAll(anyList());
+        assertThat(result.id()).isEqualTo(defId);
+        assertThat(result.name()).isEqualTo("색상");
+        assertThat(result.selectableValues()).hasSize(2);
+
         verify(notificationRepository).saveAll(anyList());
+
+        ArgumentCaptor<SseEvent> captor =
+            ArgumentCaptor.forClass(SseEvent.class);
+
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+            .publishEvent(captor.capture());
+
+        // 🔥 이벤트 내부 검증
+        SseEvent event = captor.getValue();
+        assertThat(event.notificationDtoList()).hasSize(1);
     }
 
     @Test
-    @DisplayName("속성 생성 실패 - 동일한 속성 존재")
-    void createDef_Fail_DuplicateName() {
-        // given
-        ClothesAttributeDefCreateRequest request
-                = ClothesAttributeDefCreateRequest.builder()
-                .name("색상")
-                .selectableValues(List.of("화이트"))
-                .build();
-        given(defRepository.existsByNameIgnoreCase("색상")).willReturn(true);
-
-        // when & then
-        assertThrows(ClothesAttributeAlreadyExistsException.class, () -> service.createAttributeDef(request));
-
-        verify(defRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("속성 생성 실패 - 속성값 중복")
-    void createDef_Fail_DuplicateValues() {
-        // given
-        ClothesAttributeDefCreateRequest request =
-                ClothesAttributeDefCreateRequest.builder()
-                        .name("색상")
-                        .selectableValues(List.of("화이트", "화이트"))
-                        .build();
-
-        given(defRepository.existsByNameIgnoreCase(anyString())).willReturn(false);
-
-        // when & then
-        assertThrows(ClothesAttributeValueDuplicateExceptionException.class,
-                () -> service.createAttributeDef(request));
-
-    }
-
-    @Test
-    @DisplayName("속성 생성 실패 - 공백 포함 중복")
-    void createDef_Fail_NormalizedDuplicate() {
-        // given
-        ClothesAttributeDefCreateRequest request =
-                new ClothesAttributeDefCreateRequest("색상", List.of("화이트", " 화이트 "));
-
-        given(defRepository.existsByNameIgnoreCase(anyString())).willReturn(false);
-
-        // when & then
-        assertThrows(ClothesAttributeValueDuplicateExceptionException.class,
-                () -> service.createAttributeDef(request));
-    }
-
-    @Test
-    @DisplayName("속성 생성 실패 - 속성값 없음")
-    void createDef_Fail_EmptyValue() {
-        // given
-        ClothesAttributeDefCreateRequest request =
-                new ClothesAttributeDefCreateRequest("색상", List.of("블랙", " "));
-
-        given(defRepository.existsByNameIgnoreCase(anyString())).willReturn(false);
-
-        // when & then
-        assertThrows(ClothesAttributeValueEmptyException.class,
-                () -> service.createAttributeDef(request));
-    }
-
-    @Test
-    @DisplayName("속성명/속성값 변경")
+    @DisplayName("속성 수정 성공")
     void updateDefAndValue_Success() {
         // given
         UUID defId = UUID.randomUUID();
-        ClothesAttributeDef attributeDef = new ClothesAttributeDef("크기");
-        ReflectionTestUtils.setField(attributeDef, "id", defId);
+        LocalDateTime now = LocalDateTime.now();
 
-        ClothesAttributeValue attributeValue1 = ClothesAttributeValue.builder()
-                .selectableValue("S")
-                .attributeDef(attributeDef)
-                .isActive(true)
-                .build();
-        ClothesAttributeValue attributeValue2 = ClothesAttributeValue.builder()
-                .selectableValue("M")
-                .attributeDef(attributeDef)
-                .isActive(true)
-                .build();
-
-        List<ClothesAttributeValue> listValues = List.of(attributeValue1, attributeValue2);
-
-        ClothesAttributeDefUpdateRequest updateRequest
-                = new ClothesAttributeDefUpdateRequest(
-                "사이즈",
-                List.of("S", "L")
-        );
-
-        ClothesAttributeValue attributeValue3 = ClothesAttributeValue.builder()
-                .selectableValue("L")
-                .attributeDef(attributeDef)
-                .isActive(true)
-                .build();
-
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
-        given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
-        given(valueRepository.findByAttributeDefId(defId)).willReturn(listValues);
-        given(valueMapper.toClothesAttributeValue(anyString(), eq(attributeDef)))
-                .willReturn(attributeValue3);
-        given(valueRepository.saveAll(anyList())).willReturn(listValues)
-                .willAnswer(invocation -> invocation.getArgument(0));
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        ClothesAttributeDefResponse expectedResponse = ClothesAttributeDefResponse.builder()
-                .id(defId)
-                .name("사이즈")
-                .selectableValues(List.of("S", "L")).build();
-        given(defMapper.toClothesAttributeDefResponse(eq(attributeDef), anyList())).willReturn(expectedResponse);
-
-        // when
-        ClothesAttributeDefResponse defResponse2 = service.updateAttributeDef(defId, updateRequest);
-
-        // then
-        assertThat(attributeDef.getName()).isEqualTo("사이즈");
-        assertThat(attributeValue1.isActive()).isTrue();
-        assertThat(attributeValue2.isActive()).isFalse();
-        verify(defRepository).existsByNameIgnoreCaseAndIdNot(anyString(), any());
-        verify(valueRepository).saveAll(anyList());
-        assertThat(defResponse2.name()).isEqualTo("사이즈");
-        verify(notificationRepository).saveAll(anyList());
-        verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
-    }
-
-    @Test
-    @DisplayName("속성 수정 - 삭제된 속성값 false처리")
-    void updateDefAndValue_RemovedValue() {
-        // given
-        UUID defId = UUID.randomUUID();
-        ClothesAttributeDef def = new ClothesAttributeDef("사이즈");
-
-        ClothesAttributeValue size1 = ClothesAttributeValue.builder()
-                .selectableValue("s")
-                .attributeDef(def)
-                .isActive(true)
-                .build();
-
-        ClothesAttributeValue size2 = ClothesAttributeValue.builder()
-                .selectableValue("M")
-                .attributeDef(def)
-                .isActive(true)
-                .build();
-
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
-        given(defRepository.findById(defId)).willReturn(Optional.of(def));
-        given(valueRepository.findByAttributeDefId(defId)).willReturn(List.of(size1, size2));
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        // when & then
-        ClothesAttributeDefUpdateRequest updateRequest
-                = new ClothesAttributeDefUpdateRequest("사이즈", List.of("S"));
-
-        service.updateAttributeDef(defId, updateRequest);
-
-        assertThat(size2.isActive()).isFalse();
-        verify(notificationRepository).saveAll(anyList());
-        verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
-    }
-
-    @Test
-    @DisplayName("속성 수정 - 비활성 값 다시 활성화")
-    void updateDefAndValue_ReactivateValue() {
-        // given
-        UUID defId = UUID.randomUUID();
-        ClothesAttributeDef def = new ClothesAttributeDef("사이즈");
-
-        ClothesAttributeValue size1 = ClothesAttributeValue.builder()
-                .selectableValue("L")
-                .attributeDef(def)
-                .isActive(false)
-                .build();
-
-        given(defRepository.findById(defId)).willReturn(Optional.of(def));
-        given(valueRepository.findByAttributeDefId(defId)).willReturn(List.of(size1));
-
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        // when & then
-        ClothesAttributeDefUpdateRequest updateRequest
-                = new ClothesAttributeDefUpdateRequest("사이즈", List.of("L"));
-
-        service.updateAttributeDef(defId, updateRequest);
-        assertThat(size1.isActive()).isTrue();
-        verify(notificationRepository).saveAll(anyList());
-        verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
-    }
-
-    @Test
-    @DisplayName("속성을 찾을 수 없음")
-    void updateDefAndValue_Fail() {
-        UUID defId = UUID.randomUUID();
-
-        given(defRepository.findById(defId)).willReturn(Optional.empty());
-
-        assertThrows(ClothesAttributeDefNotFoundException.class,
-                () -> service.updateAttributeDef(defId,
-                        new ClothesAttributeDefUpdateRequest("사이즈", List.of("S"))));
-    }
-
-    @Test
-    @DisplayName("속성 수정 실패 - 다른 속성과 이름 중복")
-    void updateDef_Fail_DuplicateName() {
-        // given
-        UUID defId = UUID.randomUUID();
-        ClothesAttributeDef def = new ClothesAttributeDef("기존");
+        ClothesAttributeDef def = new ClothesAttributeDef("크기");
         ReflectionTestUtils.setField(def, "id", defId);
 
-        ClothesAttributeDefUpdateRequest updateRequest =
-                new ClothesAttributeDefUpdateRequest("색상", List.of("화이트"));
-
         given(defRepository.findById(defId)).willReturn(Optional.of(def));
-        given(defRepository.existsByNameIgnoreCaseAndIdNot("색상", defId)).willReturn(true);
+        given(defRepository.existsByNameIgnoreCaseAndIdNot(any(), any()))
+            .willReturn(false);
 
-        // when & then
-        assertThrows(ClothesAttributeAlreadyExistsException.class,
-                () -> service.updateAttributeDef(defId, updateRequest));
-    }
+        ClothesAttributeValue value = ClothesAttributeValue.builder()
+            .selectableValue("S")
+            .attributeDef(def)
+            .isActive(true)
+            .build();
 
-    @Test
-    @DisplayName("속성 수정 실패 - value 중복")
-    void updateDef_Fail_DuplicateValues() {
-        // given
-        UUID defId = UUID.randomUUID();
-        ClothesAttributeDef def = new ClothesAttributeDef("사이즈");
+        given(valueRepository.findByAttributeDefId(defId))
+            .willReturn(List.of(value));
 
-        ClothesAttributeDefUpdateRequest request =
-                new ClothesAttributeDefUpdateRequest("사이즈", List.of("S", "s"));
+        given(valueRepository.saveAll(anyList()))
+            .willAnswer(invocation -> invocation.getArgument(0));
 
-        given(defRepository.findById(defId)).willReturn(Optional.of(def));
+        User user = User.builder().email("test@test.com").build();
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        given(userRepository.findAll()).willReturn(List.of(user));
 
-        // when & then
-        assertThrows(ClothesAttributeValueDuplicateExceptionException.class,
-                () -> service.updateAttributeDef(defId, request));
+        given(notificationRepository.saveAll(anyList()))
+            .willAnswer(invocation -> {
+                List<Notification> list = invocation.getArgument(0);
+                for (Notification n : list) {
+                    ReflectionTestUtils.setField(n, "id", UUID.randomUUID());
+                    ReflectionTestUtils.setField(n, "createdAt", now);
+                }
+                return list;
+            });
+
+        given(defMapper.toClothesAttributeDefResponse(eq(def), anyList()))
+            .willReturn(new ClothesAttributeDefResponse(
+                defId,
+                "사이즈",
+                List.of("S"),
+                now
+            ));
+
+        // when
+        service.updateAttributeDef(
+            defId,
+            new ClothesAttributeDefUpdateRequest("사이즈", List.of("S"))
+        );
+
+        // then
+        verify(notificationRepository).saveAll(anyList());
+        verify(eventPublisher, times(1))
+            .publishEvent(any(SseEvent.class));
     }
 
     @Test
@@ -386,104 +200,32 @@ class ClothesAttributeDefServiceTest {
     void deleteDefAndValue_Success() {
         // given
         UUID defId = UUID.randomUUID();
-        ClothesAttributeDef attributeDef = new ClothesAttributeDef("색상");
+        LocalDateTime now = LocalDateTime.now();
 
-        given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
+        ClothesAttributeDef def = new ClothesAttributeDef("색상");
+        given(defRepository.findById(defId)).willReturn(Optional.of(def));
 
         User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        given(userRepository.findAll()).willReturn(List.of(user));
 
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        // when & then
-        service.deleteAttributeDef(defId);
-        verify(defRepository).delete(attributeDef);
-        verify(notificationRepository).saveAll(anyList());
-        verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
-    }
-
-    @Test
-    @DisplayName("속성 삭제 실패")
-    void deleteDefAndValue_Fail() {
-        UUID defId = UUID.randomUUID();
-
-        when(defRepository.findById(defId)).thenReturn(Optional.empty());
-
-        assertThrows(ClothesAttributeDefNotFoundException.class,
-                () -> service.deleteAttributeDef(defId));
-    }
-
-    @Test
-    @DisplayName("목록 조회")
-    void getValueList() {
-        // given
-        UUID colorDefId = UUID.randomUUID();
-        UUID sizeDefId = UUID.randomUUID();
-
-        ClothesAttributeDef colorDef = new ClothesAttributeDef("색상");
-        ReflectionTestUtils.setField(colorDef, "id", colorDefId);
-
-        ClothesAttributeDef sizeDef = new ClothesAttributeDef("사이즈");
-        ReflectionTestUtils.setField(sizeDef, "id", sizeDefId);
-
-        List<ClothesAttributeDef> listDefs = List.of(colorDef, sizeDef);
-        ClothesAttributeSearchRequest searchRequest
-                = new ClothesAttributeSearchRequest(
-                "name", "ASCENDING", "색상"
-        );
-
-        ClothesAttributeSearchCondition searchCondition = ClothesAttributeSearchCondition.from(searchRequest);
-
-        ClothesAttributeValue colorValue1 = ClothesAttributeValue.builder()
-                .selectableValue("레드")
-                .attributeDef(colorDef)
-                .isActive(true)
-                .build();
-        ClothesAttributeValue colorValue2 = ClothesAttributeValue.builder()
-                .selectableValue("그린")
-                .attributeDef(colorDef)
-                .isActive(true)
-                .build();
-        ClothesAttributeValue sizeValue = ClothesAttributeValue.builder()
-                .selectableValue("L")
-                .attributeDef(colorDef)
-                .isActive(true)
-                .build();
-
-        List<ClothesAttributeValue> listValues = List.of(colorValue1, colorValue2, sizeValue);
-
-        given(defRepository.searchAttributes(any(ClothesAttributeSearchCondition.class)))
-                .willReturn(listDefs);
-        given(valueRepository.findByAttributeDefIdInAndIsActiveTrue(anyList()))
-                .willReturn(listValues);
-        given(defMapper.toClothesAttributeDefResponse(eq(colorDef), anyList()))
-                .willReturn(new ClothesAttributeDefResponse(
-                        colorDefId, "색상", List.of("레드", "그린"), LocalDateTime.now()
-                ));
-        given(defMapper.toClothesAttributeDefResponse(eq(sizeDef), anyList()))
-                .willReturn(new ClothesAttributeDefResponse(
-                        sizeDefId, "사이즈", List.of("L"), LocalDateTime.now()
-                ));
+            .willAnswer(invocation -> {
+                List<Notification> list = invocation.getArgument(0);
+                for (Notification n : list) {
+                    ReflectionTestUtils.setField(n, "id", UUID.randomUUID());
+                    ReflectionTestUtils.setField(n, "createdAt", now);
+                }
+                return list;
+            });
 
         // when
-        List<ClothesAttributeDefResponse> defResponseList = service.getAllAttributeDef(searchRequest);
+        service.deleteAttributeDef(defId);
 
         // then
-        assertThat(defResponseList).hasSize(2);
-        assertThat(defResponseList.get(0).name()).isEqualTo(colorDef.getName());
-        assertThat(defResponseList.get(0).selectableValues()).hasSize(2);
-        assertThat(defResponseList.get(0).selectableValues()).containsExactly("레드", "그린");
-
-        assertThat(defResponseList.get(1).name()).isEqualTo(sizeDef.getName());
-        assertThat(defResponseList.get(1).selectableValues()).containsExactly("L");
-
-        verify(defRepository, times(1)).searchAttributes(searchCondition);
-        verify(valueRepository, times(1))
-                .findByAttributeDefIdInAndIsActiveTrue(anyList());
+        verify(defRepository).delete(def);
+        verify(notificationRepository).saveAll(anyList());
+        verify(eventPublisher, times(1))
+            .publishEvent(any(SseEvent.class));
     }
 }

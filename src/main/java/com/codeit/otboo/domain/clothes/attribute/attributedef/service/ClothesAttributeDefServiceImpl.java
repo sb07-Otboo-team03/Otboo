@@ -15,6 +15,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.Clothes
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.mapper.ClothesAttributeValueMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
@@ -43,7 +44,6 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     private final UserRepository userRepository;
     private final ClothesAttributeValueMapper clothesAttributeValueMapper;
     private final ClothesAttributeDefMapper clothesAttributeDefMapper;
-    private final NotificationMapper notificationMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -230,9 +230,11 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
         notificationRepository.saveAll(notifications);
 
+        List<NotificationDto> notificationDtos = notifications.stream()
+            .map(NotificationMapper::toEventDto)
+            .toList();
+
         // 알림 이벤트 발행
-        for(Notification notification : notifications) {
-            eventPublisher.publishEvent( SseEvent.of(notificationMapper.toEventDto(notification)));
-        }
+        eventPublisher.publishEvent( new SseEvent(notificationDtos));
     }
 }

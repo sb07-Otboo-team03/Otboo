@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.notification.dto;
 
+import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import java.time.LocalDateTime;
@@ -15,14 +16,14 @@ public record NotificationDto(
     String content,
     NotificationLevel level
 ) {
-    public static NotificationDto from(SseEvent event) {
+    public static NotificationDto from(Notification notification) {
         return  NotificationDto.builder()
-            .id(event.id())
-            .createdAt(event.createdAt())
-            .receiverId(event.receiverId())
-            .title(event.title())
-            .content(event.content())
-            .level(event.level())
+            .id(notification.getId())
+            .createdAt(notification.getCreatedAt())
+            .receiverId(notification.getReceiver().getId())
+            .title(notification.getTitle())
+            .content(notification.getContent())
+            .level(notification.getLevel())
             .build();
     }
 

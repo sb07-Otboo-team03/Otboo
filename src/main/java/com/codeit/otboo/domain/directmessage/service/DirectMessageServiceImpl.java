@@ -20,7 +20,9 @@ import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,10 +75,12 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             .receiver(receiver)
             .build();
 
-        notificationRepository.save(notification);
+        Notification savedNotification =
+            notificationRepository.save(notification);
 
-        eventPublisher.publishEvent( SseEvent.of(notificationMapper.toEventDto(notification))
-        );
+        NotificationDto notificationDto = NotificationMapper.toEventDto(savedNotification);
+
+        eventPublisher.publishEvent( new SseEvent(List.of((notificationDto))));
 
         return response;
     }

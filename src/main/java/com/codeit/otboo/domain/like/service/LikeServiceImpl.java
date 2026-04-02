@@ -9,21 +9,20 @@ import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.exception.ErrorCode;
-import com.codeit.otboo.global.exception.OtbooException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +32,8 @@ public class LikeServiceImpl implements LikeService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationMapper notificationMapper;
+    private final NotificationRepository notificationRepository;
 
     @Override
     @Transactional
@@ -51,16 +52,18 @@ public class LikeServiceImpl implements LikeService {
         likeRepository.save(like);
         feed.increaseLike();
 
-        NotificationDto eventData = NotificationDto.builder()
-                .id(like.getId())
-                .createdAt(now)
-                .receiverId(feed.getAuthor().getId())
-                .title(user.getProfile().getName() + "님이 내 피드를 좋아합니다.")
-                .content(feed.getContent())
-                .level(NotificationLevel.INFO)
-                .build();
+        Notification notification = Notification.builder()
+            .title(user.getProfile().getName() + "님이 내 피드를 좋아합니다.")
+            .content(feed.getContent())
+            .level(NotificationLevel.INFO)
+            .receiver(feed.getAuthor())
+            .build();
 
-        eventPublisher.publishEvent( SseEvent.of(eventData));
+        notificationRepository.save(notification);
+
+        NotificationDto notificationDto = notificationMapper.toEventDto(notification);
+        eventPublisher.publishEvent( new SseEvent(List.of(notificationDto)));
+
     }
 
     @Override
