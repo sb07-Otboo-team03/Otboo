@@ -58,9 +58,9 @@ public class LikeServiceImpl implements LikeService {
             .receiver(feed.getAuthor())
             .build();
 
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
 
-        NotificationDto notificationDto = NotificationMapper.toEventDto(notification);
+        NotificationDto notificationDto = NotificationMapper.toEventDto(savedNotification);
         eventPublisher.publishEvent( new SseEvent("like.feedLike", List.of(notificationDto)));
 
     }

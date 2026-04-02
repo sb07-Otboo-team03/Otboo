@@ -23,9 +23,11 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(SseEvent event) {
+
         event.notificationDtoList()
             .forEach(notificationDto -> {
                 UUID receiverId = notificationDto.receiverId();
+
                 sseService.send(
                     Set.of(receiverId),
                     event.eventName(),

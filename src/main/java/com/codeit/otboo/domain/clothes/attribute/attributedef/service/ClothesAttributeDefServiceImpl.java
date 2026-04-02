@@ -231,13 +231,13 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
                         .build())
                 .toList();
 
-        notificationRepository.saveAll(notifications);
+        List<Notification> savedNotificationsList = notificationRepository.saveAll(notifications);
 
-        List<NotificationDto> notificationDtos = notifications.stream()
+        List<NotificationDto> notificationDtoList = savedNotificationsList.stream()
             .map(NotificationMapper::toEventDto)
             .toList();
 
         // 알림 이벤트 발행
-        eventPublisher.publishEvent( new SseEvent(eventName, notificationDtos));
+        eventPublisher.publishEvent( new SseEvent(eventName, notificationDtoList));
     }
 }
