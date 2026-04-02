@@ -30,9 +30,9 @@ public class ProfileMapper {
     private LocationResponse toLocationResponse(Location location) {
         List<String> locationsMap = new ArrayList<>();
         locationsMap.add(location.getRegion1depthName());
-        locationsMap.add(location.getRegion1depthName());
-        locationsMap.add(location.getRegion1depthName());
-        locationsMap.add(location.getRegion1depthName());
+        locationsMap.add(location.getRegion2depthName());
+        locationsMap.add(location.getRegion3depthName());
+        locationsMap.add(location.getRegion4depthName());
 
         return new LocationResponse(
                 location.getLatitude(),
