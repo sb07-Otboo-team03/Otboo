@@ -45,6 +45,8 @@ public enum ErrorCode {
     // Weather
     KMA_API_INVALID_RESPONSE("기상청 API 응답이 올바르지 않습니다."),
     KMA_API_ERROR("기상청 API 호출 결과 오류가 발생했습니다."),
+    WEATHER_NOT_FOUND("날씨 정보를 찾을 수 없습니다."),
+    YESTERDAY_WEATHER_NOT_FOUND("어제 날씨 정보를 찾을 수 없습니다."),
 
     // Profile
 
