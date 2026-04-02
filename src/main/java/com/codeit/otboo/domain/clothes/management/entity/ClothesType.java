@@ -1,5 +1,7 @@
 package com.codeit.otboo.domain.clothes.management.entity;
 
+import java.util.Optional;
+
 public enum ClothesType {
     TOP,
     BOTTOM,
@@ -12,5 +14,9 @@ public enum ClothesType {
     HAT,
     BAG,
     SCARF,
-    ETC
+    ETC;
+
+    public static ClothesType fromString(String value){
+        return value == null ? null : ClothesType.valueOf(value.toUpperCase());
+    }
 }

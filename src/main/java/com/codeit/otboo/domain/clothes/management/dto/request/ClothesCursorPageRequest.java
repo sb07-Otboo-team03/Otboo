@@ -1,0 +1,18 @@
+package com.codeit.otboo.domain.clothes.management.dto.request;
+
+import jakarta.validation.constraints.NotNull;
+
+import java.util.UUID;
+
+public record ClothesCursorPageRequest (
+    String cursor,
+    String after,
+    Integer limit,
+    String type,
+    @NotNull
+    UUID ownerId
+){
+    public ClothesCursorPageRequest {
+        if (limit == null) limit = 20;
+    }
+}

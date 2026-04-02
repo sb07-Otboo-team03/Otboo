@@ -8,21 +8,29 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.Clot
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
 import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
+import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeSelection;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeValueKey;
+import com.codeit.otboo.domain.clothes.management.vo.NextCursor;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +49,8 @@ public class ClothesServiceImpl implements ClothesService{
     private final BinaryContentService binaryContentService;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
+    private final ClothesQueryMapper clothesQueryMapper;
+    private final ClothesRepositoryCustomImpl clothesRepositoryCustom;
 
     @Override
     @Transactional
@@ -168,6 +178,38 @@ public class ClothesServiceImpl implements ClothesService{
             binaryContentService.delete(clothes.getBinaryContent().getId());
         }
         clothesRepository.deleteById(clothesId);
+    }
+
+    @Override
+    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
+    public CursorResponse<ClothesResponse> getMyClotheList(ClothesCursorPageRequest request) {
+        ClothesCursorQuery query = clothesQueryMapper.toQuery(request);
+        Slice<Clothes> slice = clothesRepositoryCustom.findMyClotheList(query);
+
+        List<ClothesResponse> content = slice.getContent().stream()
+                .map(clothes -> {
+                    List<ClothesAttributeValue> allSelectableValues =
+                            clothesAttributeValueRepository.findByAttributeDefIdIn(
+                                clothes.getValues().stream().map(attributeValue ->
+                                        attributeValue.getAttributeDef().getId()).toList());
+                    return clothesMapper.toDto(
+                        clothes,
+                        clothes.getBinaryContent() == null
+                                ? null
+                                : binaryContentUrlResolver.resolve(clothes.getBinaryContent().getId()),
+                        groupSelectableValuesByAttributeId(allSelectableValues));
+                }).toList();
+
+        NextCursor nextCursor = NextCursor.from(slice);
+        return new CursorResponse<>(
+                content,
+                nextCursor.getCursor(),
+                nextCursor.getAfter(),
+                slice.hasNext(),
+                0L,
+                "createdAt",
+                SortDirection.DESCENDING
+        );
     }
 
     private Clothes getById(UUID clothesId){
