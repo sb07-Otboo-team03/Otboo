@@ -38,6 +38,7 @@ public class BinaryContentServiceImpl implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID binaryContentId) {
         BinaryContent binaryContent = find(binaryContentId);
         binaryContentRepository.delete(binaryContent);
