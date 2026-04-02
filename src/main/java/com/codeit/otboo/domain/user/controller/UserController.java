@@ -29,8 +29,8 @@ public class UserController {
 
     @GetMapping("{userId}/profiles")
     public ResponseEntity<ProfileResponse> getProfile(@PathVariable("userId") UUID userId) {
-        userService.getProfile(userId);
-        return ResponseEntity.ok(userService.getProfile(userId));
+        ProfileResponse profileResponse = userService.getProfile(userId);
+        return ResponseEntity.ok(profileResponse);
     }
 
 }
