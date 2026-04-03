@@ -7,6 +7,7 @@ import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
 import com.codeit.otboo.domain.weather.entity.Weather;
+import com.codeit.otboo.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
         Weather weather = weatherRepository.findById(weatherId)
-                .orElseThrow(() -> new RuntimeException("weatherId를 찾을 수 없습니다."));
+                .orElseThrow(WeatherNotFoundException::new);
 
         List<Clothes> clothes = clothesRepository.findAll();
 

@@ -10,6 +10,7 @@ import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
 import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationServiceImpl;
 import com.codeit.otboo.domain.weather.entity.Weather;
+import com.codeit.otboo.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -109,8 +110,8 @@ class RecommendationServiceTest {
 
         // when & then
         assertThatThrownBy(() -> recommendationService.recommend(weatherId, userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("weatherId를 찾을 수 없습니다.");
+                .isInstanceOf(WeatherNotFoundException.class)
+                .hasMessage("날씨 정보를 찾을 수 없습니다.");
 
     }
 
