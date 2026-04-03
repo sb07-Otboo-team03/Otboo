@@ -84,6 +84,12 @@ public class Profile extends BaseUpdatableEntity {
     public Profile(User user, String name) {
         setUser(user);
         this.name = name;
+        this.location = Location.builder()
+                .region1depthName("")
+                .region2depthName("")
+                .region3depthName("")
+                .region4depthName("")
+                .build();
     }
 
     private void setUser(User user) {
