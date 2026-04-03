@@ -47,6 +47,39 @@ public class Profile extends BaseUpdatableEntity {
     @JoinColumn(name="profile_image_id")
     private BinaryContent binaryContent;
 
+    public void update(
+            String name,
+            Gender gender,
+            LocalDate birthDate,
+            Location location,
+            Integer temperatureSensitivity,
+            BinaryContent binaryContent
+    ) {
+        if (name != null && !name.isBlank()) {
+            this.name = name;
+        }
+
+        if (gender != null) {
+            this.gender = gender;
+        }
+
+        if (birthDate != null) {
+            this.birthDate = birthDate;
+        }
+
+        if (location != null) {
+            this.location = location;
+        }
+
+        if (temperatureSensitivity != null) {
+            this.temperatureSensitivity = temperatureSensitivity;
+        }
+
+        if (binaryContent != null) {
+            this.binaryContent = binaryContent;
+        }
+    }
+
     @Builder
     public Profile(User user, String name) {
         setUser(user);

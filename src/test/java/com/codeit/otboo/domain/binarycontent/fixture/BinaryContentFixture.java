@@ -29,4 +29,10 @@ public class BinaryContentFixture {
         ReflectionTestUtils.setField(newBinaryContent, "id", UUID.randomUUID());
         return newBinaryContent;
     }
+
+    public static BinaryContent create(UUID binaryContentId){
+        BinaryContent newBinaryContent = new BinaryContent("test", "image/png", 64L);
+        ReflectionTestUtils.setField(newBinaryContent, "id", binaryContentId);
+        return newBinaryContent;
+    }
 }
