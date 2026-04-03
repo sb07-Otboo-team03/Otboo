@@ -1,5 +1,6 @@
 package com.codeit.otboo.global.exception;
 
+import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(OtbooException.class)
     public ResponseEntity<ErrorResponse> OtbooException(OtbooException e) {
         ErrorCode errorCode = e.getErrorCode();

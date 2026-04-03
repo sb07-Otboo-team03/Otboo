@@ -2,12 +2,13 @@ package com.codeit.otboo.domain.binarycontent.unit.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentServiceImpl;
-import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.properties.MultipartProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.io.Resource;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.util.unit.DataSize;
 
 import java.util.Optional;
@@ -28,17 +28,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class BinaryContentServiceImplTest {
     @Mock
-    private BinaryContentRepository binaryContentRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private BinaryContentStorage binaryContentStorage;
+    private BinaryContentRepository binaryContentRepository;
 
     @InjectMocks
     private BinaryContentServiceImpl binaryContentService;
@@ -48,8 +47,8 @@ public class BinaryContentServiceImplTest {
         MultipartProperties props = new MultipartProperties(DataSize.ofMegabytes(10));
 
         binaryContentService = new BinaryContentServiceImpl(
+                eventPublisher,
                 binaryContentRepository,
-                binaryContentStorage,
                 props
         );
     }
@@ -74,8 +73,7 @@ public class BinaryContentServiceImplTest {
             assertThat(result).isEqualTo(binaryContent);
             then(binaryContentRepository).should(times(1))
                     .save(any(BinaryContent.class));
-            then(binaryContentStorage).should(times(1))
-                    .put(eq(binaryContent.getId()), eq(data));
+            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
         }
 
         @Test
@@ -91,87 +89,14 @@ public class BinaryContentServiceImplTest {
                     .isInstanceOf(FileUploadMaximumSizeException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FILE_UPLOAD_MAXIMUM_SIZE);
+
+            then(binaryContentRepository).should(never())
+                    .save(any(BinaryContent.class));
+            then(eventPublisher).should(never())
+                    .publishEvent(any(BinaryContentCreatedEvent.class));
         }
     }
 
-    @Nested
-    @DisplayName("바이너리 컨텐츠 다운로드")
-    class DownloadBinaryContent {
-        @Test
-        @DisplayName("성공: 유효한 id 값이 들어오면 다운로드에 성공한다")
-        void success_download() {
-            // given
-            BinaryContent binaryContent = BinaryContentFixture.create();
-            Resource resource = mock(Resource.class);
-            given(binaryContentRepository.findById(any(UUID.class)))
-                    .willReturn(Optional.of(binaryContent));
-            given(binaryContentStorage.download(any(UUID.class)))
-                    .willReturn(resource);
-
-            // when
-            Resource result = binaryContentService.download(binaryContent.getId());
-
-            // then
-            assertThat(result).isEqualTo(resource);
-            then(binaryContentRepository).should(times(1))
-                    .findById(any(UUID.class));
-            then(binaryContentStorage).should(times(1))
-                    .download(any(UUID.class));
-        }
-
-        @Test
-        @DisplayName("실패: 존재하지 않는 id 값이 들어오면 예외가 발생한다")
-        void fail_download_binary_not_found() {
-            // given
-            UUID binaryContentId = UUID.randomUUID();
-            given(binaryContentRepository.findById(any(UUID.class)))
-                    .willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> binaryContentService.download(binaryContentId))
-                    .isInstanceOf(BinaryContentNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
-            then(binaryContentStorage).should(never())
-                    .download(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("바이너리 컨텐츠 메타데이터 읽기")
-    class ReadBinaryContent {
-        @Test
-        @DisplayName("성공: 유효한 id 값이 들어오면 메타데이터 가져오기에 성공한다")
-        void success_get_info() {
-            // given
-            BinaryContent binaryContent = BinaryContentFixture.create();
-            given(binaryContentRepository.findById(any(UUID.class)))
-                    .willReturn(Optional.of(binaryContent));
-
-            // when
-            BinaryContent result = binaryContentService.getInfo(binaryContent.getId());
-
-            // then
-            assertThat(result).isEqualTo(binaryContent);
-            then(binaryContentRepository).should(times(1))
-                    .findById(binaryContent.getId());
-        }
-
-        @Test
-        @DisplayName("실패: 존재하지 않는 id 값이 들어오면 예외가 발생한다")
-        void fail_get_info_binary_not_found() {
-            // given
-            UUID binaryContentId = UUID.randomUUID();
-            given(binaryContentRepository.findById(any(UUID.class)))
-                    .willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> binaryContentService.getInfo(binaryContentId))
-                    .isInstanceOf(BinaryContentNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
-        }
-    }
 
     @Nested
     @DisplayName("바이너리 컨텐츠 삭제")
@@ -192,8 +117,8 @@ public class BinaryContentServiceImplTest {
                     .findById(binaryContent.getId());
             then(binaryContentRepository).should(times(1))
                     .delete(binaryContent);
-            then(binaryContentStorage).should(times(1))
-                    .delete(binaryContent.getId());
+            then(eventPublisher).should()
+                    .publishEvent(any(BinaryContentDeletedEvent.class));
         }
 
         @Test
@@ -209,10 +134,9 @@ public class BinaryContentServiceImplTest {
                     .isInstanceOf(BinaryContentNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.BINARY_CONTENT_NOT_FOUND);
-            then(binaryContentStorage).should(never())
-                    .delete(any());
             then(binaryContentRepository).should(never())
                     .delete(any());
+            then(eventPublisher).should(never()).publishEvent(any(BinaryContentDeletedEvent.class));
         }
     }
 }

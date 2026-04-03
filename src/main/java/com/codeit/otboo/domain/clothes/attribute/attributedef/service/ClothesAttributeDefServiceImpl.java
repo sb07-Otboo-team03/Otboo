@@ -15,20 +15,16 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.Clothes
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.mapper.ClothesAttributeValueMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
-import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -236,11 +232,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
         // 알림 이벤트 발행
         for(Notification notification : notifications) {
-            eventPublisher.publishEvent(new SseEvent(
-                    notificationMapper.toEventDto(notification),
-                    notification.getCreatedAt()
-            ));
+            eventPublisher.publishEvent(new SseEvent(notificationMapper.toEventDto(notification)));
         }
-
     }
 }

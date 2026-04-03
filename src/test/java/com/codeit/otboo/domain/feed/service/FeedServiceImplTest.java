@@ -22,7 +22,11 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.weather.entity.Weather;
+import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
+import com.codeit.otboo.domain.weather.exception.WeatherNotFoundException;
+import com.codeit.otboo.domain.weather.exception.YesterdayWeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
+import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +45,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +73,8 @@ class FeedServiceImplTest {
     private CommentRepository commentRepository;
     @Mock
     private FollowRepository followRepository;
+    @Mock
+    private YesterdayHourlyWeatherRepository yesterdayHourlyWeatherRepository;
     @Mock
     private FeedMapper feedMapper;
     @Mock
@@ -103,14 +112,19 @@ class FeedServiceImplTest {
 
             FeedCreateRequest request = new FeedCreateRequest(userId, weatherId, List.of(clothes.getId()), content);
             FeedResponse dto = FeedResponse.builder().content(request.content()).build();
-            
-            Weather weather = new Weather(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate date = now.toLocalDate().minusDays(1);
+            LocalTime hour = now.toLocalTime().withMinute(0).withSecond(0).withNano(0);
+
+            Weather weather = new Weather(null, now, 57, 126, 10.0, null, null, null, null, null, null, null, null, null);
+            YesterdayHourlyWeather yesterdayWeather = new YesterdayHourlyWeather(57, 126, date, hour, 20.0, 30.0);
 
             Set<UUID> receiverId = id == null ? Set.of() : Set.of(id);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(weatherRepository.findById(weatherId)).willReturn(Optional.of(weather));
+            given(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(eq(weather.getX()), eq(weather.getY()), eq(date), eq(hour))).willReturn(Optional.of(yesterdayWeather));
             given(clothesRepository.findAllById(List.of(clothes.getId()))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
             given(followRepository.findAllFollowerIdsByFolloweeId(userId)).willReturn(receiverId);
@@ -153,7 +167,24 @@ class FeedServiceImplTest {
             // when & then
             assertThatThrownBy(() -> feedService.createFeed(
                     new FeedCreateRequest(userId, weatherId, null, null)))
-                    .isInstanceOf(IllegalArgumentException.class); // TODO
+                    .isInstanceOf(WeatherNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("조회된 날씨와 대응하는 어제 날씨 정보가 없는 경우 예외를 반환한다.")
+        void createFeed_Fail_NotFoundYesterdayWeather() {
+            // given
+            UUID userId = user.getId();
+            UUID weatherId = UUID.randomUUID();
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(new User("otboo@a.a", "otboo123")));
+            given(weatherRepository.findById(weatherId)).willReturn(Optional.of(new Weather(null, LocalDateTime.now(), 57, 126, null, null, null, null, null, null, null, null, null, null)));
+            given(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> feedService.createFeed(
+                    new FeedCreateRequest(userId, weatherId, null, null)))
+                    .isInstanceOf(YesterdayWeatherNotFoundException.class);
         }
     }
 
