@@ -17,9 +17,9 @@ public class DirectMessageMapper {
 
     public DirectMessageResponse toDto(DirectMessage directMessage) {
         UUID senderBinaryContentId = null;
-        BinaryContent sednerBinaryContent = directMessage.getSender().getProfile().getBinaryContent();
-        if(sednerBinaryContent != null) {
-            senderBinaryContentId = sednerBinaryContent.getId();
+        BinaryContent senderBinaryContent = directMessage.getSender().getProfile().getBinaryContent();
+        if(senderBinaryContent != null) {
+            senderBinaryContentId = senderBinaryContent.getId();
         }
         UUID receiverBinaryContentId = null;
         BinaryContent receiverBinaryContent = directMessage.getReceiver().getProfile().getBinaryContent();
