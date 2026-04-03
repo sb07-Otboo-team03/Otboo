@@ -40,7 +40,7 @@ public class SseRequiredEventListener {
     public void on(FeedCreatedEvent event) {
         for(UUID receiverId : event.receiverIds()) {
             NotificationDto notificationDto = NotificationDto.from(event, receiverId);
-            sseService.send(Set.of(receiverId), "notifications", notificationDto);
+            sseService.send(Set.of(receiverId), "feed.createdEvent", notificationDto);
         }
     }
 }
