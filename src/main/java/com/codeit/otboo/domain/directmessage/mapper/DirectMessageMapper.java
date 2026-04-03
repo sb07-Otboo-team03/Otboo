@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.directmessage.mapper;
 
+import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
@@ -16,12 +17,14 @@ public class DirectMessageMapper {
 
     public DirectMessageResponse toDto(DirectMessage directMessage) {
         UUID senderBinaryContentId = null;
-        if(directMessage.getSender().getProfile().getBinaryContent() != null) {
-            senderBinaryContentId = directMessage.getSender().getProfile().getBinaryContent().getId();
+        BinaryContent sednerBinaryContent = directMessage.getSender().getProfile().getBinaryContent();
+        if(sednerBinaryContent != null) {
+            senderBinaryContentId = sednerBinaryContent.getId();
         }
         UUID receiverBinaryContentId = null;
-        if(directMessage.getSender().getProfile().getBinaryContent() != null) {
-            receiverBinaryContentId = directMessage.getSender().getProfile().getBinaryContent().getId();
+        BinaryContent receiverBinaryContent = directMessage.getReceiver().getProfile().getBinaryContent();
+        if(receiverBinaryContent != null) {
+            receiverBinaryContentId = receiverBinaryContent.getId();
         }
 
         return new DirectMessageResponse(
