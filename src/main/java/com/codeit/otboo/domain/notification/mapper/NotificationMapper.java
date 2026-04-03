@@ -5,8 +5,6 @@ import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 @Component
 public class NotificationMapper {
 
@@ -21,7 +19,7 @@ public class NotificationMapper {
         );
     }
 
-    public static NotificationDto toEventDto(Notification notification) {
+    public static NotificationDto toDto(Notification notification) {
         return NotificationDto.builder()
                 .id(notification.getId())
                 .createdAt(notification.getCreatedAt())

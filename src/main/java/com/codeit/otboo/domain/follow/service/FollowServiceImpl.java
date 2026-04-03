@@ -77,7 +77,7 @@ public class FollowServiceImpl implements FollowService {
 
         Notification savedNotification = notificationRepository.save(notification);
 
-        NotificationDto notificationDto = NotificationMapper.toEventDto(savedNotification);
+        NotificationDto notificationDto = NotificationMapper.toDto(savedNotification);
         eventPublisher.publishEvent( new SseEvent("follow.createFollow", List.of(notificationDto)));
 
         return followMapper.toDto(saveFollow);

@@ -234,7 +234,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
         List<Notification> savedNotificationsList = notificationRepository.saveAll(notifications);
 
         List<NotificationDto> notificationDtoList = savedNotificationsList.stream()
-            .map(NotificationMapper::toEventDto)
+            .map(NotificationMapper::toDto)
             .toList();
 
         // 알림 이벤트 발행

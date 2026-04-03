@@ -146,7 +146,7 @@
 //        given(notificationRepository.save(any(Notification.class)))
 //            .willReturn(notification);
 //
-//        given(notificationMapper.toEventDto(notification)).willReturn(notificationDto);
+//        given(notificationMapper.toDto(notification)).willReturn(notificationDto);
 //
 //        // --- 서비스 호출 ---
 //        DirectMessageResponse result = directMessageService.create(request);

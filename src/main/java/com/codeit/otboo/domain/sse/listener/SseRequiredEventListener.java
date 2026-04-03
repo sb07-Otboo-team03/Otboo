@@ -28,7 +28,7 @@ public class SseRequiredEventListener {
             .forEach(notificationDto -> {
                 sseService.send(
                     Set.of(notificationDto.receiverId()),
-                    event.eventName(),
+                    "notifications",
                     notificationDto);
         });
     }

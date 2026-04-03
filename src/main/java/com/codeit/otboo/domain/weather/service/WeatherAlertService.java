@@ -192,7 +192,7 @@ public class WeatherAlertService {
         LocalDateTime publishedAt = timeProvider.nowDateTime();
 
         List<NotificationDto> notificationDtos = notifications.stream()
-            .map(NotificationMapper::toEventDto).toList();
+            .map(NotificationMapper::toDto).toList();
 
         eventPublisher.publishEvent( new SseEvent(eventName, notificationDtos));
     }
