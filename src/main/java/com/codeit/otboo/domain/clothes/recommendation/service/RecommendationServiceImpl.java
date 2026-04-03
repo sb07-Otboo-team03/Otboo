@@ -28,7 +28,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
         Weather weather = weatherRepository.findById(weatherId)
-                .orElseThrow(WeatherNotFoundException::new);
+                .orElseThrow(()-> new WeatherNotFoundException(weatherId));
 
         List<Clothes> clothes = clothesRepository.findAll();
 
