@@ -1,8 +1,6 @@
 package com.codeit.otboo.domain.sse.listener;
 
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.sse.event.ClothesAttributeCreateEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
@@ -21,14 +19,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SseRequiredEventListener {
 
     private final SseService sseService;
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(ClothesAttributeCreateEvent event) {
-        NotificationDto notification = event.getData();
-        UUID receiverId = notification.receiverId();
-        sseService.broadcast("notifications", notification);
-    }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

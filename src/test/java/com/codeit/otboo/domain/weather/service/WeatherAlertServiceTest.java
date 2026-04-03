@@ -332,12 +332,17 @@ class WeatherAlertServiceTest {
                 .name("테스트유저")
                 .build();
 
+        List<String> locationNames = List.of("서울특별시", "강남구", "역삼동");
+
         Location location = Location.builder()
                 .x(x)
                 .y(y)
                 .latitude(37.5)
                 .longitude(126.9)
-                .locationNames("테스트 지역")
+                .region1depthName(locationNames.get(0))
+                .region2depthName(locationNames.get(1))
+                .region3depthName(locationNames.get(2))
+                .region4depthName("")
                 .build();
 
         ReflectionTestUtils.setField(profile, "location", location);

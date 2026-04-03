@@ -1,8 +1,16 @@
 package com.codeit.otboo.domain.follow.unit;
 
+import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
 import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.sse.event.SseEvent;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.lang.reflect.Field;
+
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.*;
@@ -46,82 +57,150 @@ class FollowServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private NotificationRepository notificationRepository;
+
+    @Mock
+    private NotificationMapper notificationMapper;
+
     @InjectMocks
     private FollowServiceImpl followService;
 
     private final TestFixture fixture = new TestFixture();
 
-    @Test
-    @DisplayName("팔로우 생성 실패")
-    void createFollow_fail() {
+    /* ==========================
+       Utility: Reflection으로 ID 세팅
+       ========================== */
+    private void setEntityId(Object entity, UUID id) {
+        try {
+            Field field = BaseEntity.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(entity, id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-        // given
+    /* ==========================
+       Utility: 실제 User + Profile 객체 생성
+       ========================== */
+    private User createUserWithProfile(UUID id, String email, String password, String name) {
+        User user = User.builder()
+            .email(email)
+            .password(password)
+            .build();
+
+        Profile profile = Profile.builder()
+            .user(user)
+            .name(name)
+            .build();
+
+        setEntityId(user, id); // reflection으로 id 주입
+        return user;
+    }
+
+    private NotificationDto createNotificationDto(UUID receiverId) {
+        return NotificationDto.builder()
+            .id(UUID.randomUUID())
+            .receiverId(receiverId)
+            .createdAt(LocalDateTime.now())
+            .title("알림")
+            .content("")
+            .level(NotificationLevel.INFO)
+            .build();
+    }
+
+    @Test
+    @DisplayName("팔로우 생성 성공 - 알림 생성 및 이벤트 발행")
+    void createFollow_success() {
+        // UUID 준비
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
 
-        FollowCreateRequest request =
-            new FollowCreateRequest(followerId, followeeId);
+        // --- 실제 User + Profile 엔티티 생성 ---
+        User follower = User.builder()
+            .email("follower@test.com")
+            .password("pass")
+            .build();
+        Profile followerProfile = Profile.builder()
+            .user(follower)
+            .name("팔로워")
+            .build();
+        follower.setProfile(followerProfile);
+        setEntityId(follower, followerId);
 
-        LocalDateTime now = LocalDateTime.now();
+        User followee = User.builder()
+            .email("followee@test.com")
+            .password("pass")
+            .build();
+        Profile followeeProfile = Profile.builder()
+            .user(followee)
+            .name("팔로위")
+            .build();
+        followee.setProfile(followeeProfile);
+        setEntityId(followee, followeeId);
 
-        User follower = fixture.mockUserWithProfile(now.minusSeconds(1));
-        User followee = fixture.mockUserWithProfile(now.minusSeconds(2));
+        // --- 요청 객체 ---
+        FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
-        Follow follow = new Follow(follower, followee);
+        // --- repository stub ---
+        given(userRepository.findById(any())).willAnswer(invocation -> {
+            UUID id = invocation.getArgument(0);
+            if (id.equals(followerId)) return Optional.of(follower);
+            if (id.equals(followeeId)) return Optional.of(followee);
+            return Optional.empty();
+        });
 
-        // given
-        when(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
-            .thenReturn(Optional.of(mock(Follow.class)));
+        given(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
+            .willReturn(Optional.empty());
 
-        // when & then
-        assertThatThrownBy(() -> followService.createFollow(request))
-            .isInstanceOf(DuplicateFollowException.class);
-    }
+        Follow savedFollow = new Follow(follower, followee);
+        given(followRepository.save(any(Follow.class))).willReturn(savedFollow);
 
-    @Test
-    @DisplayName("팔로우 생성 성공")
-    void createFollow_success() {
-        FollowCreateRequest request = new FollowCreateRequest(
-            UUID.randomUUID(),
-            UUID.randomUUID()
-        );
+        // --- Notification stub ---
+        given(notificationRepository.save(any(Notification.class)))
+            .willAnswer(invocation -> invocation.getArgument(0));
 
-        User user = fixture.mockUserWithProfile(LocalDateTime.now());
-
-        when(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
-            .thenReturn(Optional.empty());
-
-        when(userRepository.findById(any()))
-            .thenReturn(Optional.of(user));
-
-        when(followRepository.save(any()))
-            .thenReturn(mock(Follow.class));
-
-        when(followMapper.toDto(any(Follow.class)))
-            .thenReturn(FollowResponse.builder()
+        given(notificationMapper.toEventDto(any(Notification.class)))
+            .willReturn(NotificationDto.builder()
                 .id(UUID.randomUUID())
-                .build());
+                .receiverId(followeeId)
+                .title("팔로워님이 나를 팔로우했어요.")
+                .content("")
+                .level(NotificationLevel.INFO)
+                .createdAt(LocalDateTime.now())
+                .build()
+            );
 
+        // --- FollowResponse stub ---
+        given(followMapper.toDto(any(Follow.class)))
+            .willReturn(FollowResponse.builder()
+                .id(UUID.randomUUID())
+                .build()
+            );
+
+        // --- when: 서비스 호출 ---
         FollowResponse result = followService.createFollow(request);
 
+        // --- then: 검증 ---
         assertThat(result).isNotNull();
-    }
+        assertThat(result.id()).isNotNull();
 
+        verify(followRepository).save(any(Follow.class));
+        verify(notificationRepository).save(any(Notification.class));
+        verify(eventPublisher).publishEvent(any(SseEvent.class));
+    }
 
     @Test
     @DisplayName("팔로우 생성 실패 - 중복")
     void createFollow_duplicate() {
-        // given
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
+        FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
-        FollowCreateRequest request =
-            new FollowCreateRequest(followerId, followeeId);
+        given(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
+            .willReturn(Optional.of(mock(Follow.class)));
 
-        when(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
-            .thenReturn(Optional.of(mock(Follow.class)));
-
-        // when & then
         assertThatThrownBy(() -> followService.createFollow(request))
             .isInstanceOf(DuplicateFollowException.class);
     }
@@ -129,56 +208,41 @@ class FollowServiceImplTest {
     @Test
     @DisplayName("팔로우 생성 실패 - 유저 없음")
     void createFollow_userNotFound() {
-        // given
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
+        FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
-        FollowCreateRequest request =
-            new FollowCreateRequest(followerId, followeeId);
+        given(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
+            .willReturn(Optional.empty());
 
-        when(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
-            .thenReturn(Optional.empty());
+        given(userRepository.findById(followerId))
+            .willReturn(Optional.empty());
+        given(userRepository.findById(followeeId))
+            .willReturn(Optional.of(mock(User.class)));
 
-        // ✅ follower 조회 실패 상황
-        when(userRepository.findById(followerId))
-            .thenReturn(Optional.empty());
-
-        // ✅ followee도 호출되므로 stub 필요 (strict 방지)
-        when(userRepository.findById(followeeId))
-            .thenReturn(Optional.of(mock(User.class)));
-
-        // when & then
         assertThatThrownBy(() -> followService.createFollow(request))
-            .isInstanceOf(UserNotFoundException.class); // ✅ 수정
+            .isInstanceOf(UserNotFoundException.class);
     }
 
     @Test
     @DisplayName("팔로우 취소 성공")
     void cancelFollow_success() {
-        // given
         UUID id = UUID.randomUUID();
         Follow follow = mock(Follow.class);
 
-        when(followRepository.findById(id))
-            .thenReturn(Optional.of(follow));
+        given(followRepository.findById(id)).willReturn(Optional.of(follow));
 
-        // when
         followService.cancelFollow(id);
 
-        // then
         verify(followRepository).delete(follow);
     }
 
     @Test
     @DisplayName("팔로우 취소 실패 - 없음")
     void cancelFollow_fail() {
-        // given
         UUID id = UUID.randomUUID();
+        given(followRepository.findById(id)).willReturn(Optional.empty());
 
-        when(followRepository.findById(id))
-            .thenReturn(Optional.empty());
-
-        // when & then
         assertThatThrownBy(() -> followService.cancelFollow(id))
             .isInstanceOf(FollowNotFoundException.class);
     }
@@ -186,7 +250,6 @@ class FollowServiceImplTest {
     @Test
     @DisplayName("팔로잉 조회 - hasNext true")
     void getFollowings_hasNext() {
-        // given
         CursorRequest request = new CursorRequest(null, null, 2);
         UUID userId = UUID.randomUUID();
 
@@ -196,21 +259,15 @@ class FollowServiceImplTest {
             fixture.followDto()
         );
 
-        when(followRepository.findAllFollowings(any(), any(), any(), any(), any()))
-            .thenReturn(results);
+        given(followRepository.findAllFollowings(any(), any(), any(), any(), any()))
+            .willReturn(results);
 
-        when(followMapper.toDto(any(FollowDto.class)))
-            .thenReturn(
-                FollowResponse.builder()
-                    .id(UUID.randomUUID())
-                    .build()
-            );
+        given(followMapper.toDto(any(FollowDto.class)))
+            .willReturn(FollowResponse.builder().id(UUID.randomUUID()).build());
 
-        // when
         CursorResponse<FollowResponse> result =
             followService.getFollowings(userId, null, request);
 
-        // then
         assertThat(result.data().size()).isEqualTo(2);
         assertThat(result.hasNext()).isTrue();
     }

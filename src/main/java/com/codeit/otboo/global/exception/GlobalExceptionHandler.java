@@ -1,5 +1,6 @@
 package com.codeit.otboo.global.exception;
 
+import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(OtbooException.class)
     public ResponseEntity<ErrorResponse> OtbooException(OtbooException e) {
         ErrorCode errorCode = e.getErrorCode();
@@ -67,6 +70,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
+        return ResponseEntity.badRequest().body("필수 파라미터가 없습니다.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> OtbooException(Exception e) {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
@@ -78,6 +86,5 @@ public class GlobalExceptionHandler {
         log.error("Exception : {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
-
 
 }
