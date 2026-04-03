@@ -16,16 +16,15 @@ public class Location {
     private Integer y;
 
     @Column(name = "region_1depth_name", length = 50)
-    private String region1depthName ="";
+    private String region1depthName;
 
     @Column(name = "region_2depth_name",length = 100)
-    private String region2depthName = "";
+    private String region2depthName;
 
     @Column(name = "region_3depth_name",length = 100)
-    private String region3depthName = "";
+    private String region3depthName;
 
     @Column(name = "region_4depth_name",length = 100)
-    @Builder.Default
-    private String region4depthName = "";
+    private String region4depthName;
 
 }
