@@ -105,7 +105,7 @@ class FollowServiceImplTest {
 
     @Test
     @DisplayName("팔로우 생성 성공 - 알림 생성 및 이벤트 발행")
-    void createFollow_success() {
+    void create_success() {
         // UUID 준비
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
@@ -158,7 +158,7 @@ class FollowServiceImplTest {
             );
 
         // --- when ---
-        FollowResponse result = followService.createFollow(request);
+        FollowResponse result = followService.create(request);
 
         // --- then ---
         assertThat(result).isNotNull();
@@ -176,7 +176,7 @@ class FollowServiceImplTest {
 
     @Test
     @DisplayName("팔로우 생성 실패 - 중복")
-    void createFollow_duplicate() {
+    void create_duplicate() {
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
         FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
@@ -184,13 +184,13 @@ class FollowServiceImplTest {
         given(followRepository.findByFollowerIdAndFolloweeId(any(), any()))
             .willReturn(Optional.of(mock(Follow.class)));
 
-        assertThatThrownBy(() -> followService.createFollow(request))
+        assertThatThrownBy(() -> followService.create(request))
             .isInstanceOf(DuplicateFollowException.class);
     }
 
     @Test
     @DisplayName("팔로우 생성 실패 - 유저 없음")
-    void createFollow_userNotFound() {
+    void create_userNotFound() {
         UUID followerId = UUID.randomUUID();
         UUID followeeId = UUID.randomUUID();
         FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
@@ -203,7 +203,7 @@ class FollowServiceImplTest {
         given(userRepository.findById(followeeId))
             .willReturn(Optional.of(mock(User.class)));
 
-        assertThatThrownBy(() -> followService.createFollow(request))
+        assertThatThrownBy(() -> followService.create(request))
             .isInstanceOf(UserNotFoundException.class);
     }
 

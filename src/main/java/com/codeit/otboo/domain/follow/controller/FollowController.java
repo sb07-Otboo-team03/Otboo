@@ -34,7 +34,7 @@ public class FollowController {
     @PostMapping
     public ResponseEntity<FollowResponse> createFollow(@Valid @RequestBody FollowCreateRequest request) {
 
-        FollowResponse response = followService.createFollow(request);
+        FollowResponse response = followService.create(request);
 
         return ResponseEntity
             .status(HttpStatus.OK)
