@@ -21,8 +21,6 @@ import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.follow.service.FollowServiceImpl;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
-import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
@@ -57,12 +55,6 @@ class FollowServiceImplTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
-
-    @Mock
-    private NotificationRepository notificationRepository;
-
-    @Mock
-    private NotificationMapper notificationMapper;
 
     @InjectMocks
     private FollowServiceImpl followService;
