@@ -35,6 +35,9 @@ public class Follow extends BaseEntity {
     )
     private User followee;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
     public Follow(User follower, User followee) {
         this.follower = follower;
         this.followee = followee;
