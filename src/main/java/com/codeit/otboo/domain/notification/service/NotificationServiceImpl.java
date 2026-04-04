@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class NotificationServiceImpl implements NotificationService{
+public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
 
@@ -81,5 +81,11 @@ public class NotificationServiceImpl implements NotificationService{
             .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         notificationRepository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public Notification saveSseEvent(Notification notification) {
+        return notificationRepository.save(notification);
     }
 }
