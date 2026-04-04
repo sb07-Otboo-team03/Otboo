@@ -32,7 +32,7 @@ public class SseRequiredEventListener {
     private void sendSseEvent(List<Notification> notification) {
 
         notification.stream()
-            .map(notificationService::saveSseEvent)
+            .map(notificationService::createSseEvent)
             .map(notificationMapper::toDto)
             .forEach(notificationDto ->
                 sseService.send(
