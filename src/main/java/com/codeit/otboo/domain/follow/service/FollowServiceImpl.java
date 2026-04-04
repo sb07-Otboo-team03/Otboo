@@ -47,7 +47,7 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     @Transactional
-    public FollowResponse createFollow(FollowCreateRequest request) {
+    public FollowResponse create(FollowCreateRequest request) {
 
         followRepository.findByFollowerIdAndFolloweeId(request.followerId(), request.followeeId())
             .ifPresent(follow -> {

@@ -80,7 +80,7 @@ class FollowControllerTest {
             .id(UUID.randomUUID())
             .build();
 
-        when(followService.createFollow(any()))
+        when(followService.create(any()))
             .thenReturn(response);
 
         // when & then

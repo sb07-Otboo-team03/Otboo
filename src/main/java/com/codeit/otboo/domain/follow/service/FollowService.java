@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface FollowService {
 
-    FollowResponse createFollow(FollowCreateRequest request);
+    FollowResponse create(FollowCreateRequest request);
 
     FollowSummaryResponse getFollowSummary(UUID userId, OtbooUserDetails userDetails);
 
