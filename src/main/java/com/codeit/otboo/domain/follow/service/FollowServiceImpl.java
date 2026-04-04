@@ -9,11 +9,11 @@ import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
@@ -68,7 +68,6 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = new Follow(follower, followee);
         Follow saveFollow = followRepository.save(follow);
 
-
         Notification notification = Notification.builder()
             .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
             .content("")
@@ -76,10 +75,7 @@ public class FollowServiceImpl implements FollowService {
             .receiver(followee)
             .build();
 
-        notificationRepository.save(notification);
-
-        eventPublisher.publishEvent(
-            new SseEvent(notificationMapper.toEventDto(notification)));
+        eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
 
         return followMapper.toDto(saveFollow);
     }
