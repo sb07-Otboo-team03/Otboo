@@ -7,23 +7,23 @@ import org.springframework.data.domain.Slice;
 import java.util.UUID;
 
 @Getter
-public class NextCursor {
+public class ClothesNextCursor {
     private final String cursor;
     private final UUID after;
 
-    private NextCursor(String cursor, UUID after) {
+    private ClothesNextCursor(String cursor, UUID after) {
         this.cursor = cursor;
         this.after = after;
     }
 
-    public static NextCursor from(Slice<Clothes> slice) {
+    public static ClothesNextCursor from(Slice<Clothes> slice) {
         if (!slice.hasNext() || slice.getContent().isEmpty()) {
-            return new NextCursor(null, null);
+            return new ClothesNextCursor(null, null);
         }
 
         Clothes last = slice.getContent().get(slice.getContent().size() - 1);
         String cursor = last.getCreatedAt().toString();
         UUID after = last.getId();
-        return new NextCursor(cursor, after);
+        return new ClothesNextCursor(cursor, after);
     }
 }

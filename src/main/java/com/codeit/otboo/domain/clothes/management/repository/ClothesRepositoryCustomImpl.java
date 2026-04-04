@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.clothes.management.repository;
 
 import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.codeit.otboo.domain.clothes.management.entity.QClothes.clothes;
 
@@ -43,5 +45,16 @@ public class ClothesRepositoryCustomImpl implements ClothesRepositoryCustom{
             result.remove(result.size() - 1);
         }
         return new SliceImpl<>(result, PageRequest.of(0, query.limit()), hasNext);
+    }
+
+    @Override
+    public Long totalCount(UUID ownerId, ClothesType type) {
+        Long count = queryFactory.select(clothes.count())
+                .from(clothes)
+                .where(
+                        clothes.owner.id.eq(ownerId),
+                        type == null ? null : clothes.type.eq(type)
+                ).fetchOne();
+        return count == null ? 0L : count;
     }
 }

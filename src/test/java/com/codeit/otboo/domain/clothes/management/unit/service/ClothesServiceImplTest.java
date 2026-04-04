@@ -13,7 +13,9 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAt
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.fixture.ClothesAttributeValueFixture;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
@@ -22,13 +24,16 @@ import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundExcep
 import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
+import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
 import com.codeit.otboo.domain.clothes.management.service.ClothesServiceImpl;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +41,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import java.util.List;
 import java.util.Map;
@@ -68,6 +76,12 @@ public class ClothesServiceImplTest {
 
     @Mock
     ClothesMapper clothesMapper;
+
+    @Mock
+    ClothesQueryMapper clothesQueryMapper;
+
+    @Mock
+    ClothesRepositoryCustomImpl clothesRepositoryCustom;
 
     @InjectMocks
     ClothesServiceImpl clothesService;
@@ -568,6 +582,137 @@ public class ClothesServiceImplTest {
                     )
             );
             then(clothesMapper).should().toDto(clothes, null, expectedGrouping);
+        }
+    }
+
+    @Nested
+    @DisplayName("옷 목록 조회")
+    class GetClothesList {
+        @Test
+        @DisplayName("성공: totalCount가 없으면 바로 빈 리스트를 가진 Slice 로 응답한다.")
+        void success_getClothesList_empty(){
+            // given
+            UUID ownerId = UUID.randomUUID();
+            ClothesCursorPageRequest request = new ClothesCursorPageRequest(
+                    null, null, null, null, ownerId);
+
+            given(clothesRepositoryCustom.totalCount(ownerId, null)).willReturn(0L);
+
+            // when
+            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+
+            // then
+            assertThat(result.totalCount()).isEqualTo(0L);
+            assertThat(result.data()).isEmpty();
+            assertThat(result.hasNext()).isFalse();
+
+            then(clothesRepositoryCustom).should(times(1)).totalCount(ownerId, null);
+            then(clothesRepositoryCustom).should(never()).findMyClotheList(any(ClothesCursorQuery.class));
+        }
+
+        @Test
+        @DisplayName("성공: 모든 옷의 속성이 존재하지 않는다면 레포지토리 조회를 하지 않고 빈 Map 을 반환한다.")
+        void success_getClothesList_no_attribute(){
+            // given
+            User owner = UserFixture.create();
+            ClothesCursorPageRequest request = new ClothesCursorPageRequest(
+                    null, null, 20, null, owner.getId());
+            ClothesCursorQuery query = new ClothesCursorQuery(
+                    null, null, 20, null, owner.getId());
+            Clothes clothes = ClothesFixture.create(
+                    "옷", null, owner, null, List.of());
+            Slice<Clothes> slice = new SliceImpl<>(
+                    List.of(clothes), PageRequest.of(0, 20), false);
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(), owner.getId(),"옷", null, null, List.of());
+
+            given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
+            given(clothesQueryMapper.toQuery(request)).willReturn(query);
+            given(clothesRepositoryCustom.findMyClotheList(query)).willReturn(slice);
+
+            // when
+            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+
+            // then
+            then(clothesAttributeValueRepository).should(never()).findByAttributeDefIdIn(anyList());
+        }
+
+        @Test
+        @DisplayName("성공: 옷 목록 조회를 하면 repository의 조회가 호출된다.")
+        void success_getMyClotheList(){
+            // given
+            User owner = UserFixture.create();
+            ClothesCursorPageRequest request = new ClothesCursorPageRequest(
+                    null, null, 20, null, owner.getId());
+            ClothesCursorQuery query = new ClothesCursorQuery(
+                    null, null, 20, null, owner.getId());
+            BinaryContent binaryContent = BinaryContentFixture.create();
+            ClothesAttributeDef definition = ClothesAttributeDefFixture.create();
+            ClothesAttributeValue attributeValue = ClothesAttributeValueFixture.create(definition, "속성값");
+            ClothesAttributeWithDefResponse defResponse = new ClothesAttributeWithDefResponse(
+                    definition.getId(),
+                    definition.getName(),
+                    List.of(attributeValue.getSelectableValue()),
+                    attributeValue.getSelectableValue()
+            );
+            Clothes clothes = ClothesFixture.create(
+                    "옷", null, owner, binaryContent, List.of(attributeValue));
+            Slice<Clothes> slice = new SliceImpl<>(
+                    List.of(clothes), PageRequest.of(0, 20), false);
+            String imageUrl = "http://example.com/binary/test.png";
+            ClothesResponse response = new ClothesResponse(
+                    clothes.getId(), owner.getId(), "옷", imageUrl, null, List.of(defResponse));
+            Map<UUID, List<String>> groupingAttribute =  Map.of(
+                    definition.getId(),
+                    List.of(attributeValue.getSelectableValue())
+            );
+
+            given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
+            given(clothesQueryMapper.toQuery(request)).willReturn(query);
+            given(clothesRepositoryCustom.findMyClotheList(query)).willReturn(slice);
+            given(clothesAttributeValueRepository.findByAttributeDefIdIn(List.of(definition.getId())))
+                    .willReturn(List.of(attributeValue));
+            given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(imageUrl);
+            given(clothesMapper.toDto(clothes, imageUrl, groupingAttribute))
+                    .willReturn(response);
+
+            // when
+            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.hasNext()).isFalse();
+
+            then(clothesQueryMapper).should().toQuery(request);
+            then(clothesRepositoryCustom).should(times(1))
+                    .totalCount(owner.getId(), null);
+            then(clothesRepositoryCustom).should(times(1))
+                    .findMyClotheList(query);
+            then(binaryContentUrlResolver).should().resolve(binaryContent.getId());
+            then(clothesMapper).should().toDto(clothes, imageUrl, groupingAttribute);
+        }
+    }
+
+    @Nested
+    @DisplayName("옷 주인 검사")
+    class IsOwner{
+        @Test
+        @DisplayName("성공: 옷 주인 검사를 하면 DB에서 옷ID & 주인ID 있는지 확인하고 있으면 true를 반환한다.")
+        void success_isOwner(){
+            // given
+            User owner = UserFixture.create();
+            Clothes clothes = ClothesFixture.create(
+                    "옷", null, owner, null, List.of());
+            given(clothesRepository.existsByIdAndOwnerId(clothes.getId(), owner.getId()))
+                    .willReturn(true);
+
+            // when
+            boolean result = clothesService.isOwner(clothes.getId(), owner.getId());
+
+            // then
+            assertThat(result).isTrue();
+            then(clothesRepository).should(times(1))
+                    .existsByIdAndOwnerId(clothes.getId(), owner.getId());
         }
     }
 }

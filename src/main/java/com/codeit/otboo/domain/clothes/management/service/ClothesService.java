@@ -22,5 +22,5 @@ public interface ClothesService {
 
     void deleteClothes(UUID clothesId);
 
-    CursorResponse<ClothesResponse> getMyClotheList(ClothesCursorPageRequest request);
+    CursorResponse<ClothesResponse> getMyClothesList(ClothesCursorPageRequest request);
 }
