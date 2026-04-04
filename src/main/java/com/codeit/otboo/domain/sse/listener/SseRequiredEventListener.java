@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
@@ -25,13 +26,13 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SseRequiredEventListener {
 
     private final SseService sseService;
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
 
     private void sendSseEvent(List<Notification> notification) {
 
         notification.stream()
-            .map(notificationRepository::save)
+            .map(notificationService::saveSseEvent)
             .map(notificationMapper::toDto)
             .forEach(notificationDto ->
                 sseService.send(
