@@ -8,7 +8,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.Clot
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
-import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesSearchCondition;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
@@ -182,7 +182,7 @@ public class ClothesServiceImpl implements ClothesService{
                 List.of(), null, null, false, totalCount, sortBy, direction
             );
         }
-        ClothesCursorQuery query = clothesQueryMapper.toQuery(request);
+        ClothesSearchCondition query = clothesQueryMapper.toQuery(request);
         Slice<Clothes> slice = clothesRepositoryCustom.findMyClothesList(query);
         List<Clothes> sliceContent= slice.getContent();
         Map<UUID, List<String>> listAllSelectableGrouping = getListAllSelectableGrouping(sliceContent);

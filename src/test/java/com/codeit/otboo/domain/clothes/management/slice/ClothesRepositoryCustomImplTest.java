@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.clothes.management.slice;
 
-import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesSearchCondition;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
@@ -56,7 +56,7 @@ public class ClothesRepositoryCustomImplTest {
                             .password("1234")
                             .build();
             ClothesTestUtils.createClothesList(user, entityManager,0);
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, 20, null, user.getId());
 
             // when
@@ -86,7 +86,7 @@ public class ClothesRepositoryCustomImplTest {
                     .password("1234")
                     .build();
             ClothesTestUtils.createClothesList(user, entityManager,totalCount);
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, 20, null, user.getId());
 
             // when
@@ -130,7 +130,7 @@ public class ClothesRepositoryCustomImplTest {
 
             // [Page 1]
             // given
-            ClothesCursorQuery query1 = new ClothesCursorQuery(
+            ClothesSearchCondition query1 = new ClothesSearchCondition(
                     null,
                     null,
                     pageSize,
@@ -143,7 +143,7 @@ public class ClothesRepositoryCustomImplTest {
 
             // [Page 2]
             // given
-            ClothesCursorQuery query2 = new ClothesCursorQuery(
+            ClothesSearchCondition query2 = new ClothesSearchCondition(
                     page1.getContent().get(page1.getContent().size() - 1).getCreatedAt(),
                     page1.getContent().get(page1.getContent().size() - 1).getId(),
                     pageSize,
@@ -156,7 +156,7 @@ public class ClothesRepositoryCustomImplTest {
 
             // [Page 3]
             // given
-            ClothesCursorQuery query3 = new ClothesCursorQuery(
+            ClothesSearchCondition query3 = new ClothesSearchCondition(
                     page2.getContent().get(page2.getContent().size() - 1).getCreatedAt(),
                     page2.getContent().get(page2.getContent().size() - 1).getId(),
                     pageSize,
@@ -216,7 +216,7 @@ public class ClothesRepositoryCustomImplTest {
                     .password("1234")
                     .build();
             ClothesTestUtils.createClothesList(user, entityManager, totalCount);
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, pageSize, ClothesType.DRESS, user.getId());
 
             // when
@@ -240,7 +240,7 @@ public class ClothesRepositoryCustomImplTest {
                     .password("1234")
                     .build();
             ClothesTestUtils.createClothesList(user, entityManager, totalCount);
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, pageSize, null, user.getId());
 
             // when
@@ -318,7 +318,7 @@ public class ClothesRepositoryCustomImplTest {
 
             // [Page 1]
             // given
-            ClothesCursorQuery query1 = new ClothesCursorQuery(
+            ClothesSearchCondition query1 = new ClothesSearchCondition(
                     null,
                     null,
                     pageSize,
@@ -331,7 +331,7 @@ public class ClothesRepositoryCustomImplTest {
 
             // [Page 2]
             // given
-            ClothesCursorQuery query2 = new ClothesCursorQuery(
+            ClothesSearchCondition query2 = new ClothesSearchCondition(
                     page1.getContent().get(page1.getContent().size() - 1).getCreatedAt(),
                     null,
                     pageSize,

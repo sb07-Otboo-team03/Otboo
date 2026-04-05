@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.clothes.management.repository;
 
-import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesSearchCondition;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -22,7 +22,7 @@ public class ClothesRepositoryCustomImpl implements ClothesRepositoryCustom{
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Slice<Clothes> findMyClothesList(ClothesCursorQuery query) {
+    public Slice<Clothes> findMyClothesList(ClothesSearchCondition query) {
         List<Clothes> result = queryFactory
                 .selectFrom(clothes)
                 .where(

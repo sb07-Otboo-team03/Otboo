@@ -13,7 +13,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAt
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.fixture.ClothesAttributeValueFixture;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
-import com.codeit.otboo.domain.clothes.management.dto.query.ClothesCursorQuery;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesSearchCondition;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
@@ -607,7 +607,7 @@ public class ClothesServiceImplTest {
             assertThat(result.hasNext()).isFalse();
 
             then(clothesRepositoryCustom).should(times(1)).totalCount(ownerId, null);
-            then(clothesRepositoryCustom).should(never()).findMyClothesList(any(ClothesCursorQuery.class));
+            then(clothesRepositoryCustom).should(never()).findMyClothesList(any(ClothesSearchCondition.class));
         }
 
         @Test
@@ -617,7 +617,7 @@ public class ClothesServiceImplTest {
             User owner = UserFixture.create();
             ClothesCursorPageRequest request = new ClothesCursorPageRequest(
                     null, null, 20, null, owner.getId());
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, 20, null, owner.getId());
             Clothes clothes = ClothesFixture.create(
                     "옷", null, owner, null, List.of());
@@ -642,7 +642,7 @@ public class ClothesServiceImplTest {
             User owner = UserFixture.create();
             ClothesCursorPageRequest request = new ClothesCursorPageRequest(
                     null, null, 20, null, owner.getId());
-            ClothesCursorQuery query = new ClothesCursorQuery(
+            ClothesSearchCondition query = new ClothesSearchCondition(
                     null, null, 20, null, owner.getId());
             BinaryContent binaryContent = BinaryContentFixture.create();
             ClothesAttributeDef definition = ClothesAttributeDefFixture.create();
