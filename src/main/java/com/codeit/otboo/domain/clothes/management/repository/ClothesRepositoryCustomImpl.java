@@ -21,18 +21,18 @@ public class ClothesRepositoryCustomImpl implements ClothesRepositoryCustom{
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Slice<Clothes> findMyClotheList(ClothesCursorQuery query) {
+    public Slice<Clothes> findMyClothesList(ClothesCursorQuery query) {
         List<Clothes> result = queryFactory
                 .selectFrom(clothes)
                 .where(
                     clothes.owner.id.eq(query.ownerId()),
                     query.type() == null ? null : clothes.type.eq(query.type()),
-                    query.createdAt() == null
+                    query.cursor() == null
                             ? null
-                            : clothes.createdAt.lt(query.createdAt())
+                            : clothes.createdAt.lt(query.cursor())
                                 .or(query.after() == null
                                         ? null
-                                        : clothes.createdAt.eq(query.createdAt())
+                                        : clothes.createdAt.eq(query.cursor())
                                             .and(clothes.id.lt(query.after()))
                                 )
                 )
@@ -47,6 +47,9 @@ public class ClothesRepositoryCustomImpl implements ClothesRepositoryCustom{
         return new SliceImpl<>(result, PageRequest.of(0, query.limit()), hasNext);
     }
 
+    // intelliJ 노란줄 경고 표시로 인하여 Long 으로 해서 null 체킹
+    // 'queryFactory.select(clothes.count()) .from(clothes) .where( ...'을(를) 언박싱하면
+    // 'NullPointerException이 생성될 수 있습니다
     @Override
     public Long totalCount(UUID ownerId, ClothesType type) {
         Long count = queryFactory.select(clothes.count())

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ClothesCursorQuery(
-    LocalDateTime createdAt,
+    LocalDateTime cursor,
     UUID after,
     Integer limit,
     ClothesType type,
