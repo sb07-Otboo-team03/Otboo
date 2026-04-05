@@ -9,6 +9,7 @@ import com.codeit.otboo.domain.user.event.TemporaryPasswordIssuedEvent;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.TemporaryPasswordFixture;
+import com.codeit.otboo.domain.user.fixture.UserCreateRequestFixture;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
@@ -36,6 +37,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -69,6 +71,8 @@ class AuthServiceImplTest {
     private TemporaryPasswordRepository temporaryPasswordRepository;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private UserDetailsService userDetailsService;
 
 
     @InjectMocks
@@ -89,7 +93,7 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("정상 로그인")
+        @DisplayName("정상 로그인 - 기존 비밀번호로 로그인.")
         void signIn_success() {
             // given
             String email = "test@test.com";
@@ -103,6 +107,8 @@ class AuthServiceImplTest {
             Authentication authentication = mock(Authentication.class);
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
 
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willReturn(authentication);
             given(authentication.getPrincipal()).willReturn(userDetails);
@@ -125,8 +131,69 @@ class AuthServiceImplTest {
             assertThat(result.refreshToken()).isEqualTo(refreshToken);
             assertThat(result.userResponse()).isEqualTo(userResponse);
 
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
+
             then(authenticationManager).should()
                     .authenticate(any(UsernamePasswordAuthenticationToken.class));
+            then(redisRegistry).should()
+                    .save(eq(userId), sessionIdCaptor.capture(), eq(refreshToken), eq(refreshTokenExpiration));
+
+            String savedSessionId = sessionIdCaptor.getValue();
+            assertThat(savedSessionId).isNotBlank();
+
+            then(jwtProvider).should()
+                    .generateRefreshToken(eq(userId), eq(email), eq(savedSessionId));
+            then(jwtProvider).should()
+                    .generateAccessToken(eq(userId), eq(email), eq(savedSessionId));
+        }
+        
+        @Test
+        @DisplayName("정상 로그인 - 임시비밀번호 사용")
+        void singIn_success_withTemporaryPassword() {
+            // given
+            String email = "test@test.com";
+            String rawPassword = "temp-1234";
+            String encodedTempPassword = "encoded-temp-password";
+            SignInRequest signInRequest = new SignInRequest(email, rawPassword);
+
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, email, "origin-password");
+            UserResponse userResponse = UserResponseFixture.create(user);
+
+            TemporaryPassword temporaryPassword = TemporaryPasswordFixture.create(user,encodedTempPassword, LocalDateTime.now().plusMinutes(3));
+            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
+            given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(true);
+            given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
+            given(userDetails.isAccountNonLocked()).willReturn(true);
+            given(userDetails.getUserResponse()).willReturn(userResponse);
+
+            given(jwtProvider.generateRefreshToken(eq(userId), eq(email), any(String.class)))
+                    .willReturn(refreshToken);
+            given(jwtProperties.refreshTokenExpiration()).willReturn(refreshTokenExpiration);
+            given(jwtProvider.generateAccessToken(eq(userId), eq(email), any(String.class)))
+                    .willReturn(accessToken);
+
+            ArgumentCaptor<String> sessionIdCaptor = ArgumentCaptor.forClass(String.class);
+
+            // when
+            JwtInformation result = authService.signIn(signInRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.accessToken()).isEqualTo(accessToken);
+            assertThat(result.refreshToken()).isEqualTo(refreshToken);
+            assertThat(result.userResponse()).isEqualTo(userResponse);
+
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
+            then(passwordEncoder).should().matches(rawPassword, encodedTempPassword);
+            then(userDetailsService).should().loadUserByUsername(email);
+            then(authenticationManager).shouldHaveNoInteractions();
+
             then(redisRegistry).should()
                     .save(eq(userId), sessionIdCaptor.capture(), eq(refreshToken), eq(refreshTokenExpiration));
 
@@ -148,6 +215,10 @@ class AuthServiceImplTest {
         void signIn_fail(String email, String password) {
             // given
             SignInRequest signInRequest = new SignInRequest(email, password);
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, email, "origin-password");
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willThrow(new BadCredentialsException("Bad credentials"));
 
@@ -155,6 +226,8 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(BadCredentialsException.class);
 
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
             then(jwtProvider).shouldHaveNoInteractions();
             then(redisRegistry).shouldHaveNoInteractions();
         }
@@ -173,6 +246,8 @@ class AuthServiceImplTest {
             Authentication authentication = mock(Authentication.class);
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
 
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willReturn(authentication);
             given(authentication.getPrincipal()).willReturn(userDetails);
@@ -190,19 +265,26 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(AuthStatePersistentException.class);
 
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
             then(redisRegistry).should().delete(userId);
             then(jwtProvider).shouldHaveNoMoreInteractions();
         }
 
-        // NOTE & TODO: 계정 비활성화 기능은 아직 만들지 않았지만,
-        // 이미 존재하는 유저가, 비활성화된 경우 처리,
-        @DisplayName("비활성화 계정은 로그인할 수 없다")
+        // NOTE & TODO: 계정 잠금 기능은 아직 만들지 않았지만,
+        // 이미 존재하는 유저가, 잠금된 경우 처리,
+        @DisplayName("잠김 계정은 로그인할 수 없다")
         @Test
         void signIn_fail_lockedUser() {
             // given
             String email = "test@test.com";
             String password = "1234";
             SignInRequest signInRequest = new SignInRequest(email, password);
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, email, "origin-password");
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
             given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                     .willThrow(new LockedException("Account is locked"));
 
@@ -210,9 +292,79 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.signIn(signInRequest))
                     .isInstanceOf(LockedException.class);
 
+
             then(jwtProvider).shouldHaveNoInteractions();
             then(redisRegistry).shouldHaveNoInteractions();
         }
+
+        @Test
+        @DisplayName("로그인 실패 - 임시 비밀번호 비밀번호 실패")
+        void singIn_fail_temporaryPassword_invalid() {
+            // given
+            String email = "test@test.com";
+            String rawPassword = "temp-1234";
+            String encodedTempPassword = "encoded-temp-password";
+            SignInRequest signInRequest = new SignInRequest(email, rawPassword);
+
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, email, "origin-password");
+
+            TemporaryPassword temporaryPassword = mock(TemporaryPassword.class);
+            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
+            given(temporaryPassword.isValid()).willReturn(true);
+            given(temporaryPassword.getPassword()).willReturn(encodedTempPassword);
+            given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(true);
+
+            given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
+            given(userDetails.isAccountNonLocked()).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> authService.signIn(signInRequest))
+                    .isInstanceOf(LockedException.class);
+
+            then(authenticationManager).shouldHaveNoInteractions();
+            then(jwtProvider).shouldHaveNoInteractions();
+            then(redisRegistry).shouldHaveNoInteractions();
+
+        }
+
+        @Test
+        @DisplayName("로그인 실패 - 임시 비밀번호 로그인 시 계정 잠김으로 인한 실패")
+        void signIn_fail_lockedUser_withTemporaryPassword() {
+            // given
+            String email = "test@test.com";
+            String rawPassword = "temp-1234";
+            String encodedTempPassword = "encoded-temp-password";
+            SignInRequest signInRequest = new SignInRequest(email, rawPassword);
+
+            UUID userId = UUID.randomUUID();
+            User user = UserFixture.create(userId, email, "origin-password");
+
+            TemporaryPassword temporaryPassword = mock(TemporaryPassword.class);
+            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
+            given(temporaryPassword.isValid()).willReturn(true);
+            given(temporaryPassword.getPassword()).willReturn(encodedTempPassword);
+            given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(true);
+
+            given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
+            given(userDetails.isAccountNonLocked()).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> authService.signIn(signInRequest))
+                    .isInstanceOf(LockedException.class);
+
+            then(authenticationManager).shouldHaveNoInteractions();
+            then(jwtProvider).shouldHaveNoInteractions();
+            then(redisRegistry).shouldHaveNoInteractions();
+        }
+
+
     }
 
     @DisplayName("리프레시 토큰 테스트")
@@ -277,6 +429,7 @@ class AuthServiceImplTest {
                     .rotateRefreshToken(userId, refreshToken, newRefreshToken, refreshTokenExpiration);
             then(jwtProvider).should().generateAccessToken(userId, email, sessionId);
         }
+        
 
         @Test
         @DisplayName("존재하지 않는 사용자의 ID(Claims)를 가진 Refresh 토큰이면 예외 발생")
