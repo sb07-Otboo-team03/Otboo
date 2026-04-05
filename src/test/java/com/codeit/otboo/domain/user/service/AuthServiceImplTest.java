@@ -309,21 +309,15 @@ class AuthServiceImplTest {
             UUID userId = UUID.randomUUID();
             User user = UserFixture.create(userId, email, "origin-password");
 
-            TemporaryPassword temporaryPassword = mock(TemporaryPassword.class);
-            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+            TemporaryPassword temporaryPassword = TemporaryPasswordFixture.create(user,encodedTempPassword, LocalDateTime.now().plusMinutes(3));
 
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
-            given(temporaryPassword.isValid()).willReturn(true);
-            given(temporaryPassword.getPassword()).willReturn(encodedTempPassword);
-            given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(true);
-
-            given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
-            given(userDetails.isAccountNonLocked()).willReturn(false);
+            given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(false);
 
             // when & then
             assertThatThrownBy(() -> authService.signIn(signInRequest))
-                    .isInstanceOf(LockedException.class);
+                    .isInstanceOf(BadCredentialsException.class);
 
             then(authenticationManager).shouldHaveNoInteractions();
             then(jwtProvider).shouldHaveNoInteractions();
@@ -343,13 +337,11 @@ class AuthServiceImplTest {
             UUID userId = UUID.randomUUID();
             User user = UserFixture.create(userId, email, "origin-password");
 
-            TemporaryPassword temporaryPassword = mock(TemporaryPassword.class);
+            TemporaryPassword temporaryPassword = TemporaryPasswordFixture.create(user,encodedTempPassword, LocalDateTime.now().plusMinutes(3));
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
 
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
-            given(temporaryPassword.isValid()).willReturn(true);
-            given(temporaryPassword.getPassword()).willReturn(encodedTempPassword);
             given(passwordEncoder.matches(rawPassword, encodedTempPassword)).willReturn(true);
 
             given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
@@ -468,7 +460,7 @@ class AuthServiceImplTest {
         @DisplayName("Redis rotate 실패 시 저장 예외가 발생한다")
         void refreshToken_fail_authStatePersistence() {
             // given
-            User user = mock(User.class);
+            User user = UserFixture.create(userId, email, password);
 
             given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
             given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(true);
