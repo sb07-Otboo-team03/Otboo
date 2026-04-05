@@ -12,6 +12,7 @@ import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
 import com.codeit.otboo.domain.weather.repository.LocationNameMapRepository;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;
+import com.codeit.otboo.domain.weather.repository.projection.CoordinateProjection;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.global.util.KakaoLocalUtil.KakaoRegionType;
 import com.codeit.otboo.global.util.KmaGridConverter;
@@ -181,11 +182,10 @@ public class WeatherServiceImpl implements WeatherService{
     @Scheduled(cron = "0 15 2,5,8,11,14,17,20,23 * * *")
     @Transactional
     public void updateCurrentWeather() {
-        // TODO: x, y를 기준으로 중복 필터링하고 반복문 들어가기
-        List<LocationNameMap> locations = locationNameMapRepository.findAll();
+        List<CoordinateProjection> targets = locationNameMapRepository.findDistinctCoordinates();
 
-        for(LocationNameMap location : locations) {
-            updateWeather(location.getX(), location.getY());
+        for (CoordinateProjection target : targets) {
+            updateWeather(target.getX(), target.getY());
         }
     }
 

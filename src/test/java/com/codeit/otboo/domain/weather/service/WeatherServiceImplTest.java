@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
+import com.codeit.otboo.domain.weather.repository.projection.CoordinateProjection;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
@@ -457,16 +458,16 @@ class WeatherServiceImplTest {
             when(timeProvider.nowDate()).thenReturn(fixedNow.toLocalDate());
             when(timeProvider.nowTime()).thenReturn(fixedNow.toLocalTime());
 
-            LocationNameMap location1 = mock(LocationNameMap.class);
-            when(location1.getX()).thenReturn(57);
-            when(location1.getY()).thenReturn(126);
+            CoordinateProjection target1 = mock(CoordinateProjection.class);
+            when(target1.getX()).thenReturn(57);
+            when(target1.getY()).thenReturn(126);
 
-            LocationNameMap location2 = mock(LocationNameMap.class);
-            when(location2.getX()).thenReturn(60);
-            when(location2.getY()).thenReturn(127);
+            CoordinateProjection target2 = mock(CoordinateProjection.class);
+            when(target2.getX()).thenReturn(60);
+            when(target2.getY()).thenReturn(127);
 
-            when(locationNameMapRepository.findAll())
-                    .thenReturn(List.of(location1, location2));
+            when(locationNameMapRepository.findDistinctCoordinates())
+                    .thenReturn(List.of(target1, target2));
 
             List<KmaWeatherItem> items1 = List.of(mock(KmaWeatherItem.class));
             List<KmaWeatherItem> items2 = List.of(mock(KmaWeatherItem.class));
@@ -517,7 +518,7 @@ class WeatherServiceImplTest {
             weatherService.updateCurrentWeather();
 
             // then
-            verify(locationNameMapRepository).findAll();
+            verify(locationNameMapRepository).findDistinctCoordinates();
 
             verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052));
             verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(60), eq(127), eq(1052));
@@ -558,11 +559,11 @@ class WeatherServiceImplTest {
             when(timeProvider.nowDate()).thenReturn(fixedNow.toLocalDate());
             when(timeProvider.nowTime()).thenReturn(fixedNow.toLocalTime());
 
-            LocationNameMap location = mock(LocationNameMap.class);
-            when(location.getX()).thenReturn(57);
-            when(location.getY()).thenReturn(126);
+            CoordinateProjection target = mock(CoordinateProjection.class);
+            when(target.getX()).thenReturn(57);
+            when(target.getY()).thenReturn(126);
 
-            when(locationNameMapRepository.findAll()).thenReturn(List.of(location));
+            when(locationNameMapRepository.findDistinctCoordinates()).thenReturn(List.of(target));
 
             List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             when(kmaWeatherClient.callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052)))
@@ -592,7 +593,7 @@ class WeatherServiceImplTest {
             weatherService.updateCurrentWeather();
 
             // then
-            verify(locationNameMapRepository).findAll();
+            verify(locationNameMapRepository).findDistinctCoordinates();
 
             verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052));
             verify(kmaWeatherMapper).toWeathers(anyString(), eq(57), eq(126), eq(items), eq(true));
@@ -618,13 +619,13 @@ class WeatherServiceImplTest {
         @DisplayName("저장된 위치가 없으면 아무 작업도 하지 않는다")
         void updateCurrentWeather_doesNothing_whenNoLocations() {
             // given
-            when(locationNameMapRepository.findAll()).thenReturn(List.of());
+            when(locationNameMapRepository.findDistinctCoordinates()).thenReturn(List.of());
 
             // when
             weatherService.updateCurrentWeather();
 
             // then
-            verify(locationNameMapRepository).findAll();
+            verify(locationNameMapRepository).findDistinctCoordinates();
             verifyNoInteractions(kmaWeatherClient); // 해당 mock을 실행하면 fail
             verifyNoInteractions(kmaWeatherMapper);
             verify(weatherRepository, never()).saveAll(anyList());
