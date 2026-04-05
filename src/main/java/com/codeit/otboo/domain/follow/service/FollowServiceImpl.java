@@ -6,33 +6,30 @@ import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
+import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
 import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
-import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
-import com.codeit.otboo.domain.notification.repository.NotificationRepository;
-import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -43,8 +40,6 @@ public class FollowServiceImpl implements FollowService {
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final NotificationRepository notificationRepository;
-    private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -52,7 +47,7 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     @Transactional
-    public FollowResponse createFollow(FollowCreateRequest request) {
+    public FollowResponse create(FollowCreateRequest request) {
 
         followRepository.findByFollowerIdAndFolloweeId(request.followerId(), request.followeeId())
             .ifPresent(follow -> {
@@ -68,7 +63,6 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = new Follow(follower, followee);
         Follow saveFollow = followRepository.save(follow);
 
-
         Notification notification = Notification.builder()
             .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
             .content("")
@@ -76,10 +70,7 @@ public class FollowServiceImpl implements FollowService {
             .receiver(followee)
             .build();
 
-        notificationRepository.save(notification);
-
-        eventPublisher.publishEvent(
-            new SseEvent(notificationMapper.toEventDto(notification)));
+        eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
 
         return followMapper.toDto(saveFollow);
     }

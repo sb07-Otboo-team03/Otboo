@@ -68,7 +68,7 @@ class FollowControllerTest {
 
     @Test
     @WithMockUser
-    @DisplayName("🎯 POST /api/follows - ⭕️ 팔로우 생성")
+    @DisplayName("POST /api/follows - ⭕️ 팔로우 생성")
     void createFollow_OK() throws Exception {
         // given
         FollowCreateRequest request = new FollowCreateRequest(
@@ -80,7 +80,7 @@ class FollowControllerTest {
             .id(UUID.randomUUID())
             .build();
 
-        when(followService.createFollow(any()))
+        when(followService.create(any()))
             .thenReturn(response);
 
         // when & then
@@ -93,7 +93,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/summary - ⭕️ 요약 조회")
+    @DisplayName("GET /api/follows/summary - ⭕️ 요약 조회")
     void getFollowSummary_OK() throws Exception {
         // given
         UUID userId = UUID.randomUUID();
@@ -116,7 +116,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/followings - ⭕️ 목록 조회")
+    @DisplayName("GET /api/follows/followings - ⭕️ 목록 조회")
     void getFollowings_OK() throws Exception {
         // given
         UUID followerId = UUID.randomUUID();
@@ -150,7 +150,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/followers - ⭕️ 목록 조회")
+    @DisplayName("GET /api/follows/followers - ⭕️ 목록 조회")
     void getFollowers_OK() throws Exception {
         // given
         UUID followeeId = UUID.randomUUID();
@@ -183,7 +183,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 DELETE /api/follows/{followId} - ⭕️ 취소")
+    @DisplayName("DELETE /api/follows/{followId} - ⭕️ 취소")
     void cancelFollow_OK() throws Exception {
         // given
         UUID followId = UUID.randomUUID();
@@ -197,7 +197,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 DELETE /api/follows/{followId} - ❌ 실패")
+    @DisplayName("DELETE /api/follows/{followId} - ❌ 실패")
     void cancelFollow_Fail() throws Exception {
         // given
         UUID followId = UUID.randomUUID();

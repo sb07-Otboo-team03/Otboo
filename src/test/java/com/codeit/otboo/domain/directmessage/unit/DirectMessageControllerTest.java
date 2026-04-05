@@ -57,7 +57,7 @@ class DirectMessageControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/direct-messages - ⭕️ 정상 조회")
+    @DisplayName("GET /api/direct-messages - ⭕️ 정상 조회")
     void getDirectMessages_success() throws Exception {
         // given
         UUID userId = UUID.randomUUID();
@@ -124,7 +124,7 @@ class DirectMessageControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/direct-messages - ❌ DM 목록 조회 실패")
+    @DisplayName("GET /api/direct-messages - ❌ DM 목록 조회 실패")
     void getDirectMessages_fail() {
 
     }

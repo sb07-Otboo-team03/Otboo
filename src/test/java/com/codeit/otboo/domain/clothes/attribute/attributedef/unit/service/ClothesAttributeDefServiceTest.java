@@ -94,7 +94,7 @@ class ClothesAttributeDefServiceTest {
         given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class)))
                 .willReturn(color2);
         given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
+        given(notificationMapper.toDto(any(Notification.class)))
                 .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(any()))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -229,7 +229,7 @@ class ClothesAttributeDefServiceTest {
         given(valueRepository.saveAll(anyList())).willReturn(listValues)
                 .willAnswer(invocation -> invocation.getArgument(0));
         given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
+        given(notificationMapper.toDto(any(Notification.class)))
                 .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(anyList()))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -280,7 +280,7 @@ class ClothesAttributeDefServiceTest {
         given(defRepository.findById(defId)).willReturn(Optional.of(def));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(List.of(size1, size2));
         given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
+        given(notificationMapper.toDto(any(Notification.class)))
                 .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(anyList()))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -317,7 +317,7 @@ class ClothesAttributeDefServiceTest {
         List<User> allUser = List.of(user);
 
         given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
+        given(notificationMapper.toDto(any(Notification.class)))
                 .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(anyList()))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -394,7 +394,7 @@ class ClothesAttributeDefServiceTest {
         List<User> allUser = List.of(user);
 
         given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toEventDto(any(Notification.class)))
+        given(notificationMapper.toDto(any(Notification.class)))
                 .willReturn(mock(NotificationDto.class));
         given(notificationRepository.saveAll(anyList()))
                 .willAnswer(invocation -> invocation.getArgument(0));

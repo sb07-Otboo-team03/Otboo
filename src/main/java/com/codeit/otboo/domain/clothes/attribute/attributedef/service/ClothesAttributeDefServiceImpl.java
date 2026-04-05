@@ -232,7 +232,7 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
         // 알림 이벤트 발행
         for(Notification notification : notifications) {
-            eventPublisher.publishEvent(new SseEvent(notificationMapper.toEventDto(notification)));
+            eventPublisher.publishEvent(new SseEvent(notificationMapper.toDto(notification)));
         }
     }
 }
