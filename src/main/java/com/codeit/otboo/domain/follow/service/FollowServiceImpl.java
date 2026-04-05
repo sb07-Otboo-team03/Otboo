@@ -6,14 +6,12 @@ import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
-import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
 import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
-import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -22,6 +20,7 @@ import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,53 +48,81 @@ public class FollowServiceImpl implements FollowService {
     @Transactional
     public FollowResponse create(FollowCreateRequest request) {
 
-        followRepository.findByFollowerIdAndFolloweeId(request.followerId(), request.followeeId())
-            .ifPresent(follow -> {
-                throw new DuplicateFollowException(request.followerId(), request.followeeId());
-            });
+        Optional<Follow> optionalFollow = followRepository.findByFollowerIdAndFolloweeId(
+            request.followerId(), request.followeeId());
 
-        User follower = userRepository.findById(request.followerId())
-            .orElseThrow(() -> new UserNotFoundException(request.followerId()));
+        if (optionalFollow.isPresent()) {
+            Follow savedFollow = optionalFollow.get();
+            followRepository.updateIsActive(savedFollow.getId(), true);
+            return followMapper.toDto(savedFollow);
+        }
+        else {
+            User followee = userRepository.findById(request.followeeId())
+                .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
 
-        User followee = userRepository.findById(request.followeeId())
-            .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
+            User follower = userRepository.findById(request.followerId())
+                .orElseThrow(() -> new UserNotFoundException(request.followerId()));
 
-        Follow follow = new Follow(follower, followee);
-        Follow saveFollow = followRepository.save(follow);
+            Follow follow = new Follow(follower, followee);
+            Follow savedFollow = followRepository.save(follow);
 
-        Notification notification = Notification.builder()
-            .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
-            .content("")
-            .level(NotificationLevel.INFO)
-            .receiver(followee)
-            .build();
+            Notification notification = Notification.builder()
+                .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
+                .content("")
+                .level(NotificationLevel.INFO)
+                .receiver(followee)
+                .build();
 
-        eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
+            eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
 
-        return followMapper.toDto(saveFollow);
+            return followMapper.toDto(savedFollow);
+        }
     }
 
-    @Override
-    public FollowSummaryResponse getFollowSummary(UUID userId, OtbooUserDetails userDetails) {
+    @Override // 팔로우 요약 정보 조회
+    public FollowSummaryResponse getFollowSummary(UUID followeeId, OtbooUserDetails userDetails) {
 
-        userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(userId));
+        userRepository.findById(followeeId)
+            .orElseThrow(() -> new UserNotFoundException(followeeId));
 
-        UserResponse userResponse = userDetails.getUserResponse();
+        UUID myId = userDetails.getUserResponse().id();
+        int followerCount = followRepository.countByFollowerIdAndIsActiveTrue(followeeId);
+        int followingCount = followRepository.countByFolloweeIdAndIsActiveTrue(followeeId);
 
-        int followerCount = followRepository.countByFolloweeId(userId);
-        int followingCount = followRepository.countByFollowerId(userId);
-        boolean followedByMe = followRepository.existsByFollowerIdAndFolloweeId(userId, userResponse.id());
-        boolean followingMe = followRepository.existsByFollowerIdAndFolloweeId(userResponse.id(), userId);
+        boolean itsMe = false;
+        Follow follow = null;
 
-        return new FollowSummaryResponse(
-            userId,
-            followerCount,
-            followingCount,
-            followedByMe,
-            (followingMe ? userId : null),
-            followingMe
-        );
+        if (myId.equals(followeeId)) {
+            itsMe = true;
+        }
+        else {
+            follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId)
+            .orElseThrow(() -> new FollowNotFoundException(myId, followeeId));
+        }
+
+        FollowSummaryResponse response = null;
+
+        if (itsMe || !follow.isActive()) {
+            response = new FollowSummaryResponse(
+                followeeId,
+                followingCount,
+                followerCount,
+                false,
+                itsMe ? null : follow.getId(),
+                false
+            );
+        }
+        else {
+            response = new FollowSummaryResponse(
+                followeeId,
+                followingCount,
+                followerCount,
+                true,
+                follow.getId(),
+                true
+            );
+        }
+        return response;
     }
 
     @Override
@@ -119,10 +146,7 @@ public class FollowServiceImpl implements FollowService {
     @Override
     @Transactional
     public void cancelFollow(UUID followId) {
-
-        Follow follow = followRepository.findById(followId)
-            .orElseThrow(() -> new FollowNotFoundException(followId));
-        followRepository.delete(follow);
+        followRepository.updateIsActive(followId, false);
     }
 
     public CursorResponse<FollowResponse> getFollows(
@@ -135,9 +159,13 @@ public class FollowServiceImpl implements FollowService {
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
+        String safeNameLike = (nameLike == null || nameLike.isBlank())
+            ? ""
+            : nameLike;
+
         List<FollowDto> results = isFollower
-            ? followRepository.findAllFollowers(followId, nameLike, cursor, cursorRequest.idAfter(), pageable)
-            : followRepository.findAllFollowings(followId, nameLike, cursor, cursorRequest.idAfter(), pageable);
+            ? followRepository.findAllFollowers(followId, safeNameLike, cursor, cursorRequest.idAfter(), pageable)
+            : followRepository.findAllFollowings(followId, safeNameLike, cursor, cursorRequest.idAfter(), pageable);
 
         boolean hasNext = results.size() > cursorRequest.limit();
 

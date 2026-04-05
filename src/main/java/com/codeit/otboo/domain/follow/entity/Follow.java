@@ -8,7 +8,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "follows")
+@Table(
+    name = "follows"
+    , uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"follower_id", "followee_id"})
+    }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Follow extends BaseEntity {
@@ -16,7 +21,7 @@ public class Follow extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "follower_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(
                     name = "fk_follows_followers",
                     foreignKeyDefinition = "FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE SET NULL"
@@ -27,13 +32,16 @@ public class Follow extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "followee_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(
                     name = "fk_follows_followees",
                     foreignKeyDefinition = "FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE SET NULL"
             )
     )
     private User followee;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
 
     public Follow(User follower, User followee) {
         this.follower = follower;

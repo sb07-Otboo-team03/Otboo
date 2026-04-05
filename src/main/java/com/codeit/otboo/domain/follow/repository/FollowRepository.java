@@ -10,54 +10,58 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
+    @Modifying
+    @Query("UPDATE Follow f SET f.isActive = :isActive WHERE f.id = :id")
+    void updateIsActive(@Param("id") UUID id, @Param("isActive") boolean isActive);
 
     Optional<Follow> findByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
-    int countByFollowerId(UUID followerId);
-    int countByFolloweeId(UUID followeeId);
-    boolean existsByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
+    int countByFollowerIdAndIsActiveTrue(UUID followerId);
+    int countByFolloweeIdAndIsActiveTrue(UUID followeeId);
 
-    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId")
-    Set<UUID> findAllFollowerIdsByFolloweeId(@Param("followeeId") UUID followeeId);
+    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId AND f.isActive = true")
+    Set<UUID> findAllFollowerIdsByFolloweeIdAndIsActiveTrue(@Param("followeeId") UUID followeeId);
 
     @Query("""
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
             f.id,
             f.createdAt,
-            rp.id,
-            rp.name,
-            rpb.id,
-            ep.id,
-            ep.name,
-            epb.id)
+            followee.id,
+            pfollowee.name,
+            bpfollowee.id,
+            follower.id,
+            pfollower.name,
+            bpfollower.id)
        FROM Follow f
-            JOIN f.follower r
-            JOIN f.followee e
-            JOIN r.profile rp
-            JOIN e.profile ep
-            LEFT JOIN rp.binaryContent rpb
-            LEFT JOIN ep.binaryContent epb
-       WHERE e.id = :followeeId
-           AND ep.name = '%:nameLike%'
-           AND ( CAST(:cursor AS timestamp) IS NULL
+            JOIN f.followee followee
+            JOIN f.follower follower
+            JOIN followee.profile pfollowee
+            JOIN follower.profile pfollower
+            LEFT JOIN pfollowee.binaryContent bpfollowee
+            LEFT JOIN pfollower.binaryContent bpfollower
+       WHERE follower.id = :followId
+           AND LOWER(pfollower.name) LIKE LOWER(CONCAT('%', :nameLike, '%'))
+           AND (
+               CAST(:cursor AS timestamp) IS NULL
                OR (
                    f.createdAt < :cursor
                    OR (
                        f.createdAt = :cursor
-                      AND (CAST(:idAfter AS uuid) IS NULL OR f.id < :idAfter)
+                      AND (:idAfter IS NULL OR f.id < :idAfter)
                    )
                )
-           )
+          )
+          AND f.isActive = true
        ORDER BY f.createdAt DESC, f.id DESC
     """)
     List<FollowDto> findAllFollowings(
-        @Param("followeeId") UUID followeeId,
+        @Param("followId") UUID followId,
         @Param("nameLike") String nameLike,
-        @Param("cursor")
-        LocalDateTime cursor,
+        @Param("cursor") LocalDateTime cursor,
         @Param("idAfter") UUID idAfter,
         Pageable pageable
     );
@@ -67,38 +71,38 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
             f.id,
             f.createdAt,
-            rp.id,
-            rp.name,
-            rpb.id,
-            ep.id,
-            ep.name,
-            epb.id)
+            followee.id,
+            pfollowee.name,
+            bpfollowee.id,
+            follower.id,
+            pfollower.name,
+            bpfollower.id)
        FROM Follow f
-            JOIN f.follower r
-            JOIN f.followee e
-            JOIN r.profile rp
-            JOIN e.profile ep
-            LEFT JOIN rp.binaryContent rpb
-            LEFT JOIN ep.binaryContent epb
-       WHERE r.id = :followerId
-           AND rp.name = '%:nameLike%'
+            JOIN f.followee followee
+            JOIN f.follower follower
+            JOIN followee.profile pfollowee
+            JOIN follower.profile pfollower
+            LEFT JOIN pfollowee.binaryContent bpfollowee
+            LEFT JOIN pfollower.binaryContent bpfollower
+       WHERE followee.id = :followId
+           AND LOWER(pfollowee.name) LIKE LOWER(CONCAT('%', :nameLike, '%'))
            AND (
-               :cursor IS NULL
+               CAST(:cursor AS timestamp) IS NULL
                OR (
                    f.createdAt < :cursor
                    OR (
                        f.createdAt = :cursor
-                      AND(:idAfter IS NULL OR f.id < :idAfter)
+                      AND (:idAfter IS NULL OR f.id < :idAfter)
                    )
                )
           )
+          AND f.isActive = true
        ORDER BY f.createdAt DESC, f.id DESC
     """)
     List<FollowDto> findAllFollowers(
-        @Param("followerId") UUID followerId,
+        @Param("followId") UUID followId,
         @Param("nameLike") String nameLike,
-        @Param("cursor")
-        LocalDateTime cursor,
+        @Param("cursor") LocalDateTime cursor,
         @Param("idAfter") UUID idAfter,
         Pageable pageable
     );

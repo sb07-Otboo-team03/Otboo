@@ -1,7 +1,6 @@
 package com.codeit.otboo.domain.feed.service;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
-import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
@@ -127,7 +126,7 @@ class FeedServiceImplTest {
             given(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(eq(weather.getX()), eq(weather.getY()), eq(date), eq(hour))).willReturn(Optional.of(yesterdayWeather));
             given(clothesRepository.findAllById(List.of(clothes.getId()))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
-            given(followRepository.findAllFollowerIdsByFolloweeId(userId)).willReturn(receiverId);
+            given(followRepository.findAllFollowerIdsByFolloweeIdAndIsActiveTrue(userId)).willReturn(receiverId);
 
             // when
             FeedResponse response = feedService.createFeed(request);
