@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.user.dto.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.service.AuthService;
 import com.codeit.otboo.global.security.OtbooUserDetails;
@@ -8,7 +9,6 @@ import com.codeit.otboo.global.security.jwt.RefreshCookieFactory;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.dto.JwtResponse;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +89,12 @@ public class AuthController {
         return ResponseEntity
                 .noContent()
                 .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> passwordRest(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
+        authService.issueTemporaryPassword(passwordResetRequest);
+        return ResponseEntity.noContent().build();
     }
 
 }
