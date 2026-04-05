@@ -589,7 +589,7 @@ public class ClothesServiceImplTest {
     @DisplayName("옷 목록 조회")
     class GetClothesList {
         @Test
-        @DisplayName("성공: totalCount가 없으면 바로 빈 리스트를 가진 Slice 로 응답한다.")
+        @DisplayName("성공: totalCount가 0이면 바로 빈 리스트를 가진 Slice 로 응답한다.")
         void success_getClothesList_empty(){
             // given
             UUID ownerId = UUID.randomUUID();

@@ -252,7 +252,7 @@ public class ClothesServiceImpl implements ClothesService{
                 () -> new ClothesNotFoundException(clothesId));
     }
 
-    // PreAuthorize 에서 권한 검사를 위해 작성자와 같은지 확인
+    // PreAuthorize 에서 권한 검사를 위해 로그인된 사용자와 같은지 확인
     public boolean isOwner(UUID clothesId, UUID ownerId){
         return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
     }
