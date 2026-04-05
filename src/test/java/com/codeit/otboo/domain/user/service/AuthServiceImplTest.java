@@ -5,11 +5,10 @@ import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.TemporaryPassword;
 import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.event.TemporaryPasswordIssuedEvent;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
+import com.codeit.otboo.domain.user.exception.TemporaryPasswordMailSendFailedException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.TemporaryPasswordFixture;
-import com.codeit.otboo.domain.user.fixture.UserCreateRequestFixture;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
@@ -29,9 +28,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
@@ -70,7 +69,7 @@ class AuthServiceImplTest {
     @Mock
     private TemporaryPasswordRepository temporaryPasswordRepository;
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private MailService mailService;
     @Mock
     private UserDetailsService userDetailsService;
 
@@ -534,8 +533,10 @@ class AuthServiceImplTest {
 
             ArgumentCaptor<TemporaryPassword> temporaryPasswordCaptor =
                     ArgumentCaptor.forClass(TemporaryPassword.class);
-            ArgumentCaptor<TemporaryPasswordIssuedEvent> eventCaptor =
-                    ArgumentCaptor.forClass(TemporaryPasswordIssuedEvent.class);
+            ArgumentCaptor<String> temporaryPasswordArgCaptor =
+                    ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<String> expiresAtArgCaptor =
+                    ArgumentCaptor.forClass(String.class);
 
             // when
             authService.issueTemporaryPassword(passwordResetRequest);
@@ -545,21 +546,21 @@ class AuthServiceImplTest {
             then(temporaryPasswordRepository).should().findByUserId(userId);
             then(passwordEncoder).should().encode(anyString());
             then(temporaryPasswordRepository).should().save(temporaryPasswordCaptor.capture());
-            then(eventPublisher).should().publishEvent(eventCaptor.capture());
+            then(mailService).should().sendTemporaryPassword(
+                    eq(email),
+                    temporaryPasswordArgCaptor.capture(),
+                    expiresAtArgCaptor.capture()
+            );
 
             TemporaryPassword savedTemporaryPassword = temporaryPasswordCaptor.getValue();
-            TemporaryPasswordIssuedEvent publishedEvent = eventCaptor.getValue();
 
             assertThat(savedTemporaryPassword.getUser()).isEqualTo(user);
             assertThat(savedTemporaryPassword.getPassword()).isEqualTo(encodedPassword);
             assertThat(savedTemporaryPassword.isExpired()).isFalse();
-            assertThat(savedTemporaryPassword.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
-            assertThat(savedTemporaryPassword.getExpiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
 
-            assertThat(publishedEvent.email()).isEqualTo(email);
-            assertThat(publishedEvent.temporaryPassword()).isNotBlank();
-            assertThat(publishedEvent.expiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
-            assertThat(publishedEvent.expiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
+            assertThat(temporaryPasswordArgCaptor.getValue()).isNotBlank();
+            assertThat(expiresAtArgCaptor.getValue()).isNotBlank();
+
         }
 
         @Test
@@ -569,15 +570,17 @@ class AuthServiceImplTest {
             temporaryPassword = TemporaryPasswordFixture.create(user, "previousPassword", LocalDateTime.now().plusMinutes(2));
             PasswordResetRequest passwordResetRequest = new PasswordResetRequest(email);
 
-            String previousPassword = temporaryPassword.getPassword(); // 이전 패스워드
-            LocalDateTime previousExpiresAt = temporaryPassword.getExpiresAt(); // 이전 유효예정시간
+            String previousPassword = temporaryPassword.getPassword();
+            LocalDateTime previousExpiresAt = temporaryPassword.getExpiresAt();
 
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
             given(passwordEncoder.encode(anyString())).willReturn(encodedPassword);
 
-            ArgumentCaptor<TemporaryPasswordIssuedEvent> eventCaptor =
-                    ArgumentCaptor.forClass(TemporaryPasswordIssuedEvent.class);
+            ArgumentCaptor<String> temporaryPasswordArgCaptor =
+                    ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<String> expiresAtArgCaptor =
+                    ArgumentCaptor.forClass(String.class);
 
             // when
             authService.issueTemporaryPassword(passwordResetRequest);
@@ -587,9 +590,7 @@ class AuthServiceImplTest {
             then(temporaryPasswordRepository).should().findByUserId(userId);
             then(passwordEncoder).should().encode(anyString());
             then(temporaryPasswordRepository).should(never()).save(any(TemporaryPassword.class));
-            then(eventPublisher).should().publishEvent(eventCaptor.capture());
-
-            TemporaryPasswordIssuedEvent event = eventCaptor.getValue();
+            then(mailService).should().sendTemporaryPassword(eq(email), temporaryPasswordArgCaptor.capture(), expiresAtArgCaptor.capture());
 
             assertThat(temporaryPassword.getUser()).isEqualTo(user);
             assertThat(temporaryPassword.getPassword()).isEqualTo(encodedPassword);
@@ -597,12 +598,9 @@ class AuthServiceImplTest {
 
             assertThat(temporaryPassword.isExpired()).isFalse();
             assertThat(temporaryPassword.getExpiresAt()).isAfter(previousExpiresAt);
-            assertThat(temporaryPassword.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
-            assertThat(temporaryPassword.getExpiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
 
-            assertThat(event.email()).isEqualTo(email);
-            assertThat(event.temporaryPassword()).isNotBlank();
-            assertThat(event.expiresAt()).isEqualTo(temporaryPassword.getExpiresAt());
+            assertThat(temporaryPasswordArgCaptor.getValue()).isNotBlank();
+            assertThat(expiresAtArgCaptor.getValue()).isNotBlank();
         }
         
         @Test
@@ -621,8 +619,32 @@ class AuthServiceImplTest {
             then(userRepository).should().findByEmail(email);
             then(temporaryPasswordRepository).shouldHaveNoInteractions();
             then(passwordEncoder).shouldHaveNoInteractions();
-            then(eventPublisher).shouldHaveNoInteractions();
-            
+            then(mailService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("실패 - 메일 발송 실패")
+        void password_reset_failed_mailSend() {
+            // given
+            PasswordResetRequest request = new PasswordResetRequest(email);
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn(encodedPassword);
+
+            willThrow(new TemporaryPasswordMailSendFailedException())
+                    .given(mailService)
+                    .sendTemporaryPassword(eq(email), anyString(), anyString());
+
+            // when & then
+            assertThatThrownBy(() -> authService.issueTemporaryPassword(request))
+                    .isInstanceOf(TemporaryPasswordMailSendFailedException.class);
+
+            // then
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
+            then(passwordEncoder).should().encode(anyString());
+            then(mailService).should().sendTemporaryPassword(eq(email), anyString(), anyString());
         }
     }
 
