@@ -125,7 +125,7 @@ class WeatherServiceImplTest {
 
             // 어제 날씨
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
-            when(yesterdayHourlyWeatherRepository.findByDateAndHour(any(), any()))
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
                     .thenReturn(Optional.of(yesterdayHourlyWeather));
 
             // DTO 변환
@@ -159,7 +159,7 @@ class WeatherServiceImplTest {
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
             verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
 
-            verify(yesterdayHourlyWeatherRepository, times(1)).findByDateAndHour(any(), any());
+            verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
         }
 
@@ -208,7 +208,7 @@ class WeatherServiceImplTest {
 
             // 어제 습도, 온도 값 저장
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
-            when(yesterdayHourlyWeatherRepository.findByDateAndHour(any(), any()))
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
                     .thenReturn(Optional.of(yesterdayHourlyWeather));
 
             // 반환 값 dto 변환
@@ -240,7 +240,7 @@ class WeatherServiceImplTest {
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
             verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
 
-            verify(yesterdayHourlyWeatherRepository, times(1)).findByDateAndHour(any(), any());
+            verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper, times(1)).toDto(anyList(), any(LocationNameMap.class), any(YesterdayHourlyWeather.class));
         }
 
@@ -301,7 +301,7 @@ class WeatherServiceImplTest {
                     .thenReturn(List.of(candidateFar, candidateClosest));
 
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
-            when(yesterdayHourlyWeatherRepository.findByDateAndHour(any(), any()))
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
                     .thenReturn(Optional.of(yesterdayHourlyWeather));
 
             List<WeatherResponse> expected = List.of(mock(WeatherResponse.class));
@@ -369,7 +369,7 @@ class WeatherServiceImplTest {
 
             // 어제 날씨는 처음엔 없음 -> 저장 후 다시 조회하면 있음
             YesterdayHourlyWeather savedYesterdayWeather = mock(YesterdayHourlyWeather.class);
-            when(yesterdayHourlyWeatherRepository.findByDateAndHour(any(), any()))
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(savedYesterdayWeather));
 
@@ -405,7 +405,7 @@ class WeatherServiceImplTest {
                 );
             }
 
-            verify(yesterdayHourlyWeatherRepository, times(2)).findByDateAndHour(any(), any());
+            verify(yesterdayHourlyWeatherRepository, times(2)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(300));
             verify(kmaWeatherMapper, times(1)).toYesterdayWeathers(x, y, yesterdayItems);
             verify(yesterdayHourlyWeatherRepository,times(1)).saveAll(mappedYesterdayWeathers);

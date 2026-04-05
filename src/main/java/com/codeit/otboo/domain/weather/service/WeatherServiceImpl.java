@@ -102,12 +102,16 @@ public class WeatherServiceImpl implements WeatherService{
         }
 
         // 어제 온도, 습도 정보 조회
-        YesterdayHourlyWeather yesterdayHourlyWeather = yesterdayHourlyWeatherRepository.findByDateAndHour(
+        YesterdayHourlyWeather yesterdayHourlyWeather = yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(
+                        x,
+                        y,
                         timeProvider.nowDate().minusDays(1),
                         timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0))
                 .orElseGet(() -> { // 없으면 새로 저장하고 조회
                     addYesterdayWeatherInfo(x, y);
-                    return yesterdayHourlyWeatherRepository.findByDateAndHour(
+                    return yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(
+                            x,
+                            y,
                             timeProvider.nowDate().minusDays(1),
                             timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0)
                     ).orElseThrow(() -> new RuntimeException("YesterdayHourlyWeather is not found"));
