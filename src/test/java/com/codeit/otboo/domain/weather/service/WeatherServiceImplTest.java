@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.weather.service;
 
+import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.repository.projection.CoordinateProjection;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
@@ -42,6 +43,10 @@ class WeatherServiceImplTest {
     @InjectMocks
     private WeatherServiceImpl weatherService;
 
+    @Mock
+    private WeatherForecastBatchService weatherForecastBatchService;
+    @Mock
+    private WeatherForecastUpsertService weatherForecastUpsertService;
     @Mock
     private WeatherRepository weatherRepository;
     @Mock
@@ -116,13 +121,11 @@ class WeatherServiceImplTest {
             when(savedLocation.getX()).thenReturn(x);
             when(savedLocation.getY()).thenReturn(y);
 
-            // saveOrUpdateWeather()
-            List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
-            when(kmaWeatherClient.callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052)))
-                    .thenReturn(items);
-            when(kmaWeatherMapper.toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false)))
-                    .thenReturn(mappedWeathers);
+            ForecastBatchResult batchResult = new ForecastBatchResult(x, y, mappedWeathers);
+
+            when(weatherForecastBatchService.collect(eq(x), eq(y), anyString(), eq("2300")))
+                    .thenReturn(batchResult);
 
             // 어제 날씨
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
@@ -156,10 +159,8 @@ class WeatherServiceImplTest {
                         );
             }
 
-            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
-            verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
-            verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
-
+            verify(weatherForecastBatchService, times(1)).collect(eq(x), eq(y), anyString(), eq("2300"));
+            verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
         }
@@ -199,13 +200,12 @@ class WeatherServiceImplTest {
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
 
-            // saveOrUpdateWeather()
-            List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
-            when(kmaWeatherClient.callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052)))
-                    .thenReturn(items);
-            when(kmaWeatherMapper.toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false)))
-                    .thenReturn(mappedWeathers);
+            ForecastBatchResult batchResult = new ForecastBatchResult(x, y, mappedWeathers);
+
+            when(weatherForecastBatchService.collect(eq(x), eq(y), anyString(), eq("2300")))
+                    .thenReturn(batchResult);
+
 
             // 어제 습도, 온도 값 저장
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
@@ -237,9 +237,8 @@ class WeatherServiceImplTest {
                         );
             }
 
-            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
-            verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
-            verify(weatherRepository, times(1)).saveAll(eq(mappedWeathers));
+            verify(weatherForecastBatchService, times(1)).collect(eq(x), eq(y), anyString(), eq("2300"));
+            verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
 
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper, times(1)).toDto(anyList(), any(LocationNameMap.class), any(YesterdayHourlyWeather.class));
@@ -443,193 +442,6 @@ class WeatherServiceImplTest {
 
         verify(kmaGridConverter).convertToGrid(latitude, longitude);
         verify(kakaoLocalUtil).getAddressLevels(longitude, latitude, KakaoRegionType.H);
-    }
-
-    @Nested
-    @DisplayName("updateCurrentWeather()")
-    class UpdateCurrentWeatherTest {
-
-        @Test
-        @DisplayName("저장된 모든 위치의 현재 날씨를 갱신한다")
-        void updateCurrentWeather_updatesAllLocations() {
-            // given
-
-            LocalDateTime fixedNow = LocalDateTime.of(2026, 3, 20, 11, 0);
-            when(timeProvider.nowDate()).thenReturn(fixedNow.toLocalDate());
-            when(timeProvider.nowTime()).thenReturn(fixedNow.toLocalTime());
-
-            CoordinateProjection target1 = mock(CoordinateProjection.class);
-            when(target1.getX()).thenReturn(57);
-            when(target1.getY()).thenReturn(126);
-
-            CoordinateProjection target2 = mock(CoordinateProjection.class);
-            when(target2.getX()).thenReturn(60);
-            when(target2.getY()).thenReturn(127);
-
-            when(locationNameMapRepository.findDistinctCoordinates())
-                    .thenReturn(List.of(target1, target2));
-
-            List<KmaWeatherItem> items1 = List.of(mock(KmaWeatherItem.class));
-            List<KmaWeatherItem> items2 = List.of(mock(KmaWeatherItem.class));
-
-            when(kmaWeatherClient.callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052)))
-                    .thenReturn(items1);
-            when(kmaWeatherClient.callWeatherApi(eq("20260320"), anyString(), eq(60), eq(127), eq(1052)))
-                    .thenReturn(items2);
-
-            Weather weather1 = mock(Weather.class);
-            LocalDateTime weather1ForecastedAt = LocalDateTime.of(2026, 3, 20, 0, 0);
-            LocalDateTime weather1ForecastAt = LocalDateTime.of(2026, 3, 20, 12, 0);
-
-            when(weather1.getForecastedAt()).thenReturn(weather1ForecastedAt);
-            when(weather1.getForecastAt()).thenReturn(weather1ForecastAt);
-            when(weather1.getX()).thenReturn(57);
-            when(weather1.getY()).thenReturn(126);
-
-            Weather weather2 = mock(Weather.class);
-            LocalDateTime weather2ForecastedAt = LocalDateTime.of(2026, 3, 20, 0, 0);
-            LocalDateTime weather2ForecastAt = LocalDateTime.of(2026, 3, 20, 12, 0);
-
-            when(weather2.getForecastedAt()).thenReturn(weather2ForecastedAt);
-            when(weather2.getForecastAt()).thenReturn(weather2ForecastAt);
-            when(weather2.getX()).thenReturn(60);
-            when(weather2.getY()).thenReturn(127);
-
-            when(kmaWeatherMapper.toWeathers(anyString(), eq(57), eq(126), eq(items1), eq(true)))
-                    .thenReturn(List.of(weather1));
-            when(kmaWeatherMapper.toWeathers(anyString(), eq(60), eq(127), eq(items2), eq(true)))
-                    .thenReturn(List.of(weather2));
-
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(weather1ForecastedAt),
-                    eq(weather1ForecastAt),
-                    eq(57),
-                    eq(126)
-            )).thenReturn(Optional.empty());
-
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(weather2ForecastedAt),
-                    eq(weather2ForecastAt),
-                    eq(60),
-                    eq(127)
-            )).thenReturn(Optional.empty());
-
-            // when
-            weatherService.updateCurrentWeather();
-
-            // then
-            verify(locationNameMapRepository).findDistinctCoordinates();
-
-            verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052));
-            verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(60), eq(127), eq(1052));
-
-            verify(kmaWeatherMapper).toWeathers(anyString(), eq(57), eq(126), eq(items1), eq(true));
-            verify(kmaWeatherMapper).toWeathers(anyString(), eq(60), eq(127), eq(items2), eq(true));
-
-            verify(weatherRepository).findByForecastedAtAndForecastAtAndXAndY(
-                    eq(weather1ForecastedAt),
-                    eq(weather1ForecastAt),
-                    eq(57),
-                    eq(126)
-            );
-
-            verify(weatherRepository).findByForecastedAtAndForecastAtAndXAndY(
-                    eq(weather2ForecastedAt),
-                    eq(weather2ForecastAt),
-                    eq(60),
-                    eq(127)
-            );
-
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<Weather>> captor = ArgumentCaptor.forClass(List.class);
-
-            verify(weatherRepository, times(2)).saveAll(captor.capture());
-
-            List<List<Weather>> savedLists = captor.getAllValues();
-            assertThat(savedLists).hasSize(2);
-            assertThat(savedLists.get(0)).containsExactly(weather1);
-            assertThat(savedLists.get(1)).containsExactly(weather2);
-        }
-
-        @Test
-        @DisplayName("기존 날씨가 있으면 값을 갱신한 후 저장한다")
-        void updateCurrentWeather_updatesExistingWeather() {
-            // given
-            LocalDateTime fixedNow = LocalDateTime.of(2026, 3, 20, 12, 0);
-            when(timeProvider.nowDate()).thenReturn(fixedNow.toLocalDate());
-            when(timeProvider.nowTime()).thenReturn(fixedNow.toLocalTime());
-
-            CoordinateProjection target = mock(CoordinateProjection.class);
-            when(target.getX()).thenReturn(57);
-            when(target.getY()).thenReturn(126);
-
-            when(locationNameMapRepository.findDistinctCoordinates()).thenReturn(List.of(target));
-
-            List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
-            when(kmaWeatherClient.callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052)))
-                    .thenReturn(items);
-
-            Weather newWeather = mock(Weather.class);
-            LocalDateTime newWeatherForecastedAt = LocalDateTime.of(2026, 3, 20, 0, 0);
-            LocalDateTime newWeatherForecastAt = LocalDateTime.of(2026, 3, 20, 12, 0);
-
-            when(newWeather.getForecastedAt()).thenReturn(newWeatherForecastedAt);
-            when(newWeather.getForecastAt()).thenReturn(newWeatherForecastAt);
-            when(newWeather.getX()).thenReturn(57);
-            when(newWeather.getY()).thenReturn(126);
-
-            when(kmaWeatherMapper.toWeathers(anyString(), eq(57), eq(126), eq(items), eq(true)))
-                    .thenReturn(List.of(newWeather));
-
-            Weather savedWeather = mock(Weather.class);
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(newWeatherForecastedAt),
-                    eq(newWeatherForecastAt),
-                    eq(57),
-                    eq(126)
-            )).thenReturn(Optional.of(savedWeather));
-
-            // when
-            weatherService.updateCurrentWeather();
-
-            // then
-            verify(locationNameMapRepository).findDistinctCoordinates();
-
-            verify(kmaWeatherClient).callWeatherApi(eq("20260320"), anyString(), eq(57), eq(126), eq(1052));
-            verify(kmaWeatherMapper).toWeathers(anyString(), eq(57), eq(126), eq(items), eq(true));
-
-            verify(weatherRepository).findByForecastedAtAndForecastAtAndXAndY(
-                    eq(newWeatherForecastedAt),
-                    eq(newWeatherForecastAt),
-                    eq(57),
-                    eq(126)
-            );
-
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<Weather>> captor = ArgumentCaptor.forClass(List.class);
-
-            verify(weatherRepository).saveAll(captor.capture());
-
-            List<Weather> savedList = captor.getValue();
-            assertThat(savedList).hasSize(1);
-            assertThat(savedList).containsExactly(savedWeather);
-        }
-
-        @Test
-        @DisplayName("저장된 위치가 없으면 아무 작업도 하지 않는다")
-        void updateCurrentWeather_doesNothing_whenNoLocations() {
-            // given
-            when(locationNameMapRepository.findDistinctCoordinates()).thenReturn(List.of());
-
-            // when
-            weatherService.updateCurrentWeather();
-
-            // then
-            verify(locationNameMapRepository).findDistinctCoordinates();
-            verifyNoInteractions(kmaWeatherClient); // 해당 mock을 실행하면 fail
-            verifyNoInteractions(kmaWeatherMapper);
-            verify(weatherRepository, never()).saveAll(anyList());
-        }
     }
 
     @Nested
