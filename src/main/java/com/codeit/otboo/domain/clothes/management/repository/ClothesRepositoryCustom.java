@@ -8,7 +8,7 @@ import org.springframework.data.domain.Slice;
 import java.util.UUID;
 
 public interface ClothesRepositoryCustom {
-    Slice<Clothes> findMyClotheList(ClothesCursorQuery query);
+    Slice<Clothes> findMyClothesList(ClothesCursorQuery query);
 
     Long totalCount(UUID ownerId, ClothesType type);
 }

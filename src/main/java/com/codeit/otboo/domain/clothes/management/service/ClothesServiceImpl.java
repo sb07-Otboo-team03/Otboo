@@ -183,7 +183,7 @@ public class ClothesServiceImpl implements ClothesService{
             );
         }
         ClothesCursorQuery query = clothesQueryMapper.toQuery(request);
-        Slice<Clothes> slice = clothesRepositoryCustom.findMyClotheList(query);
+        Slice<Clothes> slice = clothesRepositoryCustom.findMyClothesList(query);
         List<Clothes> sliceContent= slice.getContent();
         Map<UUID, List<String>> listAllSelectableGrouping = getListAllSelectableGrouping(sliceContent);
         List<ClothesResponse> content = toClothesResponseList(sliceContent, listAllSelectableGrouping);

@@ -607,7 +607,7 @@ public class ClothesServiceImplTest {
             assertThat(result.hasNext()).isFalse();
 
             then(clothesRepositoryCustom).should(times(1)).totalCount(ownerId, null);
-            then(clothesRepositoryCustom).should(never()).findMyClotheList(any(ClothesCursorQuery.class));
+            then(clothesRepositoryCustom).should(never()).findMyClothesList(any(ClothesCursorQuery.class));
         }
 
         @Test
@@ -628,7 +628,7 @@ public class ClothesServiceImplTest {
 
             given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
             given(clothesQueryMapper.toQuery(request)).willReturn(query);
-            given(clothesRepositoryCustom.findMyClotheList(query)).willReturn(slice);
+            given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
 
             // when
             CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
@@ -669,7 +669,7 @@ public class ClothesServiceImplTest {
 
             given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
             given(clothesQueryMapper.toQuery(request)).willReturn(query);
-            given(clothesRepositoryCustom.findMyClotheList(query)).willReturn(slice);
+            given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
             given(clothesAttributeValueRepository.findByAttributeDefIdIn(List.of(definition.getId())))
                     .willReturn(List.of(attributeValue));
             given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(imageUrl);
@@ -687,7 +687,7 @@ public class ClothesServiceImplTest {
             then(clothesRepositoryCustom).should(times(1))
                     .totalCount(owner.getId(), null);
             then(clothesRepositoryCustom).should(times(1))
-                    .findMyClotheList(query);
+                    .findMyClothesList(query);
             then(binaryContentUrlResolver).should().resolve(binaryContent.getId());
             then(clothesMapper).should().toDto(clothes, imageUrl, groupingAttribute);
         }
