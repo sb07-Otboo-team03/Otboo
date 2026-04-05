@@ -3,6 +3,8 @@ package com.codeit.otboo.domain.user.service;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -12,11 +14,11 @@ import org.springframework.stereotype.Service;
 public class SmtpMailService implements MailService{
 
     private final JavaMailSender mailSender;
-    private final UserRepository userRepository;
 
     @Value("${spring.mail.username}")
     private String from;
 
+    @Override
     public void sendTemporaryPassword(String to, String temporaryPassword, String expiresAt) {
         SimpleMailMessage message = new SimpleMailMessage();
 
@@ -24,7 +26,11 @@ public class SmtpMailService implements MailService{
         message.setTo(to);
         message.setSubject("Otboo 임시 비밀번호 발송");
         message.setText(buildTemporaryPasswordContent(temporaryPassword, expiresAt));
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+        } catch (MailException e) {
+            throw new MailSendException("임시 비밀번호 메일 발송에 실패했습니다.", e);
+        }
 
     }
 

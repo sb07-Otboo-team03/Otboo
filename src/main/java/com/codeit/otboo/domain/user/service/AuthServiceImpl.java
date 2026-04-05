@@ -5,7 +5,6 @@ import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.TemporaryPassword;
 import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.event.TemporaryPasswordIssuedEvent;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
@@ -33,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 
@@ -48,8 +48,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final UserDetailsService userDetailsService;
+    private final MailService mailService;
 
     @Override
     @Transactional
@@ -177,10 +177,9 @@ public class AuthServiceImpl implements AuthService {
                         )
                 );
 
-
-        eventPublisher.publishEvent(
-                new TemporaryPasswordIssuedEvent(user.getEmail(), temporaryPassword, expiresAt)
-        );
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String expiresAtToString = expiresAt.format(formatter);
+        mailService.sendTemporaryPassword(email, temporaryPassword, expiresAtToString);
     }
 
     private String generateTemporaryPassword() {
