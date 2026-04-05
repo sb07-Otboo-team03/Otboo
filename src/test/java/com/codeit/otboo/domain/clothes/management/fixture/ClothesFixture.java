@@ -11,7 +11,7 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +33,7 @@ public class ClothesFixture {
                 )
         );
         ReflectionTestUtils.setField(newClothes, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(newClothes, "createdAt", LocalDateTime.now());
         return newClothes;
     }
     

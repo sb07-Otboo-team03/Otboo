@@ -54,4 +54,35 @@ public class ClothesNextCursorTest {
             assertThat(clothesNextCursor.getAfter()).isNull();
         }
     }
+
+    @Nested
+    @DisplayName("다음 페이지가 존재할 때")
+    class hasNextIsTrue{
+        // 원활한 테스트 환경을 위해 페이지 사이즈를 2로 설정
+        @Test
+        @DisplayName("""
+            hasNext가 true일 때
+            cursor는 현재 페이지 마지막 요소의 생성일,
+            after는 현재 페이지 마지막 요소의 UUID
+            값을 반환한다.
+        """)
+        void hasNextIsTrue_Success(){
+            // given
+            Slice<Clothes> slice = new SliceImpl<>(
+                List.of(ClothesFixture.create(), ClothesFixture.create(), ClothesFixture.create()),
+                PageRequest.of(0, 2),
+                true
+            );
+            Clothes pageLastClothes = slice.getContent().get(slice.getContent().size() - 1);
+
+
+            // when
+            ClothesNextCursor clothesNextCursor = ClothesNextCursor.from(slice);
+
+            // then
+            assertThat(clothesNextCursor.getCursor())
+                    .isEqualTo(pageLastClothes.getCreatedAt().toString());
+            assertThat(clothesNextCursor.getAfter()).isEqualTo(pageLastClothes.getId());
+        }
+    }
 }
