@@ -296,4 +296,72 @@ public class ClothesRepositoryCustomImplTest {
             assertThat(count).isEqualTo(totalCount);
         }
     }
+
+    @Nested
+    @DisplayName("추가 케이스")
+    class cursorNotNullAfterNull{
+        @Test
+        @DisplayName("""
+            cursor가 not null, after가 null일 때
+            주 커서에 대한 조건으로 정상 조회된다.
+        """)
+        void cursorNotNullAfterNull_Success(){
+            // given
+            int totalCount = 36;
+            int pageSize = 20;
+
+            User user = User.builder()
+                    .email("test@aa.com")
+                    .password("1234")
+                    .build();
+            ClothesTestUtils.createClothesList(user, entityManager,totalCount);
+
+            // [Page 1]
+            // given
+            ClothesCursorQuery query1 = new ClothesCursorQuery(
+                    null,
+                    null,
+                    pageSize,
+                    null,
+                    user.getId()
+            );
+
+            // when
+            Slice<Clothes> page1 = clothesRepositoryCustom.findMyClothesList(query1);
+
+            // [Page 2]
+            // given
+            ClothesCursorQuery query2 = new ClothesCursorQuery(
+                    page1.getContent().get(page1.getContent().size() - 1).getCreatedAt(),
+                    null,
+                    pageSize,
+                    null,
+                    user.getId()
+            );
+
+            // when
+            Slice<Clothes> page2 = clothesRepositoryCustom.findMyClothesList(query2);
+
+            // then
+            // 각 페이지는 생성일 내림차순으로 정렬이 잘 되어있다.
+            assertThat(page1.getContent()).isSortedAccordingTo(
+                    Comparator.comparing(Clothes::getCreatedAt, Comparator.reverseOrder())
+            );
+            assertThat(page2.getContent()).isSortedAccordingTo(
+                    Comparator.comparing(Clothes::getCreatedAt, Comparator.reverseOrder())
+            );
+
+            // 페이지들 간의 첫 요소 비교 (내림차순)
+            assertThat(page1.getContent().get(0).getCreatedAt())
+                    .isAfterOrEqualTo(page2.getContent().get(0).getCreatedAt());
+
+            // 각 페이지가 있는지 여부 검증
+            assertThat(page1.hasNext()).isTrue();
+            assertThat(page2.hasNext()).isFalse();
+
+            // 각 페이지 요소 수 검증
+            assertThat(page1.getContent()).hasSize(pageSize);
+            assertThat(page2.getContent()).hasSize(totalCount % pageSize);
+        }
+    }
 }

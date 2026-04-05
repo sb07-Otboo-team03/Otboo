@@ -10,5 +10,5 @@ import java.util.UUID;
 public interface ClothesRepositoryCustom {
     Slice<Clothes> findMyClothesList(ClothesCursorQuery query);
 
-    Long totalCount(UUID ownerId, ClothesType type);
+    long totalCount(UUID ownerId, ClothesType type);
 }

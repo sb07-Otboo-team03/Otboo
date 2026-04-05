@@ -11,6 +11,7 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import static com.codeit.otboo.domain.clothes.management.entity.QClothes.clothes;
@@ -47,17 +48,15 @@ public class ClothesRepositoryCustomImpl implements ClothesRepositoryCustom{
         return new SliceImpl<>(result, PageRequest.of(0, query.limit()), hasNext);
     }
 
-    // intelliJ 노란줄 경고 표시로 인하여 Long 으로 해서 null 체킹
-    // 'queryFactory.select(clothes.count()) .from(clothes) .where( ...'을(를) 언박싱하면
-    // 'NullPointerException이 생성될 수 있습니다
     @Override
-    public Long totalCount(UUID ownerId, ClothesType type) {
-        Long count = queryFactory.select(clothes.count())
+    public long totalCount(UUID ownerId, ClothesType type) {
+        return Objects.requireNonNull(
+                queryFactory.select(clothes.count())
                 .from(clothes)
                 .where(
                         clothes.owner.id.eq(ownerId),
                         type == null ? null : clothes.type.eq(type)
-                ).fetchOne();
-        return count == null ? 0L : count;
+                ).fetchOne()
+        );
     }
 }
