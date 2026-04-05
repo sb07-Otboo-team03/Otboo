@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.weather.service;
 
+import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.KmaWeatherMapper;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
@@ -9,10 +10,10 @@ import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
 import com.codeit.otboo.domain.weather.entity.LocationNameMap;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
+import com.codeit.otboo.domain.weather.exception.YesterdayWeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.LocationNameMapRepository;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;
-import com.codeit.otboo.domain.weather.repository.projection.CoordinateProjection;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.global.util.KakaoLocalUtil.KakaoRegionType;
 import com.codeit.otboo.global.util.KmaGridConverter;
@@ -20,7 +21,6 @@ import com.codeit.otboo.global.util.KmaGridConverter.GridResult;
 import com.codeit.otboo.global.util.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +48,9 @@ public class WeatherServiceImpl implements WeatherService{
     private final TimeProvider timeProvider;
     private final KakaoLocalUtil kakaoLocalUtil;
     private final KmaGridConverter kmaGridConverter;
+
+    private final WeatherForecastBatchService weatherForecastBatchService;
+    private final WeatherForecastUpsertService weatherForecastUpsertService;
 
     @Override
     @Transactional
@@ -110,12 +112,15 @@ public class WeatherServiceImpl implements WeatherService{
                         timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0))
                 .orElseGet(() -> { // 없으면 새로 저장하고 조회
                     addYesterdayWeatherInfo(x, y);
+                    LocalDate date = timeProvider.nowDate().minusDays(1);
+                    LocalTime hour = timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0);
+
                     return yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(
                             x,
                             y,
-                            timeProvider.nowDate().minusDays(1),
-                            timeProvider.nowTime().withMinute(0).withSecond(0).withNano(0)
-                    ).orElseThrow(() -> new RuntimeException("YesterdayHourlyWeather is not found"));
+                            date,
+                            hour
+                    ).orElseThrow(() -> new YesterdayWeatherNotFoundException(x, y, date, hour));
                 });
 
 
@@ -125,7 +130,9 @@ public class WeatherServiceImpl implements WeatherService{
     private void insertNewLocationWeather(int x, int y) {
         String baseDate = timeProvider.nowDate().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
-        saveOrUpdateWeather(baseDate, baseTime, x, y, false);
+
+        ForecastBatchResult result = weatherForecastBatchService.collect(x, y, baseDate, baseTime);
+        weatherForecastUpsertService.upsert(result.weathers());
     }
 
     private void addYesterdayWeatherInfo(int x, int y) {
@@ -178,56 +185,6 @@ public class WeatherServiceImpl implements WeatherService{
         );
     }
 
-    // 3시간 단위 기상 발표에 맞추어 스케줄링
-    @Scheduled(cron = "0 15 2,5,8,11,14,17,20,23 * * *")
-    @Transactional
-    public void updateCurrentWeather() {
-        List<CoordinateProjection> targets = locationNameMapRepository.findDistinctCoordinates();
-
-        for (CoordinateProjection target : targets) {
-            updateWeather(target.getX(), target.getY());
-        }
-    }
-
-    private void updateWeather(int x, int y) {
-        String baseDate = timeProvider.nowDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String baseTime = getBaseTimeForWeather();
-        saveOrUpdateWeather(baseDate, baseTime, x, y, true);
-    }
-
-    private void saveOrUpdateWeather(String baseDate, String baseTime, int x, int y, boolean isScheduling) {
-        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
-        List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, isScheduling);
-
-        List<Weather> weatherList = new ArrayList<>();
-
-        for (Weather w : weathers) {
-            Weather savedWeather = weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    w.getForecastedAt(),
-                    w.getForecastAt(),
-                    w.getX(),
-                    w.getY()
-            ).orElse(null);
-
-            if (savedWeather != null) {
-                log.debug("존재하는 날씨 정보를 업데이트 합니다. ForecastedAt = {}, ForecastAt = {}",
-                        w.getForecastedAt(), w.getForecastAt());
-
-                savedWeather.update(w);
-                weatherList.add(savedWeather);
-            } else {
-                weatherList.add(w);
-            }
-        }
-
-        weatherList.sort(
-                Comparator.comparing(Weather::getForecastAt)
-                        .thenComparing(Weather::getForecastedAt)
-        );
-
-        weatherRepository.saveAll(weatherList);
-    }
-
     /**
      * 00시 마다 어제 저장했던 모든 날씨 데이터 삭제
      * 삭제 이전에 어제자 날씨의 (온도, 습도) 정보는 yesterday_hourly_weather 테이블에 저장
@@ -264,20 +221,5 @@ public class WeatherServiceImpl implements WeatherService{
 
         // 오늘 이전의 날씨 데이터는 모두 삭제
         weatherRepository.deleteByForecastedAtBefore(todayStart);
-    }
-
-
-    private String getBaseTimeForWeather() {
-        int hour = timeProvider.nowTime().getHour();
-
-        if (hour < 2) return "2300";
-        else if (hour < 5) return "0200";
-        else if (hour < 8) return "0500";
-        else if (hour < 11) return "0800";
-        else if (hour < 14) return "1100";
-        else if (hour < 17) return "1400";
-        else if (hour < 20) return "1700";
-        else if (hour < 23) return "2000";
-        else return "2300";
     }
 }
