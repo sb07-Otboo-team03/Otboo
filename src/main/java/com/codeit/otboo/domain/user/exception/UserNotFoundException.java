@@ -14,6 +14,12 @@ public class UserNotFoundException extends UserException {
                 HttpStatus.NOT_FOUND);
     }
 
+    public UserNotFoundException(String email) {
+        super(ErrorCode.USER_NOT_FOUND,
+                Map.of("email", email),
+                HttpStatus.NOT_FOUND);
+    }
+
     public UserNotFoundException() {
         super(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
