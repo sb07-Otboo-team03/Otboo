@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.domain.user.exception.TemporaryPasswordMailSendFailedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
@@ -29,7 +29,7 @@ public class SmtpMailService implements MailService{
         try {
             mailSender.send(message);
         } catch (MailException e) {
-            throw new MailSendException("임시 비밀번호 메일 발송에 실패했습니다.", e);
+            throw new TemporaryPasswordMailSendFailedException();
         }
 
     }
