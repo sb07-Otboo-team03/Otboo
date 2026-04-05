@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 public class TemporaryPasswordIssuedEventListener {
     private final MailService mailService;
 
-    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(TemporaryPasswordIssuedEvent event) {
         log.debug("메일 발송");
