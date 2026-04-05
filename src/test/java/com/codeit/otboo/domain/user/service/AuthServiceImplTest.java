@@ -1,13 +1,18 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.user.dto.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.entity.TemporaryPassword;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.event.TemporaryPasswordIssuedEvent;
 import com.codeit.otboo.domain.user.exception.AuthStatePersistentException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.fixture.TemporaryPasswordFixture;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
+import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtProperties;
@@ -25,11 +30,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -56,6 +63,13 @@ class AuthServiceImplTest {
     private JwtProperties jwtProperties;
     @Mock
     private UserMapper userMapper;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private TemporaryPasswordRepository temporaryPasswordRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -339,6 +353,131 @@ class AuthServiceImplTest {
             // then
             then(redisRegistry).should().delete(userId);
             then(redisRegistry).shouldHaveNoMoreInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 초기화")
+    class PasswordReset {
+        private String email;
+        private User user;
+        private UUID userId;
+
+        private String encodedPassword;
+        private LocalDateTime expiresAt;
+        private TemporaryPassword temporaryPassword;
+
+        @BeforeEach
+        void setUp() {
+            email = "test@codeit.com";
+            encodedPassword = "encodedTemporaryPassword";
+            user = UserFixture.create(email, "testPassword");
+            expiresAt = LocalDateTime.now().plusMinutes(3);
+            temporaryPassword = TemporaryPasswordFixture.create(user, encodedPassword, expiresAt);
+            userId = user.getId();
+        }
+
+        @Test
+        @DisplayName("비밀번호 초기화 성공 - 기존 임시 비밀번호가 없는 경우 (save)")
+        void password_reset_success_save() {
+            // given
+            PasswordResetRequest passwordResetRequest = new PasswordResetRequest(email);
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn(encodedPassword);
+
+            ArgumentCaptor<TemporaryPassword> temporaryPasswordCaptor =
+                    ArgumentCaptor.forClass(TemporaryPassword.class);
+            ArgumentCaptor<TemporaryPasswordIssuedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(TemporaryPasswordIssuedEvent.class);
+
+            // when
+            authService.issueTemporaryPassword(passwordResetRequest);
+
+            // then
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
+            then(passwordEncoder).should().encode(anyString());
+            then(temporaryPasswordRepository).should().save(temporaryPasswordCaptor.capture());
+            then(eventPublisher).should().publishEvent(eventCaptor.capture());
+
+            TemporaryPassword savedTemporaryPassword = temporaryPasswordCaptor.getValue();
+            TemporaryPasswordIssuedEvent publishedEvent = eventCaptor.getValue();
+
+            assertThat(savedTemporaryPassword.getUser()).isEqualTo(user);
+            assertThat(savedTemporaryPassword.getPassword()).isEqualTo(encodedPassword);
+            assertThat(savedTemporaryPassword.isExpired()).isFalse();
+            assertThat(savedTemporaryPassword.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
+            assertThat(savedTemporaryPassword.getExpiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
+
+            assertThat(publishedEvent.email()).isEqualTo(email);
+            assertThat(publishedEvent.temporaryPassword()).isNotBlank();
+            assertThat(publishedEvent.expiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
+            assertThat(publishedEvent.expiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
+        }
+
+        @Test
+        @DisplayName("비밀번호 초기화 성공 - 기존 임시 비밀번호가 있는 경우")
+        void password_reset_success_update() {
+            // given
+            temporaryPassword = TemporaryPasswordFixture.create(user, "previousPassword", LocalDateTime.now().plusMinutes(2));
+            PasswordResetRequest passwordResetRequest = new PasswordResetRequest(email);
+
+            String previousPassword = temporaryPassword.getPassword(); // 이전 패스워드
+            LocalDateTime previousExpiresAt = temporaryPassword.getExpiresAt(); // 이전 유효예정시간
+
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(temporaryPasswordRepository.findByUserId(userId)).willReturn(Optional.of(temporaryPassword));
+            given(passwordEncoder.encode(anyString())).willReturn(encodedPassword);
+
+            ArgumentCaptor<TemporaryPasswordIssuedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(TemporaryPasswordIssuedEvent.class);
+
+            // when
+            authService.issueTemporaryPassword(passwordResetRequest);
+
+            // then
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).should().findByUserId(userId);
+            then(passwordEncoder).should().encode(anyString());
+            then(temporaryPasswordRepository).should(never()).save(any(TemporaryPassword.class));
+            then(eventPublisher).should().publishEvent(eventCaptor.capture());
+
+            TemporaryPasswordIssuedEvent event = eventCaptor.getValue();
+
+            assertThat(temporaryPassword.getUser()).isEqualTo(user);
+            assertThat(temporaryPassword.getPassword()).isEqualTo(encodedPassword);
+            assertThat(temporaryPassword.getPassword()).isNotEqualTo(previousPassword);
+
+            assertThat(temporaryPassword.isExpired()).isFalse();
+            assertThat(temporaryPassword.getExpiresAt()).isAfter(previousExpiresAt);
+            assertThat(temporaryPassword.getExpiresAt()).isAfter(LocalDateTime.now().plusMinutes(2));
+            assertThat(temporaryPassword.getExpiresAt()).isBefore(LocalDateTime.now().plusMinutes(4));
+
+            assertThat(event.email()).isEqualTo(email);
+            assertThat(event.temporaryPassword()).isNotBlank();
+            assertThat(event.expiresAt()).isEqualTo(temporaryPassword.getExpiresAt());
+        }
+        
+        @Test
+        @DisplayName("실패 - 유저가 없는 경우")
+        void password_reset_failed_userNotFound() {
+            // given
+            PasswordResetRequest request = new PasswordResetRequest(email);
+            given(userRepository.findByEmail(email))
+                    .willReturn(Optional.empty());
+            
+            // when
+            assertThatThrownBy(() -> authService.issueTemporaryPassword(request))
+                    .isInstanceOf(UserNotFoundException.class);
+            
+            // then
+            then(userRepository).should().findByEmail(email);
+            then(temporaryPasswordRepository).shouldHaveNoInteractions();
+            then(passwordEncoder).shouldHaveNoInteractions();
+            then(eventPublisher).shouldHaveNoInteractions();
+            
         }
     }
 
