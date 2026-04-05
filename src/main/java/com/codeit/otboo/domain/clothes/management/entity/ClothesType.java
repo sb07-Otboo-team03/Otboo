@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.entity;
 
-import java.util.Optional;
-
 public enum ClothesType {
     TOP,
     BOTTOM,
