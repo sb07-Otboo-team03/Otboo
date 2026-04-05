@@ -59,7 +59,7 @@ public class ClothesController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(ClothesCursorPageRequest request){
+    public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@Valid ClothesCursorPageRequest request){
         return ResponseEntity.ok(clothesService.getMyClothesList(request));
     }
 }
