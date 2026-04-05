@@ -393,3 +393,19 @@ ALTER TABLE profiles
     ADD COLUMN region_2depth_name varchar(100) NOT NULL DEFAULT '',
     ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
     ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
+
+CREATE TABLE temporary_passwords (
+                                     id UUID PRIMARY KEY,
+                                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                                     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+                                     user_id UUID NOT NULL UNIQUE,
+                                     password VARCHAR(255) NOT NULL,
+                                     expires_at TIMESTAMP NOT NULL,
+                                     expired BOOLEAN NOT NULL DEFAULT FALSE,
+
+                                     CONSTRAINT fk_temporary_passwords_user
+                                         FOREIGN KEY (user_id)
+                                             REFERENCES users(id)
+                                             ON DELETE CASCADE
+);
