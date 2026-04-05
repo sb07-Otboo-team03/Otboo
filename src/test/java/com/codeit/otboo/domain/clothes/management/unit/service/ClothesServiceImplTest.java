@@ -623,15 +623,13 @@ public class ClothesServiceImplTest {
                     "옷", null, owner, null, List.of());
             Slice<Clothes> slice = new SliceImpl<>(
                     List.of(clothes), PageRequest.of(0, 20), false);
-            ClothesResponse response = new ClothesResponse(
-                    clothes.getId(), owner.getId(),"옷", null, null, List.of());
 
             given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
             given(clothesQueryMapper.toQuery(request)).willReturn(query);
             given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
 
             // when
-            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+            clothesService.getMyClothesList(request);
 
             // then
             then(clothesAttributeValueRepository).should(never()).findByAttributeDefIdIn(anyList());

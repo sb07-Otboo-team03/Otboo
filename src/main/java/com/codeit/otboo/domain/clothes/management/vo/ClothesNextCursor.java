@@ -1,23 +1,20 @@
 package com.codeit.otboo.domain.clothes.management.vo;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.data.domain.Slice;
 
 import java.util.UUID;
 
 @Getter
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class ClothesNextCursor {
     private final String cursor;
     private final UUID after;
 
-    private ClothesNextCursor(String cursor, UUID after) {
-        this.cursor = cursor;
-        this.after = after;
-    }
-
     public static ClothesNextCursor from(Slice<Clothes> slice) {
-        if (!slice.hasNext() || slice.getContent().isEmpty()) {
+        if (slice.getContent().isEmpty() || !slice.hasNext()) {
             return new ClothesNextCursor(null, null);
         }
 
