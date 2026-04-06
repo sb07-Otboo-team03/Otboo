@@ -48,7 +48,8 @@ public enum ErrorCode {
     WEATHER_NOT_FOUND("날씨 정보를 찾을 수 없습니다."),
     YESTERDAY_WEATHER_NOT_FOUND("어제 날씨 정보를 찾을 수 없습니다."),
 
-    // Profile
+    // MAIL
+    MAIL_SEND_FAIL("메일 발송에 실패하였습니다."),
 
     // BinaryContent
     BINARY_CONTENT_NOT_FOUND("해당 UUID를 가진 바이너리 컨텐츠가 존재하지 않습니다."),
@@ -68,6 +69,7 @@ public enum ErrorCode {
 
     // Internal
     INTERNAL_SERVER_ERROR("서버 에러가 발생했습니다.");
+
 
 
 
