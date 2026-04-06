@@ -397,9 +397,6 @@ ALTER TABLE profiles
 
 -- 0406 추가
 ALTER TABLE follows
-    ADD COLUMN is_active BOOLEAN DEFAULT FALSE NOT NULL;
-
-ALTER TABLE follows
     ALTER COLUMN follower_id SET NOT NULL;
 
 ALTER TABLE follows
@@ -421,6 +418,3 @@ ALTER TABLE follows
         FOREIGN KEY (followee_id)
             REFERENCES users(id)
             ON DELETE CASCADE;
-
-ALTER TABLE follows
-DROP COLUMN is_active;
