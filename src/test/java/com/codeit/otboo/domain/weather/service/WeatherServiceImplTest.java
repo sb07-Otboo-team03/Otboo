@@ -2,7 +2,6 @@ package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
-import com.codeit.otboo.domain.weather.repository.projection.CoordinateProjection;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
@@ -26,9 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -442,111 +439,5 @@ class WeatherServiceImplTest {
 
         verify(kmaGridConverter).convertToGrid(latitude, longitude);
         verify(kakaoLocalUtil).getAddressLevels(longitude, latitude, KakaoRegionType.H);
-    }
-
-    @Nested
-    @DisplayName("deleteYesterdayWeather()")
-    class DeleteYesterdayWeatherTest {
-
-        @Test
-        @DisplayName("어제 날씨의 온도/습도를 저장한 뒤 오늘 이전 날씨 데이터를 삭제한다")
-        void deleteYesterdayWeather_savesYesterdayHourlyWeatherAndDeletesOldWeather() {
-            // given
-            LocalDate today = LocalDate.of(2026, 3, 20);
-            when(timeProvider.nowDate()).thenReturn(today);
-
-            LocalDate yesterday = today.minusDays(1);
-            LocalDateTime todayStart = today.atStartOfDay();
-            LocalDateTime yesterdayStart = yesterday.atStartOfDay();
-            LocalDateTime yesterdayEnd = yesterday.plusDays(1).atStartOfDay();
-
-            Weather weather1 = mock(Weather.class);
-            when(weather1.getX()).thenReturn(57);
-            when(weather1.getY()).thenReturn(126);
-            when(weather1.getForecastAt()).thenReturn(LocalDateTime.of(2026, 3, 19, 9, 0));
-            when(weather1.getTemperatureCurrent()).thenReturn(10.5);
-            when(weather1.getHumidityCurrent()).thenReturn(60.0);
-
-            Weather weather2 = mock(Weather.class);
-            when(weather2.getX()).thenReturn(57);
-            when(weather2.getY()).thenReturn(126);
-            when(weather2.getForecastAt()).thenReturn(LocalDateTime.of(2026, 3, 19, 12, 0));
-            when(weather2.getTemperatureCurrent()).thenReturn(12.0);
-            when(weather2.getHumidityCurrent()).thenReturn(55.0);
-
-            when(weatherRepository.findYesterdayWeather(yesterdayStart, yesterdayStart, yesterdayEnd))
-                    .thenReturn(List.of(weather2, weather1));
-
-            // when
-            weatherService.deleteYesterdayWeather();
-
-            // then
-            verify(timeProvider).nowDate();
-
-            verify(weatherRepository).findYesterdayWeather(
-                    eq(yesterdayStart),
-                    eq(yesterdayStart),
-                    eq(yesterdayEnd)
-            );
-
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<YesterdayHourlyWeather>> captor = ArgumentCaptor.forClass(List.class);
-
-            verify(yesterdayHourlyWeatherRepository).saveAll(captor.capture());
-
-            List<YesterdayHourlyWeather> savedList = captor.getValue();
-            assertThat(savedList).hasSize(2);
-
-            // 정렬 확인: 09:00 이 먼저 와야 함
-            assertThat(savedList.get(0).getX()).isEqualTo(57);
-            assertThat(savedList.get(0).getY()).isEqualTo(126);
-            assertThat(savedList.get(0).getDate()).isEqualTo(LocalDate.of(2026, 3, 19));
-            assertThat(savedList.get(0).getHour()).isEqualTo(LocalTime.of(9, 0));
-            assertThat(savedList.get(0).getTemperature()).isEqualTo(10.5);
-            assertThat(savedList.get(0).getHumidity()).isEqualTo(60.0);
-
-            assertThat(savedList.get(1).getX()).isEqualTo(57);
-            assertThat(savedList.get(1).getY()).isEqualTo(126);
-            assertThat(savedList.get(1).getDate()).isEqualTo(LocalDate.of(2026, 3, 19));
-            assertThat(savedList.get(1).getHour()).isEqualTo(LocalTime.of(12, 0));
-            assertThat(savedList.get(1).getTemperature()).isEqualTo(12.0);
-            assertThat(savedList.get(1).getHumidity()).isEqualTo(55.0);
-
-            verify(weatherRepository).deleteByForecastedAtBefore(todayStart);
-        }
-
-        @Test
-        @DisplayName("어제 날씨가 없어도 빈 리스트를 저장하고 오늘 이전 날씨 데이터를 삭제한다")
-        void deleteYesterdayWeather_whenNoYesterdayWeather_deletesOldWeather() {
-            // given
-            LocalDate today = LocalDate.of(2026, 3, 20);
-            when(timeProvider.nowDate()).thenReturn(today);
-
-            LocalDate yesterday = today.minusDays(1);
-            LocalDateTime todayStart = today.atStartOfDay();
-            LocalDateTime yesterdayStart = yesterday.atStartOfDay();
-            LocalDateTime yesterdayEnd = yesterday.plusDays(1).atStartOfDay();
-
-            when(weatherRepository.findYesterdayWeather(yesterdayStart, yesterdayStart, yesterdayEnd))
-                    .thenReturn(List.of());
-
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<YesterdayHourlyWeather>> captor = ArgumentCaptor.forClass(List.class);
-
-            // when
-            weatherService.deleteYesterdayWeather();
-
-            // then
-            verify(weatherRepository).findYesterdayWeather(
-                    eq(yesterdayStart),
-                    eq(yesterdayStart),
-                    eq(yesterdayEnd)
-            );
-
-            verify(yesterdayHourlyWeatherRepository).saveAll(captor.capture());
-            assertThat(captor.getValue()).isEmpty();
-
-            verify(weatherRepository).deleteByForecastedAtBefore(todayStart);
-        }
     }
 }

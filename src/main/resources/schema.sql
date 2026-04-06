@@ -393,3 +393,5 @@ ALTER TABLE profiles
     ADD COLUMN region_2depth_name varchar(100) NOT NULL DEFAULT '',
     ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
     ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
+
+ALTER TABLE yesterday_hourly_weather RENAME COLUMN "hour" TO forecast_hour;
