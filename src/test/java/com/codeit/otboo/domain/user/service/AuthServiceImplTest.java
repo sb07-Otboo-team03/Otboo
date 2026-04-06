@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.user.dto.PasswordResetRequest;
+import com.codeit.otboo.domain.user.dto.request.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.TemporaryPassword;

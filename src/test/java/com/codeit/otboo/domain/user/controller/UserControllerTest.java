@@ -1,11 +1,10 @@
 package com.codeit.otboo.domain.user.controller;
 
-import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.profile.ProfileFixture;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
+import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
@@ -13,7 +12,6 @@ import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserCreateRequestFixture;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
-import com.codeit.otboo.domain.user.service.AuthService;
 import com.codeit.otboo.domain.user.service.UserService;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.BDDMockito;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,9 +33,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -115,7 +112,7 @@ class UserControllerTest {
             Profile profile = ProfileFixture.create(user);
             user.setProfile(profile);
             profile.update(null, null, null, null, null, null);
-            ProfileResponse profileResponse = ProfileResponseFixture.create(user,  null);
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user, null);
 
             given(userService.getProfile(userId)).willReturn(profileResponse);
 
@@ -138,5 +135,74 @@ class UserControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("비밀번호 변경")
+    class UpdatePassword {
+        @Test
+        @DisplayName("비밀번호 변경 성공")
+        void update_password_success() throws Exception {
+            // given
+            UUID userId = UUID.randomUUID();
+            UpdatePasswordRequest updatePasswordRequest = new UpdatePasswordRequest("new_password");
+
+            // when
+            mockMvc.perform(patch("/api/users/{userId}/password", userId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(updatePasswordRequest)))
+                    .andExpect(status().isNoContent());
+
+            // then
+            then(userService).should()
+                    .updateUserPassword(eq(userId), any(UpdatePasswordRequest.class));
+
+        }
+
+        @Test
+        @DisplayName("비밀번호 변경 실패 - 존재하지 않는 유저")
+        void update_password_fail_userNotFound() throws Exception {
+            // given
+            UUID userId = UUID.randomUUID();
+            UpdatePasswordRequest updatePasswordRequest = new UpdatePasswordRequest("new_password");
+
+            willThrow(new UserNotFoundException(userId))
+                    .given(userService)
+                    .updateUserPassword(eq(userId), any(UpdatePasswordRequest.class));
+
+            // when
+            mockMvc.perform(patch("/api/users/{userId}/password", userId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(updatePasswordRequest)))
+                    .andExpect(status().isNotFound());
+
+            // then
+            then(userService).should()
+                    .updateUserPassword(any(UUID.class), any(UpdatePasswordRequest.class));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "",
+                "test"
+        })
+        @DisplayName("비밀번호 변경 실패 - 존재하지 않는 유저")
+        void update_password_fail_badRequest(String password) throws Exception {
+            // given
+            UUID userId = UUID.randomUUID();
+            UpdatePasswordRequest updatePasswordRequest = new UpdatePasswordRequest(password);
+
+            // when
+            mockMvc.perform(patch("/api/users/{userId}/password", userId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(updatePasswordRequest)))
+                    .andExpect(status().isBadRequest());
+
+            // then
+            then(userService).should(never())
+                    .updateUserPassword(any(UUID.class), any(UpdatePasswordRequest.class));
+        }
+
+
+
+    }
 
 }
