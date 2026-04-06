@@ -384,6 +384,17 @@ CREATE TABLE location_name_map (
 ALTER TABLE binary_contents ADD COLUMN upload_status varchar(30) NOT NULL DEFAULT 'PROCESSING';
 ALTER TABLE binary_contents ADD CONSTRAINT chk_binary_contents_upload_status CHECK (upload_status IN ('SUCCESS', 'PROCESSING', 'FAIL'));
 
+-- Profile 필드 변경
+ALTER TABLE profiles
+DROP
+COLUMN location_names;
+
+ALTER TABLE profiles
+    ADD COLUMN region_1depth_name varchar(50) NOT NULL DEFAULT '',
+    ADD COLUMN region_2depth_name varchar(100) NOT NULL DEFAULT '',
+    ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
+    ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
+
 -- 0406 추가
 ALTER TABLE follows
     ADD COLUMN is_active BOOLEAN DEFAULT FALSE NOT NULL;
