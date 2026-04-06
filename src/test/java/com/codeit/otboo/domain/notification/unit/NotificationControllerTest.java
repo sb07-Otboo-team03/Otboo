@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.notification.controller;
+package com.codeit.otboo.domain.notification.unit;
 
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.eq;
@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.codeit.otboo.domain.notification.controller.NotificationController;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.service.NotificationService;
