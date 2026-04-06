@@ -21,10 +21,10 @@ public class Follow extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "follower_id",
-            nullable = true,
+            nullable = false,
             foreignKey = @ForeignKey(
                     name = "fk_follows_followers",
-                    foreignKeyDefinition = "FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE SET NULL"
+                    foreignKeyDefinition = "FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE"
             )
     )
     private User follower;
@@ -32,10 +32,10 @@ public class Follow extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "followee_id",
-            nullable = true,
+            nullable = false,
             foreignKey = @ForeignKey(
                     name = "fk_follows_followees",
-                    foreignKeyDefinition = "FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE SET NULL"
+                    foreignKeyDefinition = "FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE CASCADE"
             )
     )
     private User followee;

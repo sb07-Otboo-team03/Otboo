@@ -398,3 +398,26 @@ ALTER TABLE profiles
 -- 0406 추가
 ALTER TABLE follows
     ADD COLUMN is_active BOOLEAN DEFAULT FALSE NOT NULL;
+
+ALTER TABLE follows
+    ALTER COLUMN follower_id SET NOT NULL;
+
+ALTER TABLE follows
+    ALTER COLUMN followee_id SET NOT NULL;
+
+-- 1. 기존 FK 삭제
+ALTER TABLE follows DROP CONSTRAINT fk_follows_followers;
+ALTER TABLE follows DROP CONSTRAINT fk_follows_followees;
+
+-- 2. CASCADE로 다시 생성
+ALTER TABLE follows
+    ADD CONSTRAINT fk_follows_followers
+        FOREIGN KEY (follower_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
+
+ALTER TABLE follows
+    ADD CONSTRAINT fk_follows_followees
+        FOREIGN KEY (followee_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
