@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.user.controller;
 
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -27,10 +28,16 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
 
-    @GetMapping("{userId}/profiles")
+    @GetMapping("/{userId}/profiles")
     public ResponseEntity<ProfileResponse> getProfile(@PathVariable("userId") UUID userId) {
         ProfileResponse profileResponse = userService.getProfile(userId);
         return ResponseEntity.ok(profileResponse);
     }
 
+
+    @PatchMapping("/{userId}/password")
+    public ResponseEntity<Void> changePassword(@PathVariable("userId") UUID userId, @Valid @RequestBody UpdatePasswordRequest updatePasswordRequest) {
+        userService.updateUserPassword(userId, updatePasswordRequest);
+        return ResponseEntity.noContent().build();
+    }
 }
