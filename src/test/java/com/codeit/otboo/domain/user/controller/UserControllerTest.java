@@ -185,10 +185,10 @@ class UserControllerTest {
                 "test"
         })
         @DisplayName("비밀번호 변경 실패 - 존재하지 않는 유저")
-        void update_password_fail_badRequest() throws Exception {
+        void update_password_fail_badRequest(String password) throws Exception {
             // given
             UUID userId = UUID.randomUUID();
-            UpdatePasswordRequest updatePasswordRequest = new UpdatePasswordRequest("new_password");
+            UpdatePasswordRequest updatePasswordRequest = new UpdatePasswordRequest(password);
 
             // when
             mockMvc.perform(patch("/api/users/{userId}/password", userId)
