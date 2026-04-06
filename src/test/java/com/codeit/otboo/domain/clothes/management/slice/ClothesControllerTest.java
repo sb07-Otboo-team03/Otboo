@@ -423,9 +423,6 @@ public class ClothesControllerTest {
         @Test
         @DisplayName("실패: ownerId가 null 이면 에러가 발생한다.")
         void getClothes_Fail_Owner_Null() throws Exception {
-            // given
-            UUID ownerId = UUID.randomUUID();
-
             // when & then
             mockMvc.perform(get("/api/clothes")
                             .with(user(userDetails))
