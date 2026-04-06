@@ -41,6 +41,7 @@ public class FollowServiceImpl implements FollowService {
     private final ApplicationEventPublisher eventPublisher;
 
     private LocalDateTime toLocalDateTime(String cursor) {
+
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
     }
 
@@ -53,7 +54,9 @@ public class FollowServiceImpl implements FollowService {
 
         if (optionalFollow.isPresent()) {
             Follow savedFollow = optionalFollow.get();
+
             followRepository.updateIsActive(savedFollow.getId(), true);
+
             return followMapper.toDto(savedFollow);
         }
         else {
@@ -97,7 +100,7 @@ public class FollowServiceImpl implements FollowService {
         }
         else {
             follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId)
-            .orElseThrow(() -> new FollowNotFoundException(myId, followeeId));
+                .orElseThrow(() -> new FollowNotFoundException(myId, followeeId));
         }
 
         FollowSummaryResponse response = null;
@@ -122,6 +125,7 @@ public class FollowServiceImpl implements FollowService {
                 true
             );
         }
+
         return response;
     }
 
@@ -143,19 +147,12 @@ public class FollowServiceImpl implements FollowService {
         return getFollows(true, followId, nameLike, cursorRequest);
     }
 
-    @Override
-    @Transactional
-    public void cancelFollow(UUID followId) {
-        followRepository.updateIsActive(followId, false);
-    }
-
     public CursorResponse<FollowResponse> getFollows(
         Boolean isFollower,
         UUID followId,
         String nameLike,
         CursorRequest cursorRequest
     ) {
-
         LocalDateTime cursor = toLocalDateTime(cursorRequest.cursor());
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
@@ -195,4 +192,11 @@ public class FollowServiceImpl implements FollowService {
             SortDirection.DESCENDING
         );
     }
+
+    @Override
+    @Transactional
+    public void cancelFollow(UUID followId) {
+        followRepository.updateIsActive(followId, false);
+    }
+
 }
