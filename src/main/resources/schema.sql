@@ -386,8 +386,7 @@ ALTER TABLE binary_contents ADD CONSTRAINT chk_binary_contents_upload_status CHE
 
 -- Profile 필드 변경
 ALTER TABLE profiles
-DROP
-COLUMN location_names;
+    DROP COLUMN location_names;
 
 ALTER TABLE profiles
     ADD COLUMN region_1depth_name varchar(50)  NULL,
