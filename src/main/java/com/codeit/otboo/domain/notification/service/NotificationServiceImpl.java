@@ -85,7 +85,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public Notification createSseEvent(Notification notification) {
+    public Notification create(Notification notification) {
         return notificationRepository.save(notification);
     }
 }

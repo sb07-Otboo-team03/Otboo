@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NotificationService {
-    Notification createSseEvent(Notification notification);
+    Notification create(Notification notification);
 
     CursorResponse<NotificationResponse> getNotifications(
         UUID userId, CursorRequest cursorRequest);
