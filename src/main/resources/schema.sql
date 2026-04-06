@@ -394,6 +394,10 @@ ALTER TABLE profiles
     ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
     ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
 
+
+ALTER TABLE follows
+    ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE NOT NULL;
+
 CREATE TABLE temporary_passwords (
                                      id UUID PRIMARY KEY,
                                      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
