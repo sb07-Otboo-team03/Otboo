@@ -392,7 +392,7 @@ public class ClothesControllerTest {
                     "createdAt",
                     SortDirection.DESCENDING
             );
-            given(clothesService.getMyClothesList(request))
+            given(clothesService.getClothesListByOwnerId(request))
                     .willReturn(response);
 
             // when & then
