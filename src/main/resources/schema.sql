@@ -390,10 +390,10 @@ DROP
 COLUMN location_names;
 
 ALTER TABLE profiles
-    ADD COLUMN region_1depth_name varchar(50) NOT NULL DEFAULT '',
-    ADD COLUMN region_2depth_name varchar(100) NOT NULL DEFAULT '',
-    ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
-    ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
+    ADD COLUMN region_1depth_name varchar(50)  NULL,
+    ADD COLUMN region_2depth_name varchar(100)  NULL,
+    ADD COLUMN region_3depth_name varchar(100)  NULL,
+    ADD COLUMN region_4depth_name varchar(100)  NULL;
 
 
 ALTER TABLE follows
