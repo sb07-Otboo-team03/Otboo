@@ -599,7 +599,7 @@ public class ClothesServiceImplTest {
             given(clothesRepositoryCustom.totalCount(ownerId, null)).willReturn(0L);
 
             // when
-            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+            CursorResponse<ClothesResponse> result = clothesService.getClothesListByOwnerId(request);
 
             // then
             assertThat(result.totalCount()).isEqualTo(0L);
@@ -629,7 +629,7 @@ public class ClothesServiceImplTest {
             given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
 
             // when
-            clothesService.getMyClothesList(request);
+            clothesService.getClothesListByOwnerId(request);
 
             // then
             then(clothesAttributeValueRepository).should(never()).findByAttributeDefIdIn(anyList());
@@ -675,7 +675,7 @@ public class ClothesServiceImplTest {
                     .willReturn(response);
 
             // when
-            CursorResponse<ClothesResponse> result = clothesService.getMyClothesList(request);
+            CursorResponse<ClothesResponse> result = clothesService.getClothesListByOwnerId(request);
 
             // then
             assertThat(result).isNotNull();

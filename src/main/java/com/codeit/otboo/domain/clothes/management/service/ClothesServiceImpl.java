@@ -80,7 +80,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     @Override
     @Transactional
-    @PreAuthorize("@clothesService.isOwner(#clothesId, authentication.principal.userResponse.id())")
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
     public ClothesResponse updateClothes(
             UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
         Clothes clothes = getById(clothesId);
@@ -160,7 +160,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     @Override
     @Transactional
-    @PreAuthorize("@clothesService.isOwner(#clothesId, authentication.principal.userResponse.id())")
+    @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
     public void deleteClothes(UUID clothesId){
         Clothes clothes = getById(clothesId);
         BinaryContent binaryContent = clothes.getBinaryContent();
@@ -172,7 +172,7 @@ public class ClothesServiceImpl implements ClothesService{
 
     @Override
     @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
-    public CursorResponse<ClothesResponse> getMyClothesList(ClothesCursorPageRequest request) {
+    public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
         long totalCount = clothesRepositoryCustom.totalCount(
             request.ownerId(), ClothesType.fromString(request.type()));
         String sortBy = ClothesSortBy.CREATED_AT.getValue();
@@ -204,7 +204,6 @@ public class ClothesServiceImpl implements ClothesService{
     private List<ClothesResponse> toClothesResponseList(
             List<Clothes> clothesList,
             Map<UUID, List<String>> clothesListSelectableGrouping){
-        if(clothesListSelectableGrouping.isEmpty()) return List.of();
         return clothesList.stream()
                 .map(clothes -> clothesMapper.toDto(
                         clothes,
