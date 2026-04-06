@@ -389,9 +389,53 @@ ALTER TABLE profiles
     DROP COLUMN location_names;
 
 ALTER TABLE profiles
-    ADD COLUMN region_1depth_name varchar(50) NOT NULL DEFAULT '',
-    ADD COLUMN region_2depth_name varchar(100) NOT NULL DEFAULT '',
-    ADD COLUMN region_3depth_name varchar(100) NOT NULL DEFAULT '',
-    ADD COLUMN region_4depth_name varchar(100) NOT NULL DEFAULT '';
+    ADD COLUMN region_1depth_name varchar(50)  NULL,
+    ADD COLUMN region_2depth_name varchar(100)  NULL,
+    ADD COLUMN region_3depth_name varchar(100)  NULL,
+    ADD COLUMN region_4depth_name varchar(100)  NULL;
+
+
+ALTER TABLE follows
+    ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE NOT NULL;
+
+CREATE TABLE temporary_passwords (
+                                     id UUID PRIMARY KEY,
+                                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                                     updated_at TIMESTAMP NULL,
+
+                                     user_id UUID NOT NULL UNIQUE,
+                                     password VARCHAR(255) NOT NULL,
+                                     expires_at TIMESTAMP NOT NULL,
+                                     expired BOOLEAN NOT NULL DEFAULT FALSE,
+
+                                     CONSTRAINT fk_temporary_passwords_user
+                                         FOREIGN KEY (user_id)
+                                             REFERENCES users(id)
+                                             ON DELETE CASCADE
+);
+
+-- 0406 추가
+ALTER TABLE follows
+    ALTER COLUMN follower_id SET NOT NULL;
+
+ALTER TABLE follows
+    ALTER COLUMN followee_id SET NOT NULL;
+
+-- 1. 기존 FK 삭제
+ALTER TABLE follows DROP CONSTRAINT fk_follows_followers;
+ALTER TABLE follows DROP CONSTRAINT fk_follows_followees;
+
+-- 2. CASCADE로 다시 생성
+ALTER TABLE follows
+    ADD CONSTRAINT fk_follows_followers
+        FOREIGN KEY (follower_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
+
+ALTER TABLE follows
+    ADD CONSTRAINT fk_follows_followees
+        FOREIGN KEY (followee_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
 
 ALTER TABLE yesterday_hourly_weather RENAME COLUMN "hour" TO forecast_hour;

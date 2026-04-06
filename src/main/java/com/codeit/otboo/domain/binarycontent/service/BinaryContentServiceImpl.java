@@ -32,7 +32,7 @@ public class BinaryContentServiceImpl implements BinaryContentService {
         BinaryContent binaryContent = new BinaryContent(request.name(), request.type(), request.size());
         BinaryContent saved = binaryContentRepository.save(binaryContent);
         eventPublisher.publishEvent(
-                new BinaryContentCreatedEvent(binaryContent.getId(), request.data())
+                new BinaryContentCreatedEvent(binaryContent.getId(), request.data(), binaryContent.getType())
         );
         return saved;
     }

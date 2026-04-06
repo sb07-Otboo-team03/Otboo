@@ -1,8 +1,11 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.user.dto.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.TemporaryPasswordMailSendFailedException;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.service.AuthService;
@@ -12,6 +15,7 @@ import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.RefreshCookieFactory;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.exception.JwtExpiredTokenException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,12 +23,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,8 +40,8 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -66,6 +72,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtProvider jwtProvider;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Nested
     @DisplayName("로그인")
@@ -206,8 +215,8 @@ class AuthControllerTest {
 
             // when
             mockMvc.perform(post("/api/auth/refresh")
-                    .cookie(new Cookie(JwtProvider.REFRESH_TOKEN_COOKIE_NAME, refreshToken))
-                )
+                            .cookie(new Cookie(JwtProvider.REFRESH_TOKEN_COOKIE_NAME, refreshToken))
+                    )
                     .andExpect(status().isOk())
                     .andExpect(cookie().exists(JwtProvider.REFRESH_TOKEN_COOKIE_NAME))
                     .andExpect(cookie().value(
@@ -253,5 +262,82 @@ class AuthControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("비밀번호 초기화")
+    class PasswordReset {
 
+        @Test
+        @DisplayName("비밀번호 초기화 성공")
+        void resetPassword_success() throws Exception{
+            // given
+            String email = "test@codiet.com";
+            PasswordResetRequest passwordResetRequest = new PasswordResetRequest(email);
+            willDoNothing().given(authService).issueTemporaryPassword(any(PasswordResetRequest.class));
+
+            // when & then
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(passwordResetRequest)))
+                    .andExpect(status().isNoContent());
+
+            then(authService).should().issueTemporaryPassword(any(PasswordResetRequest.class));
+
+        }
+
+        @Test
+        @DisplayName("비밀번호 초기화 실패 - 존재하지 않는 유저")
+        void resetPassword_failed_notFoundEmail() throws Exception{
+            // given
+            String email = "notFoundUser@codeit.com";
+            PasswordResetRequest passwordResetRequest = new PasswordResetRequest(email);
+            willThrow(new UserNotFoundException("test@codeit.com"))
+                    .given(authService).issueTemporaryPassword(any(PasswordResetRequest.class));
+
+            // when & then
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(passwordResetRequest)))
+                    .andExpect(status().isNotFound());
+
+            then(authService).should().issueTemporaryPassword(any(PasswordResetRequest.class));
+        }
+
+        @Test
+        @DisplayName("실패 - 메일 발송 실패")
+        void password_reset_failed_mailSend() throws Exception {
+            // given
+            PasswordResetRequest request = new PasswordResetRequest("test@codeit.com");
+
+            willThrow(new TemporaryPasswordMailSendFailedException())
+                    .given(authService).issueTemporaryPassword(any(PasswordResetRequest.class));
+
+            // when & then
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isInternalServerError());
+
+            then(authService).should().issueTemporaryPassword(any(PasswordResetRequest.class));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "",
+                "test"
+        })
+        @DisplayName("실패 - 잘못된 파라미터 요청")
+        void password_reset_fail_badRequest() throws Exception {
+            // given
+            PasswordResetRequest request = new PasswordResetRequest("test"); // 이메일 형식 아님
+
+
+            // when & then
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            then(authService).should(never()).issueTemporaryPassword(any(PasswordResetRequest.class));
+        }
+    }
 }

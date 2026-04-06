@@ -44,7 +44,7 @@ public class S3BinaryContentStorageTest {
                     .willReturn(PutObjectResponse.builder().build());
 
             // when
-            UUID savedId = storage.put(binaryContentId, data);
+            UUID savedId = storage.put(binaryContentId, data, "image/jpeg");
 
             // then
             assertThat(savedId).isEqualTo(binaryContentId);

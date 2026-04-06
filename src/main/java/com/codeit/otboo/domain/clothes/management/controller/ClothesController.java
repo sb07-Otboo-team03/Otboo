@@ -3,9 +3,11 @@ package com.codeit.otboo.domain.clothes.management.controller;
 import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -54,5 +56,10 @@ public class ClothesController {
                 request
         );
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@Valid ClothesCursorPageRequest request){
+        return ResponseEntity.ok(clothesService.getClothesListByOwnerId(request));
     }
 }

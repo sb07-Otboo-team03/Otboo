@@ -1,24 +1,25 @@
 package com.codeit.otboo.domain.follow.unit;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
-
-import com.codeit.otboo.domain.follow.controller.FollowController;
-import com.codeit.otboo.global.config.SecurityConfig;
-import com.codeit.otboo.global.slice.dto.SortDirection;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.http.MediaType;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.codeit.otboo.domain.directmessage.util.TestFixture;
+import com.codeit.otboo.domain.follow.controller.FollowController;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.service.FollowService;
+import com.codeit.otboo.global.config.SecurityConfig;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
@@ -27,13 +28,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
 @WithMockUser
@@ -68,7 +68,7 @@ class FollowControllerTest {
 
     @Test
     @WithMockUser
-    @DisplayName("🎯 POST /api/follows - ⭕️ 팔로우 생성")
+    @DisplayName("POST /api/follows - ⭕️ 팔로우 생성")
     void createFollow_OK() throws Exception {
         // given
         FollowCreateRequest request = new FollowCreateRequest(
@@ -80,7 +80,7 @@ class FollowControllerTest {
             .id(UUID.randomUUID())
             .build();
 
-        when(followService.createFollow(any()))
+        when(followService.create(any()))
             .thenReturn(response);
 
         // when & then
@@ -93,7 +93,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/summary - ⭕️ 요약 조회")
+    @DisplayName("GET /api/follows/summary - ⭕️ 요약 조회")
     void getFollowSummary_OK() throws Exception {
         // given
         UUID userId = UUID.randomUUID();
@@ -116,7 +116,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/followings - ⭕️ 목록 조회")
+    @DisplayName("GET /api/follows/followings - ⭕️ 목록 조회")
     void getFollowings_OK() throws Exception {
         // given
         UUID followerId = UUID.randomUUID();
@@ -150,7 +150,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 GET /api/follows/followers - ⭕️ 목록 조회")
+    @DisplayName("GET /api/follows/followers - ⭕️ 목록 조회")
     void getFollowers_OK() throws Exception {
         // given
         UUID followeeId = UUID.randomUUID();
@@ -183,7 +183,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 DELETE /api/follows/{followId} - ⭕️ 취소")
+    @DisplayName("DELETE /api/follows/{followId} - ⭕️ 취소")
     void cancelFollow_OK() throws Exception {
         // given
         UUID followId = UUID.randomUUID();
@@ -197,7 +197,7 @@ class FollowControllerTest {
     }
 
     @Test
-    @DisplayName("🎯 DELETE /api/follows/{followId} - ❌ 실패")
+    @DisplayName("DELETE /api/follows/{followId} - ❌ 실패")
     void cancelFollow_Fail() throws Exception {
         // given
         UUID followId = UUID.randomUUID();

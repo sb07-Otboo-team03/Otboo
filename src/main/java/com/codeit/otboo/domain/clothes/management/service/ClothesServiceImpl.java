@@ -8,21 +8,31 @@ import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.Clot
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.exception.ClothesAttributeValueNotFoundException;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
+import com.codeit.otboo.domain.clothes.management.dto.query.ClothesSearchCondition;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
 import com.codeit.otboo.domain.clothes.management.exception.DuplicateClothesAttributeDefinitionException;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
+import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
+import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeSelection;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeValueKey;
+import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
+import com.codeit.otboo.domain.clothes.management.vo.ClothesNextCursor;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +51,8 @@ public class ClothesServiceImpl implements ClothesService{
     private final BinaryContentService binaryContentService;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
+    private final ClothesQueryMapper clothesQueryMapper;
+    private final ClothesRepositoryCustomImpl clothesRepositoryCustom;
 
     @Override
     @Transactional
@@ -55,14 +67,14 @@ public class ClothesServiceImpl implements ClothesService{
         if(imageRequest != null){
             binaryContent = binaryContentService.upload(imageRequest);
         }
-        ClothesAttributeSelection clothesAttributeSelection = getClothesAttributeValues(request.attributes());
+        ClothesAttributeSelection selection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
-            new Clothes(request.name(), request.type(), owner, binaryContent, clothesAttributeSelection.selectedValues())
+            new Clothes(request.name(), request.type(), owner, binaryContent, selection.selectedValues())
         );
         return clothesMapper.toDto(
                 savedClothes,
-                binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
-                groupSelectableValuesByAttributeId(clothesAttributeSelection.allSelectableValues())
+                resolveImageUrl(binaryContent),
+                groupSelectableValuesByAttributeId(selection.allSelectableValues())
         );
     }
 
@@ -91,12 +103,12 @@ public class ClothesServiceImpl implements ClothesService{
 
         return clothesMapper.toDto(
                 clothes,
-                binaryContent == null ? null: binaryContentUrlResolver.resolve(binaryContent.getId()),
+                resolveImageUrl(binaryContent),
                 groupSelectableValuesByAttributeId(clothesAttributeSelection.allSelectableValues())
         );
     }
 
-    // 옷 속성값 request DTO 들을 받아 DB에 있는지 확인하고 있으면 선택된 속성-값들과 선택 가능한 속성-값 리스트를 반환하는 메소드 
+    // 옷 속성값 requestDTO 들을 받아 DB에 있는지 확인하고 있으면 선택된 속성-값들과 선택 가능한 속성-값 리스트를 반환하는 메소드
     private ClothesAttributeSelection getClothesAttributeValues(List<ClothesAttributeRequest> requests){
         if(requests.isEmpty()) return new ClothesAttributeSelection(List.of(), List.of());
         Set<UUID> requestDefinitionIds = validateAndExtractDefinitionIds(requests);
@@ -146,18 +158,6 @@ public class ClothesServiceImpl implements ClothesService{
         return attributeValue;
     }
 
-    // 옷이 가진 속성들별로 속성이 선택할 수 있는 값들을 반환하는 메소드
-    private Map<UUID, List<String>> groupSelectableValuesByAttributeId(
-            List<ClothesAttributeValue> allSelectableValues
-    ){
-        if(allSelectableValues.isEmpty()) return Map.of();
-        return allSelectableValues.stream()
-                .collect(Collectors.groupingBy(
-                        attributeValue -> attributeValue.getAttributeDef().getId(),
-                        Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())
-                ));
-    }
-
     @Override
     @Transactional
     @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
@@ -170,12 +170,88 @@ public class ClothesServiceImpl implements ClothesService{
         clothesRepository.deleteById(clothesId);
     }
 
+    @Override
+    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
+    public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
+        long totalCount = clothesRepositoryCustom.totalCount(
+            request.ownerId(), ClothesType.fromString(request.type()));
+        String sortBy = ClothesSortBy.CREATED_AT.getValue();
+        SortDirection direction = SortDirection.DESCENDING;
+        if(totalCount == 0){
+            return new CursorResponse<>(
+                List.of(), null, null, false, totalCount, sortBy, direction
+            );
+        }
+        ClothesSearchCondition query = clothesQueryMapper.toQuery(request);
+        Slice<Clothes> slice = clothesRepositoryCustom.findMyClothesList(query);
+        List<Clothes> sliceContent= slice.getContent();
+        Map<UUID, List<String>> listAllSelectableGrouping = getListAllSelectableGrouping(sliceContent);
+        List<ClothesResponse> content = toClothesResponseList(sliceContent, listAllSelectableGrouping);
+        ClothesNextCursor clothesNextCursor = ClothesNextCursor.from(slice);
+
+        return new CursorResponse<>(
+                content,
+                clothesNextCursor.getCursor(),
+                clothesNextCursor.getAfter(),
+                slice.hasNext(),
+                totalCount,
+                sortBy,
+                direction
+        );
+    }
+
+    // Clothes -> ClothesResponse : ClothesList의 모든 속성을 모아둔 Map에서 해당 옷이 가진 속성과 선택 가능값만 선택
+    private List<ClothesResponse> toClothesResponseList(
+            List<Clothes> clothesList,
+            Map<UUID, List<String>> clothesListSelectableGrouping){
+        return clothesList.stream()
+                .map(clothes -> clothesMapper.toDto(
+                        clothes,
+                        resolveImageUrl(clothes.getBinaryContent()),
+                        clothes.getValues().stream()
+                                .map(attributeValue -> attributeValue.getAttributeDef().getId())
+                                .collect(Collectors.toMap(id -> id, clothesListSelectableGrouping::get))
+                )).toList();
+    }
+
+    // 옷 리스트의 아이디를 전부 모아서 db 에서 한번에 조회한 뒤, Map<속성ID, List<속성 선택 가능값>>로 반환
+    private Map<UUID, List<String>> getListAllSelectableGrouping(List<Clothes> clothesList){
+        Set<UUID> clothesDefIdList = clothesList.stream().map(
+                clothes -> clothes.getValues().stream().map(
+                        attributeValue -> attributeValue.getAttributeDef().getId()).toList()
+        ).flatMap(List::stream).collect(Collectors.toSet());
+        if(clothesDefIdList.isEmpty()){
+            return Map.of();
+        }
+        List<ClothesAttributeValue> allSelectableValues = clothesAttributeValueRepository.findByAttributeDefIdIn(
+                new ArrayList<>(clothesDefIdList));
+        return groupSelectableValuesByAttributeId(allSelectableValues);
+    }
+
+
+    // 옷이 가진 속성들별로 속성이 선택할 수 있는 값들을 반환하는 메소드
+    private Map<UUID, List<String>> groupSelectableValuesByAttributeId(
+            List<ClothesAttributeValue> allSelectableValues
+    ){
+        if(allSelectableValues.isEmpty()) return Map.of();
+        return allSelectableValues.stream()
+                .collect(Collectors.groupingBy(
+                        attributeValue -> attributeValue.getAttributeDef().getId(),
+                        Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())
+                ));
+    }
+
+    private String resolveImageUrl(BinaryContent binaryContent){
+        if(binaryContent == null) return null;
+        return binaryContentUrlResolver.resolve(binaryContent.getId());
+    }
+
     private Clothes getById(UUID clothesId){
         return clothesRepository.findById(clothesId).orElseThrow(
                 () -> new ClothesNotFoundException(clothesId));
     }
 
-    // 작성자와 같은지 확인
+    // PreAuthorize 에서 권한 검사를 위해 로그인된 사용자와 같은지 확인
     public boolean isOwner(UUID clothesId, UUID ownerId){
         return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
     }

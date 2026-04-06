@@ -1,9 +1,16 @@
 package com.codeit.otboo.domain.sse.listener;
 
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.notification.service.NotificationService;
+import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
+import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +26,32 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SseRequiredEventListener {
 
     private final SseService sseService;
+    private final NotificationService notificationService;
+    private final NotificationMapper notificationMapper;
+
+    private void sendSseEvent(List<Notification> notification) {
+
+        notification.stream()
+            .map(notificationService::createSseEvent)
+            .map(notificationMapper::toDto)
+            .forEach(notificationDto ->
+                sseService.send(
+                    Set.of(notificationDto.receiverId()),
+                    "notifications",
+                    notificationDto)
+            );
+    }
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(SseEvent event) {
-        NotificationDto notification = event.getData();
-        UUID receiverId = notification.receiverId();
-        sseService.send(Set.of(receiverId), "notifications", notification);
+    @TransactionalEventListener
+    public void on(DirectMessageSseEvent event) {
+        sendSseEvent(event.notificationList);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(FollowSseEvent event) {
+        sendSseEvent(event.notificationList);
     }
 
     @Async
@@ -36,4 +62,14 @@ public class SseRequiredEventListener {
             sseService.send(Set.of(receiverId), "notifications", notificationDto);
         }
     }
+
+    // TODO: 삭제 예정
+    @Async
+    @TransactionalEventListener
+    public void on(SseEvent event) {
+        NotificationDto notificationDto = event.getData();
+        UUID receiverId = notificationDto.receiverId();
+        sseService.send(Set.of(receiverId), "notifications", notificationDto);
+    }
+
 }

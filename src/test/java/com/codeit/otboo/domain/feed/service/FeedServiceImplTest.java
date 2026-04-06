@@ -1,7 +1,6 @@
 package com.codeit.otboo.domain.feed.service;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
-import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;

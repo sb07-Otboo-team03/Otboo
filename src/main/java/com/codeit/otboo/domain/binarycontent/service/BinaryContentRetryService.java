@@ -22,8 +22,8 @@ public class BinaryContentRetryService {
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000) // 2초 간격
     )
-    public void upload(UUID binaryContentId, byte[] bytes) {
-        binaryContentStorage.put(binaryContentId, bytes);
+    public void upload(UUID binaryContentId, byte[] bytes, String contentType) {
+        binaryContentStorage.put(binaryContentId, bytes, contentType);
         binaryContentStatusService.updateSuccess(binaryContentId);
     }
 

@@ -17,6 +17,17 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
+  mail:
+    host: smtp.naver.com
+    port: 587
+    username: ${NAVER_MAIL_ID}
+    password: ${NAVER_MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+
+
   cloud:
     aws:
       credentials:

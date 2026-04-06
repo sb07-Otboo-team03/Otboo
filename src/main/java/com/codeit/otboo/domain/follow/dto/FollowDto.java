@@ -8,11 +8,11 @@ import lombok.Builder;
 public record FollowDto (
     UUID id,
     LocalDateTime createdAt,
-    UUID followerId,
-    String followerName,
-    UUID followerProfileImageId,
     UUID followeeId,
     String followeeName,
-    UUID followeeProfileImageId
+    UUID followeeProfileImageId,
+    UUID followerId,
+    String followerName,
+    UUID followerProfileImageId
 ) {
 }
