@@ -73,7 +73,7 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = new Feed(request.content(), author, weather, clothesList);
         feedRepository.save(feed);
 
-        Set<UUID> followerIds = followRepository.findAllFollowerIdsByFolloweeIdAndIsActiveTrue(author.getId());
+        Set<UUID> followerIds = followRepository.findAllFollowerIdsByFolloweeId(author.getId());
 
         if (!followerIds.isEmpty()) {
             eventPublisher.publishEvent(

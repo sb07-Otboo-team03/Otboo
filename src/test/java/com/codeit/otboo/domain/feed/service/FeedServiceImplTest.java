@@ -126,7 +126,7 @@ class FeedServiceImplTest {
             given(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(eq(weather.getX()), eq(weather.getY()), eq(date), eq(hour))).willReturn(Optional.of(yesterdayWeather));
             given(clothesRepository.findAllById(List.of(clothes.getId()))).willReturn(List.of(clothes));
             given(feedMapper.toDto(any(Feed.class))).willReturn(dto);
-            given(followRepository.findAllFollowerIdsByFolloweeIdAndIsActiveTrue(userId)).willReturn(receiverId);
+            given(followRepository.findAllFollowerIdsByFolloweeId(userId)).willReturn(receiverId);
 
             // when
             FeedResponse response = feedService.createFeed(request);

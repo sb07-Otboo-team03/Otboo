@@ -52,79 +52,52 @@ public class FollowServiceImpl implements FollowService {
         Optional<Follow> optionalFollow = followRepository.findByFollowerIdAndFolloweeId(
             request.followerId(), request.followeeId());
 
-        if (optionalFollow.isPresent()) {
-            Follow savedFollow = optionalFollow.get();
+        User followee = userRepository.findById(request.followeeId())
+            .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
 
-            followRepository.updateIsActive(savedFollow.getId(), true);
+        User follower = userRepository.findById(request.followerId())
+            .orElseThrow(() -> new UserNotFoundException(request.followerId()));
 
-            return followMapper.toDto(savedFollow);
-        }
-        else {
-            User followee = userRepository.findById(request.followeeId())
-                .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
+        Follow follow = new Follow(follower, followee);
+        Follow savedFollow = followRepository.save(follow);
 
-            User follower = userRepository.findById(request.followerId())
-                .orElseThrow(() -> new UserNotFoundException(request.followerId()));
+        Notification notification = Notification.builder()
+            .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
+            .content("")
+            .level(NotificationLevel.INFO)
+            .receiver(followee)
+            .build();
 
-            Follow follow = new Follow(follower, followee);
-            Follow savedFollow = followRepository.save(follow);
+        eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
 
-            Notification notification = Notification.builder()
-                .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
-                .content("")
-                .level(NotificationLevel.INFO)
-                .receiver(followee)
-                .build();
-
-            eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
-
-            return followMapper.toDto(savedFollow);
-        }
+        return followMapper.toDto(savedFollow);
     }
 
     @Override // 팔로우 요약 정보 조회
     public FollowSummaryResponse getFollowSummary(UUID followeeId, OtbooUserDetails userDetails) {
 
+        log.debug("🔥 followeeId = {}", followeeId);
+        log.debug("🔥 userDetails = {}", userDetails);
+
         userRepository.findById(followeeId)
             .orElseThrow(() -> new UserNotFoundException(followeeId));
 
         UUID myId = userDetails.getUserResponse().id();
-        int followerCount = followRepository.countByFollowerIdAndIsActiveTrue(followeeId);
-        int followingCount = followRepository.countByFolloweeIdAndIsActiveTrue(followeeId);
+        int followerCount = followRepository.countByFollowerId(followeeId);
+        int followingCount = followRepository.countByFolloweeId(followeeId);
 
         boolean itsMe = false;
-        Follow follow = null;
+        Optional<Follow> follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId);
+        boolean isEmpty = follow.isEmpty();
 
-        if (myId.equals(followeeId)) {
-            itsMe = true;
-        }
-        else {
-            follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId)
-                .orElseThrow(() -> new FollowNotFoundException(myId, followeeId));
-        }
-
-        FollowSummaryResponse response = null;
-
-        if (itsMe || !follow.isActive()) {
-            response = new FollowSummaryResponse(
-                followeeId,
-                followingCount,
-                followerCount,
-                false,
-                itsMe ? null : follow.getId(),
-                false
-            );
-        }
-        else {
-            response = new FollowSummaryResponse(
-                followeeId,
-                followingCount,
-                followerCount,
-                true,
-                follow.getId(),
-                true
-            );
-        }
+        FollowSummaryResponse response = new FollowSummaryResponse(
+            followeeId,
+            followingCount,
+            followerCount,
+            !isEmpty,
+            isEmpty ? null : follow.get().getId(),
+            !isEmpty
+        );
 
         return response;
     }
@@ -196,7 +169,7 @@ public class FollowServiceImpl implements FollowService {
     @Override
     @Transactional
     public void cancelFollow(UUID followId) {
-        followRepository.updateIsActive(followId, false);
+        followRepository.deleteById(followId);
     }
 
 }

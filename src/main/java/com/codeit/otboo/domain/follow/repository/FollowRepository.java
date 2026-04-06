@@ -15,16 +15,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
-    @Modifying
-    @Query("UPDATE Follow f SET f.isActive = :isActive WHERE f.id = :id")
-    void updateIsActive(@Param("id") UUID id, @Param("isActive") boolean isActive);
-
+    
     Optional<Follow> findByFollowerIdAndFolloweeId(UUID followerId, UUID followeeId);
-    int countByFollowerIdAndIsActiveTrue(UUID followerId);
-    int countByFolloweeIdAndIsActiveTrue(UUID followeeId);
+    int countByFollowerId(UUID followerId);
+    int countByFolloweeId(UUID followeeId);
 
-    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId AND f.isActive = true")
-    Set<UUID> findAllFollowerIdsByFolloweeIdAndIsActiveTrue(@Param("followeeId") UUID followeeId);
+    @Query("SELECT f.follower.id FROM Follow f WHERE f.followee.id = :followeeId")
+    Set<UUID> findAllFollowerIdsByFolloweeId(@Param("followeeId") UUID followeeId);
 
     @Query("""
        SELECT new com.codeit.otboo.domain.follow.dto.FollowDto(
@@ -55,7 +52,6 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
                    )
                )
           )
-          AND f.isActive = true
        ORDER BY f.createdAt DESC, f.id DESC
     """)
     List<FollowDto> findAllFollowings(
@@ -96,7 +92,6 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
                    )
                )
           )
-          AND f.isActive = true
        ORDER BY f.createdAt DESC, f.id DESC
     """)
     List<FollowDto> findAllFollowers(

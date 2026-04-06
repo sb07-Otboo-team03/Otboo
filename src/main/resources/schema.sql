@@ -421,3 +421,6 @@ ALTER TABLE follows
         FOREIGN KEY (followee_id)
             REFERENCES users(id)
             ON DELETE CASCADE;
+
+ALTER TABLE follows
+DROP COLUMN is_active;
