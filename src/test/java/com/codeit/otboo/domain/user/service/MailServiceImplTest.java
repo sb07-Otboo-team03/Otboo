@@ -21,7 +21,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
 
 @ExtendWith(MockitoExtension.class)
-class SmtpMailServiceTest {
+class MailServiceImplTest {
     @Mock
     private JavaMailSender mailSender;
 
