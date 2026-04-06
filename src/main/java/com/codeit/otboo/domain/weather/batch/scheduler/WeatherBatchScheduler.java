@@ -17,10 +17,11 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class WeatherForecastBatchScheduler {
+public class WeatherBatchScheduler {
 
     private final JobLauncher jobLauncher;
     private final Job weatherForecastCollectionJob;
+    private final Job deleteYesterdayWeatherJob;
     private final TimeProvider timeProvider;
 
     @Scheduled(cron = "0 15 2,5,8,11,14,17,20,23 * * *")
@@ -31,6 +32,10 @@ public class WeatherForecastBatchScheduler {
         Map<String, JobParameter<?>> jobParameterMap = new HashMap<>();
         jobParameterMap.put("baseDate", new JobParameter<>(baseDate, String.class));
         jobParameterMap.put("baseTime", new JobParameter<>(baseTime, String.class));
+        jobParameterMap.put(
+                "requestedAt",
+                new JobParameter<>(timeProvider.nowDateTime().toString(), String.class)
+        );
 
         JobParameters jobParameters = new JobParameters(jobParameterMap);
 
@@ -43,6 +48,32 @@ public class WeatherForecastBatchScheduler {
         } catch (Exception e) {
             log.error("날씨 예보 배치 실행 실패 - baseDate: {}, baseTime: {}", baseDate, baseTime, e);
             // TODO: exception 추가
+        }
+    }
+
+    /**
+     * 어제 날씨 이관 및 삭제 배치 실행
+     */
+    @Scheduled(cron = "0 0 0 * * *")
+    public void runDeleteYesterdayWeatherBatch() {
+        String targetDate = timeProvider.nowDate().minusDays(1)
+                .format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        Map<String, JobParameter<?>> jobParameterMap = new HashMap<>();
+        jobParameterMap.put("targetDate", new JobParameter<>(targetDate, String.class));
+        jobParameterMap.put(
+                "requestedAt",
+                new JobParameter<>(timeProvider.nowDateTime().toString(), String.class)
+        );
+
+        JobParameters jobParameters = new JobParameters(jobParameterMap);
+
+        try {
+            log.info("어제 날씨 이관/삭제 배치 실행 시작 - targetDate: {}", targetDate);
+            jobLauncher.run(deleteYesterdayWeatherJob, jobParameters);
+            log.info("어제 날씨 이관/삭제 배치 실행 완료 - targetDate: {}", targetDate);
+        } catch (Exception e) {
+            log.error("어제 날씨 이관/삭제 배치 실행 실패 - targetDate: {}", targetDate, e);
         }
     }
 

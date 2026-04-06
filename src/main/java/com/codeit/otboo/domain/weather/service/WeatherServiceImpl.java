@@ -184,42 +184,4 @@ public class WeatherServiceImpl implements WeatherService{
                 kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H)
         );
     }
-
-    /**
-     * 00시 마다 어제 저장했던 모든 날씨 데이터 삭제
-     * 삭제 이전에 어제자 날씨의 (온도, 습도) 정보는 yesterday_hourly_weather 테이블에 저장
-     */
-    @Scheduled(cron = "0 0 0 * * *")
-    @Transactional
-    public void deleteYesterdayWeather() {
-        LocalDate today = timeProvider.nowDate();
-        LocalDateTime todayStart = today.atStartOfDay();
-
-        LocalDate yesterday = today.minusDays(1);
-        LocalDateTime start = yesterday.atStartOfDay();
-        LocalDateTime end = yesterday.plusDays(1).atStartOfDay();
-
-        // 어제자 날씨 정보만 저장
-        List<Weather> yesterdayWeatherList = weatherRepository.findYesterdayWeather(start, start, end);
-
-        // 어제자 날씨의 온도, 습도를 YesterdayHourlyWeather 엔티티에 저장
-        List<YesterdayHourlyWeather> yesterdayHourlyWeatherList = yesterdayWeatherList.stream()
-                .map(weather -> new YesterdayHourlyWeather(
-                        weather.getX(),
-                        weather.getY(),
-                        weather.getForecastAt().toLocalDate(),
-                        weather.getForecastAt().toLocalTime(),
-                        weather.getTemperatureCurrent(),
-                        weather.getHumidityCurrent()
-                ))
-                .sorted(Comparator.comparing(YesterdayHourlyWeather::getX)
-                        .thenComparing(YesterdayHourlyWeather::getY)
-                        .thenComparing(YesterdayHourlyWeather::getHour))
-                .toList();
-
-        yesterdayHourlyWeatherRepository.saveAll(yesterdayHourlyWeatherList);
-
-        // 오늘 이전의 날씨 데이터는 모두 삭제
-        weatherRepository.deleteByForecastedAtBefore(todayStart);
-    }
 }
