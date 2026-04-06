@@ -28,6 +28,7 @@ public class ProfileMapper {
     }
 
     private LocationResponse toLocationResponse(Location location) {
+        if(location == null) return null;
         List<String> locationsMap = new ArrayList<>();
         locationsMap.add(location.getRegion1depthName());
         locationsMap.add(location.getRegion2depthName());
