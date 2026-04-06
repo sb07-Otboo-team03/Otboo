@@ -92,7 +92,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> passwordRest(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
+    public ResponseEntity<Void> passwordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
         authService.issueTemporaryPassword(passwordResetRequest);
         return ResponseEntity.noContent().build();
     }
