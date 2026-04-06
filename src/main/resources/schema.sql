@@ -401,7 +401,7 @@ ALTER TABLE follows
 CREATE TABLE temporary_passwords (
                                      id UUID PRIMARY KEY,
                                      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                                     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                                     updated_at TIMESTAMP NULL,
 
                                      user_id UUID NOT NULL UNIQUE,
                                      password VARCHAR(255) NOT NULL,
