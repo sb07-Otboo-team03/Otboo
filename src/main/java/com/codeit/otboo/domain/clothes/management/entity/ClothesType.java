@@ -12,5 +12,9 @@ public enum ClothesType {
     HAT,
     BAG,
     SCARF,
-    ETC
+    ETC;
+
+    public static ClothesType fromString(String value){
+        return value == null ? null : ClothesType.valueOf(value.toUpperCase());
+    }
 }

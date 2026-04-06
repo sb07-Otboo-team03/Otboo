@@ -52,6 +52,24 @@ public class ClothesTest {
                 )
             );
         }
+
+        @Test
+        @DisplayName("""
+            성공: 유효한 파라미터들과 빈 리스트가 들어올 경우
+            옷 속성값 리스트가 비어있는 옷이 생성된다.
+        """)
+        void createdClothes_without_values(){
+            //given
+            User user = UserFixture.create();
+
+            // when
+            Clothes clothes = new Clothes(
+                    "옷", null, user, null, null
+            );
+
+            // then
+            assertThat(clothes.getValues()).isEmpty();
+        }
     }
     
     @Nested
@@ -86,6 +104,23 @@ public class ClothesTest {
                     attributeValue -> attributeValue.getAttributeDef().getName()
                 )
             );
+        }
+
+        @Test
+        @DisplayName("""
+            성공: 유효한 파라미터들과 빈 리스트가 들어올 경우
+            옷 속성값 리스트가 비어있는 옷으로 수정된다.
+        """)
+        void createdClothes_without_values(){
+            //given
+            User user = UserFixture.create();
+            Clothes clothes = ClothesFixture.create();
+
+            // when
+            clothes.updateClothes("새 옷", null, null, null);
+
+            // then
+            assertThat(clothes.getValues()).isEmpty();
         }
     }
 }

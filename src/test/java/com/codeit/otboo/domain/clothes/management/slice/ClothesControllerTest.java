@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.management.controller.ClothesController;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
@@ -19,6 +20,8 @@ import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,14 +42,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -357,6 +357,75 @@ public class ClothesControllerTest {
                                     })
                                     .with(csrf())
                                     .with(user(userDetails))
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+    }
+    
+    @Nested
+    @DisplayName("옷 목록 조회")
+    class getListClothes{
+        @Test
+        @DisplayName("성공: 유효한 요청이 들어올 경우 200으로 응답한다.")
+        void getListClothes_Success() throws Exception {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            Clothes clothes = ClothesFixture.create();
+            ClothesCursorPageRequest request = new ClothesCursorPageRequest(
+                    null, null, null, null, ownerId);
+            List<ClothesResponse> clothesList = List.of(
+                    new ClothesResponse(clothes.getId(),
+                            ownerId,
+                            clothes.getName(),
+                            null,
+                            clothes.getType(),
+                            List.of()
+                    )
+            );
+            CursorResponse<ClothesResponse> response = new CursorResponse<>(
+                    clothesList,
+                    null,
+                    null,
+                    false,
+                    1L,
+                    "createdAt",
+                    SortDirection.DESCENDING
+            );
+            given(clothesService.getMyClothesList(request))
+                    .willReturn(response);
+
+            // when & then
+            mockMvc.perform(get("/api/clothes")
+                            .with(user(userDetails))
+                            .param("ownerId", ownerId.toString())
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].id").value(clothes.getId().toString()));
+        }
+
+        @Test
+        @DisplayName("실패: limit가 1보다 작은 수가 들어오면 400 에러가 발생한다.")
+        void getClothes_Fail_MinLimit() throws Exception {
+            // given
+            UUID ownerId = UUID.randomUUID();
+
+            // when & then
+            mockMvc.perform(get("/api/clothes")
+                            .with(user(userDetails))
+                            .param("ownerId", ownerId.toString())
+                            .param("limit", "-1")
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+
+        @Test
+        @DisplayName("실패: ownerId가 null 이면 에러가 발생한다.")
+        void getClothes_Fail_Owner_Null() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/clothes")
+                            .with(user(userDetails))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));

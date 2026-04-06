@@ -31,10 +31,11 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     }
 
     @Override
-    public UUID put(UUID binaryId, byte[] data) {
+    public UUID put(UUID binaryId, byte[] data, String contentType) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key(binaryId))
+                .contentType(contentType)
                 .build();
 
         s3Client.putObject(request, RequestBody.fromBytes(data));

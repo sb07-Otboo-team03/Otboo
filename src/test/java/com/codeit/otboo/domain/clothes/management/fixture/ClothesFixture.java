@@ -11,6 +11,7 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,6 +33,7 @@ public class ClothesFixture {
                 )
         );
         ReflectionTestUtils.setField(newClothes, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(newClothes, "createdAt", LocalDateTime.now());
         return newClothes;
     }
     
@@ -51,8 +53,7 @@ public class ClothesFixture {
         ReflectionTestUtils.setField(newClothes, "id", UUID.randomUUID());
         return newClothes;
     }
-    public static Clothes create(
-            ClothesCreateRequest request){
+    public static Clothes create(ClothesCreateRequest request){
         User newUser = UserFixture.create();
         ReflectionTestUtils.setField(newUser, "id", request.ownerId());
         Clothes newClothes = new Clothes(
@@ -70,9 +71,7 @@ public class ClothesFixture {
         return newClothes;
     }
 
-    public static Clothes create(
-            ClothesCreateRequest request,
-            BinaryContent binaryContent){
+    public static Clothes create(ClothesCreateRequest request, BinaryContent binaryContent){
         User newUser = UserFixture.create();
         ReflectionTestUtils.setField(newUser, "id", request.ownerId());
         Clothes newClothes = new Clothes(
