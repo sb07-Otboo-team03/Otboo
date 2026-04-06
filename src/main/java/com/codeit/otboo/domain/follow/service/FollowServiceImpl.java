@@ -86,7 +86,6 @@ public class FollowServiceImpl implements FollowService {
         int followerCount = followRepository.countByFollowerId(followeeId);
         int followingCount = followRepository.countByFolloweeId(followeeId);
 
-        boolean itsMe = false;
         Optional<Follow> follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId);
         boolean isEmpty = follow.isEmpty();
 
