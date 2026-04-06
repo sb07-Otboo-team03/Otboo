@@ -175,7 +175,7 @@ class UserControllerTest {
                     .andExpect(status().isNotFound());
 
             // then
-            then(userService).should(never())
+            then(userService).should()
                     .updateUserPassword(any(UUID.class), any(UpdatePasswordRequest.class));
         }
 
