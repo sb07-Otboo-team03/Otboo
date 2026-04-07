@@ -1,17 +1,13 @@
 package com.codeit.otboo.domain.sse.event;
 
-import lombok.Builder;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import lombok.Getter;
 
-import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.UUID;
+import java.util.List;
 
-@Builder
-public record FeedCreatedEvent(
-        UUID feedId,
-        String authorName,
-        String content,
-        LocalDateTime createdAt,
-        Set<UUID> receiverIds
-) {
+@Getter
+public class FeedCreatedEvent extends BaseSseEvent {
+    public FeedCreatedEvent(List<Notification> notificationList) {
+        super(notificationList);
+    }
 }
