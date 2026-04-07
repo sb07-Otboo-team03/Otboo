@@ -95,7 +95,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom{
                                 .and(user.id.lt(idAfter))
                 );
             } else {
-                builder.or(user.email.lt(cursor));
+                builder.or(user.email.gt(cursor));
                 builder.or(
                         user.email.eq(cursor)
                                 .and(user.id.gt(idAfter))
