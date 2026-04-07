@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.user.entity.User;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,6 +9,6 @@ import lombok.Getter;
 public class BaseSseEvent {
     String title;
     String content;
-    User user;
+    UUID userId;
 }
 

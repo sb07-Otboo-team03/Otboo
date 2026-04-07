@@ -59,7 +59,7 @@ public class FollowServiceImpl implements FollowService {
         Follow savedFollow = followRepository.save(follow);
 
         String title = follower.getProfile().getName() + "님이 나를 팔로우했어요.";
-        eventPublisher.publishEvent( new FollowSseEvent(title, "", followee));
+        eventPublisher.publishEvent( new FollowSseEvent(title, "", followee.getId()));
 
         return followMapper.toDto(savedFollow);
     }

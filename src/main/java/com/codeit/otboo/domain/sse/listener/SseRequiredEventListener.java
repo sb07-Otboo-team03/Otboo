@@ -6,11 +6,11 @@ import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.BaseSseEvent;
-import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
-import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.service.UserService;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +29,7 @@ public class SseRequiredEventListener {
     private final SseService sseService;
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
+    private final UserService userService;
 
     private void sendSseEvent(List<Notification> notification) {
 
@@ -47,11 +48,13 @@ public class SseRequiredEventListener {
     @TransactionalEventListener
     public void on(BaseSseEvent event) {
 
+        User user = userService.getUser(event.getUserId());
+
         Notification notification = Notification.builder()
             .title(event.getTitle())
             .content(event.getContent())
             .level(NotificationLevel.INFO)
-            .receiver(event.getUser())
+            .receiver(user)
             .build();
 
         sendSseEvent(List.of(notification));

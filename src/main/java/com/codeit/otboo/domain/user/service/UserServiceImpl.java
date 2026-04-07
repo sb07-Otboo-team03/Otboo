@@ -15,14 +15,12 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +32,13 @@ public class UserServiceImpl implements UserService{
     private final ProfileMapper profileMapper;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
+
+    @Override
+    public User getUser(UUID userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException(userId));
+    }
+
 
     @Override
     @Transactional

@@ -6,9 +6,12 @@ import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
 
+import com.codeit.otboo.domain.user.entity.User;
 import java.util.UUID;
 
 public interface UserService {
+    User getUser(UUID userId);
+
     UserResponse createUser(UserCreateRequest userCreateRequest);
 
     UserResponse updateUserRole(UUID userId, Role role);

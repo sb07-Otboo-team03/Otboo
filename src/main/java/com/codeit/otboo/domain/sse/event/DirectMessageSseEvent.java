@@ -1,9 +1,9 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.user.entity.User;
+import java.util.UUID;
 
 public class DirectMessageSseEvent extends BaseSseEvent {
-    public DirectMessageSseEvent(String title, String content, User user) {
-        super(title, content, user);
+    public DirectMessageSseEvent(String title, String content, UUID userId) {
+        super(title, content, userId);
     }
 }
