@@ -5,9 +5,8 @@ import com.codeit.otboo.domain.sse.object.SseMessage;
 import com.codeit.otboo.domain.sse.repository.SseEmitterRepository;
 import com.codeit.otboo.domain.sse.repository.SseMessageRepository;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,96 +29,76 @@ public class SseServiceImpl implements SseService {
     private final SseMessageRepository sseMessageRepository;
 
     public SseEmitter connect(UUID receiverId, UUID lastEventId) {
-        SseEmitter emitter = new SseEmitter(timeout);
+        SseEmitter sseEmitter = new SseEmitter(timeout);
 
-        emitter.onCompletion(() -> {
-            log.debug("✅sse on onCompletion");
-            sseEmitterRepository.delete(receiverId, emitter);
+        sseEmitter.onCompletion(() -> {
+            log.debug("✅ sse on onCompletion");
+            sseEmitterRepository.delete(receiverId, sseEmitter);
         });
-        emitter.onTimeout(() -> {
+        sseEmitter.onTimeout(() -> {
             log.debug("✅sse on onTimeout");
-            sseEmitterRepository.delete(receiverId, emitter);
+            sseEmitterRepository.delete(receiverId, sseEmitter);
         });
-        emitter.onError((ex) -> {
+        sseEmitter.onError((ex) -> {
             log.debug("✅sse on onError");
-            sseEmitterRepository.delete(receiverId, emitter);
+            sseEmitterRepository.delete(receiverId, sseEmitter);
         });
 
-        boolean success;
+        sseEmitterRepository.save(receiverId, sseEmitter);
 
-        if (lastEventId != null) {
-            success = replay(emitter, receiverId, lastEventId);
-        } else {
-            success = ping(emitter);
-            if (!success) {
-                emitter.completeWithError(new RuntimeException("initial ping failed"));
-            }
-        }
+        Optional.ofNullable(lastEventId)
+            .ifPresentOrElse(
+                id -> {
+                    sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)
+                        .forEach(sseMessage -> {
+                            try {
+                                sseEmitter.send(sseMessage.toEvent());
+                            } catch (IOException e) {
+                                log.error("🚨 {}", e.getMessage(), e);
+                                sseEmitterRepository.delete(receiverId, sseEmitter);
+                            }
+                        });
+                },
+                () -> {
+                    ping(sseEmitter);
+                }
+            );
 
-        if (success) {
-            sseEmitterRepository.save(receiverId, emitter);
-        }
-
-        return emitter;
-    }
-
-    private boolean replay(SseEmitter emitter, UUID receiverId, UUID lastEventId) {
-        List<SseMessage> messages =
-            sseMessageRepository.findAllByEventIdAfterAndReceiverId(lastEventId, receiverId);
-
-        for (SseMessage msg : messages) {
-            try {
-                emitter.send(msg.toEvent());
-            } catch (IOException e) {
-                log.warn(e.getMessage(), e);
-                emitter.completeWithError(e);
-                return false;
-            }
-        }
-        return true;
+        return sseEmitter;
     }
 
     public void send(Collection<UUID> receiverIds, String eventName, NotificationDto data) {
         SseMessage message = sseMessageRepository.save(SseMessage.create(receiverIds, eventName, data));
         Set<DataWithMediaType> event = message.toEvent();
-        List<SseEmitter> emitters =
-            new ArrayList<>(sseEmitterRepository.findAllByReceiverIdsIn(receiverIds));
-
-        emitters.forEach(emitter -> {
-            try {
-                emitter.send(event);
-            } catch (IOException e) {
-                log.warn(e.getMessage(), e);
-                emitter.completeWithError(e);
-            }
-        });
+        sseEmitterRepository.findAllByReceiverIdsIn(receiverIds)
+            .forEach(sseEmitter -> {
+                try {
+                    sseEmitter.send(event);
+                } catch (IOException e) {
+                    log.error("🚨🚨 {}",e.getMessage(), e);
+                }
+            });
     }
 
     public void broadcast(String eventName, NotificationDto data) {
         SseMessage message = sseMessageRepository.save(SseMessage.createBroadcast(eventName, data));
         Set<DataWithMediaType> event = message.toEvent();
-        List<SseEmitter> emitters =
-            new ArrayList<>(sseEmitterRepository.findAll());
-
-        emitters.forEach(emitter -> {
-            try {
-                emitter.send(event);
-            } catch (IOException e) {
-                log.warn(e.getMessage(), e);
-                emitter.completeWithError(e);
-            }
-        });
+        sseEmitterRepository.findAll()
+            .forEach(sseEmitter -> {
+                try {
+                    sseEmitter.send(event);
+                } catch (IOException e) {
+                    log.error("🚨🚨🚨 {}",e.getMessage(), e);
+                }
+            });
     }
 
     @Scheduled(fixedDelay = 1000 * 60 * 30)
     public void cleanUp() {
-        List<SseEmitter> emitters =
-            new ArrayList<>(sseEmitterRepository.findAll());
-
-        emitters.stream()
-            .filter(emitter -> !ping(emitter))
-            .forEach(emitter ->
-                emitter.completeWithError(new RuntimeException("sse ping failed")));
+        sseEmitterRepository.findAll()
+            .stream().filter(sseEmitter -> !ping(sseEmitter))
+            .forEach(
+                sseEmitter -> sseEmitter.completeWithError(new RuntimeException("sse ping failed")));
     }
 
     private boolean ping(SseEmitter sseEmitter) {
@@ -129,8 +108,7 @@ public class SseServiceImpl implements SseService {
                 .build());
             return true;
         } catch (IOException e) {
-            log.warn("Failed to send ping event", e);
-//            sseEmitter.completeWithError(e);
+            log.error("🚨Failed to send ping event", e);
             return false;
         }
     }
