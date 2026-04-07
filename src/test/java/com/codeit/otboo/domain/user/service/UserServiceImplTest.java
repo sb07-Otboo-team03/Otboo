@@ -255,32 +255,6 @@ class UserServiceImplTest {
     @Nested
     @DisplayName("유저 조회")
     class UserSearch {
-        private List<User> getUserList(int n) {
-            List<User> userList = new ArrayList<>();
-            for (int i = 0; i < n; i++) {
-                String keyword = "A"+i;
-                if(i % 2 == 1)
-                    keyword = "B"+i;
-
-                String email = "test" + keyword + "@test.com";
-                User user =  User
-                        .builder()
-                        .email(email)
-                        .password("password")
-                        .build();
-
-                Profile profile = Profile.builder()
-                        .name("test" + i)
-                        .user(user)
-                        .build();
-
-                user.setProfile(profile);
-                userList.add(user);
-            }
-
-            return userList;
-        }
-
         @ParameterizedTest
         @CsvSource({
                 "createdAt",
