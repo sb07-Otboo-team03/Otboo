@@ -45,13 +45,13 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageSseEvent event) {
-        sendSseEvent(event.notificationList);
+        sendSseEvent(event.getNotificationList());
     }
 
     @Async
     @TransactionalEventListener
     public void on(FollowSseEvent event) {
-        sendSseEvent(event.notificationList);
+        sendSseEvent(event.getNotificationList());
     }
 
     @Async
