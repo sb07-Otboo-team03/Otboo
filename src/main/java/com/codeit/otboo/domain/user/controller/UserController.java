@@ -45,7 +45,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorResponse<UserResponse>> getCurrentUser(@ParameterObject @ModelAttribute UserSearchRequest request) {
+    public ResponseEntity<CursorResponse<UserResponse>> getAllUser(@Valid @ParameterObject @ModelAttribute UserSearchRequest request) {
         CursorResponse<UserResponse> getUsers = userService.getAllUsers(request);
         return ResponseEntity.ok(getUsers);
 
