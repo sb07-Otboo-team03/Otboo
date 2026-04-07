@@ -6,9 +6,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.codeit.otboo.domain.notification.controller.NotificationController;
@@ -21,7 +21,6 @@ import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,9 +45,6 @@ class NotificationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockitoBean
     private NotificationService notificationService;

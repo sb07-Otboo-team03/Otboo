@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
@@ -38,8 +37,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 class FollowServiceImplTest {
