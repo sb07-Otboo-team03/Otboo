@@ -428,11 +428,11 @@ class WeatherAlertBatchServiceTest {
             verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
             WeatherSseEvent publishedEvent = eventCaptor.getValue();
-            assertThat(publishedEvent.notificationList).hasSize(2);
-            assertThat(publishedEvent.notificationList)
+            assertThat(publishedEvent.getNotificationList()).hasSize(2);
+            assertThat(publishedEvent.getNotificationList())
                     .extracting(Notification::getTitle)
                     .containsOnly("어제와 기온 차가 커요");
-            assertThat(publishedEvent.notificationList)
+            assertThat(publishedEvent.getNotificationList())
                     .extracting(Notification::getContent)
                     .containsOnly("오늘은 어제보다 전반적으로 3도 낮아요.");
         }

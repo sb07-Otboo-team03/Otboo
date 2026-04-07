@@ -10,6 +10,7 @@ import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -101,7 +102,7 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
-        sendSseEvent(event.notificationList);
+        sendSseEvent(event.getNotificationList());
     }
 
     @Async
