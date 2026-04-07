@@ -146,11 +146,9 @@ class FollowServiceImplTest {
 //
 //            FollowCreateRequest request = new FollowCreateRequest(followeeId, followerId);
 //
-//            // ⭐ userRepository mock (필수)
 //            given(userRepository.findById(followerId)).willReturn(Optional.of(follower));
 //            given(userRepository.findById(followeeId)).willReturn(Optional.of(followee));
 //
-//            // follow 저장 mock
 //            Follow savedFollow = mock(Follow.class);
 //            UUID followId = UUID.randomUUID();
 //            LocalDateTime now = LocalDateTime.now();
@@ -161,7 +159,6 @@ class FollowServiceImplTest {
 //            given(savedFollow.getFollower()).willReturn(follower);
 //            given(savedFollow.getFollowee()).willReturn(followee);
 //
-//            // ⭐ mapper mock (이거 없으면 result = null 됨)
 //            FollowResponse mockResponse = new FollowResponse(
 //                followId,
 //                new UserSummaryResponse(
@@ -178,7 +175,6 @@ class FollowServiceImplTest {
 //
 //            given(followMapper.toDto(savedFollow)).willReturn(mockResponse);
 //
-//            // 🔥 publishEvent는 stub 필요 없음 (또는 아래처럼)
 //            // doNothing().when(eventPublisher).publishEvent(any());
 //
 //            // --- when ---
@@ -201,7 +197,6 @@ class FollowServiceImplTest {
             given(userRepository.findById(followeeId))
                 .willReturn(Optional.empty());
 
-            // 🔥 중요: 다른 호출도 stub
             given(userRepository.findById(followerId))
                 .willReturn(Optional.of(mock(User.class)));
 
@@ -216,7 +211,6 @@ class FollowServiceImplTest {
             // given
             FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
-            // ❗ 이거 하나만 필요
             given(userRepository.findById(followerId))
                 .willReturn(Optional.empty());
 
