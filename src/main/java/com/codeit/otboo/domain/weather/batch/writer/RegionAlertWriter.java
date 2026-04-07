@@ -16,7 +16,7 @@ public class RegionAlertWriter implements ItemWriter<RegionAlertResult> {
     @Override
     public void write(Chunk<? extends RegionAlertResult> chunk) {
         for (RegionAlertResult result : chunk) {
-            weatherAlertBatchService.saveAndPublish(result);
+            weatherAlertBatchService.publishWeatherEvent(result);
         }
     }
 }

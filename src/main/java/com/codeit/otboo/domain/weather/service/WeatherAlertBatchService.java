@@ -159,8 +159,7 @@ public class WeatherAlertBatchService {
                 .toList();
     }
 
-    @Transactional
-    public void saveAndPublish(RegionAlertResult result) {
+    public void publishWeatherEvent(RegionAlertResult result) {
         if (result.isEmpty()) {
             return;
         }

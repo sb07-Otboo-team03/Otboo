@@ -391,7 +391,7 @@ class WeatherAlertBatchServiceTest {
             RegionAlertResult result = new RegionAlertResult(60, 127, List.of());
 
             // when
-            weatherAlertBatchService.saveAndPublish(result);
+            weatherAlertBatchService.publishWeatherEvent(result);
 
             // then
             verify(eventPublisher, never()).publishEvent(any());
@@ -422,7 +422,7 @@ class WeatherAlertBatchServiceTest {
             ArgumentCaptor<WeatherSseEvent> eventCaptor = ArgumentCaptor.forClass(WeatherSseEvent.class);
 
             // when
-            weatherAlertBatchService.saveAndPublish(result);
+            weatherAlertBatchService.publishWeatherEvent(result);
 
             // then
             verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
