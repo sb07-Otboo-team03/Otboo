@@ -37,6 +37,11 @@ spring:
         static: ${AWS_REGION}
       s3:
         bucket: ${AWS_S3_BUCKET}
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false # 앱 시작 시 배치 자동 실행 방지
 
 otboo:
   storage:

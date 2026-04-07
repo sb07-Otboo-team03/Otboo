@@ -3,12 +3,8 @@ package com.codeit.otboo.domain.sse.listener;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
-import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.notification.service.NotificationService;
-import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
-import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
-import com.codeit.otboo.domain.sse.event.FollowSseEvent;
-import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.sse.event.*;
 import com.codeit.otboo.domain.sse.service.SseService;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +47,12 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(FollowSseEvent event) {
+        sendSseEvent(event.notificationList);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(WeatherSseEvent event) {
         sendSseEvent(event.notificationList);
     }
 

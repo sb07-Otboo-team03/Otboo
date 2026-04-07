@@ -437,3 +437,5 @@ ALTER TABLE follows
         FOREIGN KEY (followee_id)
             REFERENCES users(id)
             ON DELETE CASCADE;
+
+ALTER TABLE yesterday_hourly_weather RENAME COLUMN "hour" TO forecast_hour;
