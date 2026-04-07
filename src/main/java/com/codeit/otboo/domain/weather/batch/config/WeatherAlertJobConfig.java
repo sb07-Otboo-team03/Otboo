@@ -2,6 +2,8 @@ package com.codeit.otboo.domain.weather.batch.config;
 
 import com.codeit.otboo.domain.weather.batch.dto.RegionAlertResult;
 import com.codeit.otboo.domain.weather.batch.dto.RegionAlertTarget;
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchJobListener;
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchStepListener;
 import com.codeit.otboo.domain.weather.batch.processor.RegionAlertProcessor;
 import com.codeit.otboo.domain.weather.batch.reader.RegionAlertTargetReader;
 import com.codeit.otboo.domain.weather.batch.writer.RegionAlertWriter;
@@ -23,6 +25,8 @@ public class WeatherAlertJobConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
+    private final WeatherBatchJobListener weatherBatchJobListener;
+    private final WeatherBatchStepListener weatherBatchStepListener;
     private final RegionAlertTargetReader regionAlertTargetReader;
     private final RegionAlertProcessor regionAlertProcessor;
     private final RegionAlertWriter regionAlertWriter;
@@ -31,6 +35,7 @@ public class WeatherAlertJobConfig {
     public Job weatherAlertJob() {
         return new JobBuilder("weatherAlertJob", jobRepository)
                 .start(weatherAlertStep())
+                .listener(weatherBatchJobListener)
                 .build();
     }
 
@@ -41,6 +46,7 @@ public class WeatherAlertJobConfig {
                 .reader(weatherAlertReader())
                 .processor(regionAlertProcessor)
                 .writer(regionAlertWriter)
+                .listener(weatherBatchStepListener)
                 .build();
     }
 

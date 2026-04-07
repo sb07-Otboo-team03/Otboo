@@ -1,5 +1,7 @@
 package com.codeit.otboo.domain.weather.batch.config;
 
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchJobListener;
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchStepListener;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
@@ -32,7 +34,8 @@ public class WeatherHistoryBatchConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-
+    private final WeatherBatchJobListener weatherBatchJobListener;
+    private final WeatherBatchStepListener weatherBatchStepListener;
     private final EntityManagerFactory entityManagerFactory;
     private final WeatherRepository weatherRepository;
     private final YesterdayHourlyWeatherRepository yesterdayRepository;
@@ -47,6 +50,7 @@ public class WeatherHistoryBatchConfig {
         return new JobBuilder("deleteYesterdayWeatherJob", jobRepository)
                 .start(migrateYesterdayWeatherStep)
                 .next(deleteYesterdayWeatherStep)
+                .listener(weatherBatchJobListener)
                 .build();
     }
 
@@ -58,6 +62,7 @@ public class WeatherHistoryBatchConfig {
                 .reader(weatherItemReader())
                 .processor(weatherItemProcessor())
                 .writer(yesterdayItemWriter())
+                .listener(weatherBatchStepListener)
                 .build();
     }
 
@@ -66,6 +71,7 @@ public class WeatherHistoryBatchConfig {
     public Step deleteYesterdayWeatherStep() {
         return new StepBuilder("deleteYesterdayWeatherStep", jobRepository)
                 .tasklet(deleteYesterdayWeatherTasklet(), transactionManager)
+                .listener(weatherBatchStepListener)
                 .build();
     }
 

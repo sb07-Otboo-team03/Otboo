@@ -43,11 +43,7 @@ public class WeatherBatchScheduler {
         JobParameters jobParameters = new JobParameters(jobParameterMap);
 
         try {
-            log.info("날씨 예보 배치 실행 시작 - baseDate: {}, baseTime: {}", baseDate, baseTime);
-
             jobLauncher.run(weatherForecastCollectionJob, jobParameters);
-
-            log.info("날씨 예보 배치 실행 요청 완료 - baseDate: {}, baseTime: {}", baseDate, baseTime);
         } catch (Exception e) {
             log.error("날씨 예보 배치 실행 실패 - baseDate: {}, baseTime: {}", baseDate, baseTime, e);
             throw new BatchJobExecutionException("weatherForecastCollectionJob", e);
@@ -67,9 +63,7 @@ public class WeatherBatchScheduler {
                 .toJobParameters();
 
         try {
-            log.info("어제 날씨 이관/삭제 배치 실행 시작 - targetDate: {}", targetDate);
             jobLauncher.run(deleteYesterdayWeatherJob, jobParameters);
-            log.info("어제 날씨 이관/삭제 배치 실행 완료 - targetDate: {}", targetDate);
         } catch (Exception e) {
             log.error("어제 날씨 이관/삭제 배치 실행 실패 - targetDate: {}", targetDate, e);
             throw new BatchJobExecutionException("deleteYesterdayWeatherJob", e);
@@ -86,9 +80,7 @@ public class WeatherBatchScheduler {
                 .toJobParameters();
 
         try {
-            log.info("날씨 알림 배치 실행 시작");
             jobLauncher.run(weatherAlertJob, jobParameters);
-            log.info("날씨 알림 배치 실행 요청 완료");
         } catch (Exception e) {
             log.error("날씨 알림 배치 실행 실패", e);
             throw new BatchJobExecutionException("weatherAlertJob", e);

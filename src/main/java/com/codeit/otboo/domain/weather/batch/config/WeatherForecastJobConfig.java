@@ -2,6 +2,8 @@ package com.codeit.otboo.domain.weather.batch.config;
 
 import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.batch.dto.ForecastTarget;
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchJobListener;
+import com.codeit.otboo.domain.weather.batch.listener.WeatherBatchStepListener;
 import com.codeit.otboo.domain.weather.batch.processor.ForecastTargetProcessor;
 import com.codeit.otboo.domain.weather.batch.reader.ForecastTargetReader;
 import com.codeit.otboo.domain.weather.batch.writer.WeatherForecastWriter;
@@ -21,6 +23,8 @@ public class WeatherForecastJobConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
+    private final WeatherBatchJobListener weatherBatchJobListener;
+    private final WeatherBatchStepListener weatherBatchStepListener;
     private final ForecastTargetReader forecastTargetReader;
     private final ForecastTargetProcessor forecastTargetProcessor;
     private final WeatherForecastWriter weatherForecastWriter;
@@ -29,6 +33,7 @@ public class WeatherForecastJobConfig {
     public Job weatherForecastCollectionJob() {
         return new JobBuilder("weatherForecastCollectionJob", jobRepository)
                 .start(weatherForecastCollectionStep())
+                .listener(weatherBatchJobListener)
                 .build();
     }
 
@@ -39,6 +44,7 @@ public class WeatherForecastJobConfig {
                 .reader(forecastTargetReader)
                 .processor(forecastTargetProcessor)
                 .writer(weatherForecastWriter)
+                .listener(weatherBatchStepListener)
                 .build();
     }
 }
