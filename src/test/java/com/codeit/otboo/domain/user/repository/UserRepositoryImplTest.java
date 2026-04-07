@@ -134,7 +134,6 @@ class UserRepositoryImplTest {
             List<User> secondPageList = secondPage.getContent();
 
             assertThat(secondPage.hasNext()).isFalse();
-            System.out.println("FirsPage: " + firstPageList.size() + " SecondPage: " + secondPageList.size() + "");
             assertThat(secondPageList.size()).isEqualTo(3);
 
             if ("createdAt".equals(sortBy)) {
