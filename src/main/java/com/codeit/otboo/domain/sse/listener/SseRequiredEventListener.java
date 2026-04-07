@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.service.NotificationService;
+import com.codeit.otboo.domain.sse.event.BaseSseEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
@@ -44,21 +45,7 @@ public class SseRequiredEventListener {
 
     @Async
     @TransactionalEventListener
-    public void on(DirectMessageSseEvent event) {
-
-        Notification notification = Notification.builder()
-            .title(event.getTitle())
-            .content(event.getContent())
-            .level(NotificationLevel.INFO)
-            .receiver(event.getUser())
-            .build();
-
-        sendSseEvent(List.of(notification));
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(FollowSseEvent event) {
+    public void on(BaseSseEvent event) {
 
         Notification notification = Notification.builder()
             .title(event.getTitle())
