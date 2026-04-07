@@ -27,7 +27,7 @@ import static com.codeit.otboo.domain.user.entity.QUser.user;
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class UserRepositoryImpl implements UserRepositoryCustom{
+public class UserRepositoryCustomImpl implements UserRepositoryCustom{
 
     private final JPAQueryFactory queryFactory;
 

@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import({TestQueryDslConfig.class, TestJpaAuditing.class})
 @ActiveProfiles("test")
-class UserRepositoryImplTest {
+class UserRepositoryCustomImplTest {
     @Autowired
     private UserRepository userRepository;
     @Autowired
