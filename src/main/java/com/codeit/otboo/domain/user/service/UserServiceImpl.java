@@ -6,7 +6,7 @@ import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchCondition;
+import com.codeit.otboo.    domain.user.dto.request.UserSearchCondition;
 import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;

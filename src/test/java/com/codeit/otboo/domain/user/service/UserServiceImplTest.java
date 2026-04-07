@@ -3,12 +3,17 @@ package com.codeit.otboo.domain.user.service;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
+import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
+import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
+import com.codeit.otboo.domain.feed.entity.Feed;
+import com.codeit.otboo.domain.feed.fixture.FeedFixture;
 import com.codeit.otboo.domain.profile.ProfileFixture;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
 import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
+import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserException;
@@ -20,18 +25,25 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -241,6 +253,122 @@ class UserServiceImplTest {
             then(userRepository).should().findById(userId);
             then(passwordEncoder).should(never()).encode(password);
             then(temporaryPasswordRepository).should(never()).deleteByUserId(userId);
+        }
+    }
+
+    @Nested
+    @DisplayName("유저 조회")
+    class UserSearch {
+        private List<User> getUserList(int n) {
+            List<User> userList = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                String keyword = "A"+i;
+                if(i % 2 == 1)
+                    keyword = "B"+i;
+
+                String email = "test" + keyword + "@test.com";
+                User user =  User
+                        .builder()
+                        .email(email)
+                        .password("password")
+                        .build();
+
+                Profile profile = Profile.builder()
+                        .name("test" + i)
+                        .user(user)
+                        .build();
+
+                user.setProfile(profile);
+                userList.add(user);
+            }
+
+            return userList;
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "createdAt",
+                "email"
+        })
+        @DisplayName("""
+                마지막 기사로부터 다음 페이지의 커서를 생성한다.
+                sortBy = createdAt, email
+                pageSize = 5
+                sortDirection = "DESCENDING" (Default)
+                emailLike, roleEqual, locked = null (전체검색)
+                """)
+        void convertUserCursorByOrderBy(String sortBy) {
+            // given
+            UserSearchRequest userSearchRequest = new UserSearchRequest(null, null, 5, sortBy, null, null, null, null);
+            List<User> userList = UserFixture.createUserCursor(6);
+
+            Slice<User> slice = new SliceImpl<>(userList, PageRequest.of(0, 5), true);
+
+            given(userRepository.findAllByKeywordLike(any())).willReturn(slice);
+            given(userRepository.countTotalElements(any())).willReturn(6L);
+            given(userMapper.toDto(any(User.class))).willReturn(null);
+
+            // when
+            CursorResponse<UserResponse> result = userService.getAllUsers(userSearchRequest);
+
+            // then
+            assertThat(result.hasNext()).isTrue();
+            User lastFeed = userList.get(5);
+            assertThat(result.nextIdAfter()).isEqualTo(userList.get(5).getId());
+            if("createdAt".equals(sortBy))
+                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastFeed.getCreatedAt()));
+            else
+                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastFeed.getEmail()));
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "createdAt",
+                "email"
+        })
+        @DisplayName("""
+                마지막 페이지를 조회하면, nextCursor, nextAfter는 null을 반환
+                sortBy = createdAt, email
+                pageSize = 5
+                sortDirection = "DESCENDING" (Default)
+                emailLike, roleEqual, locked = null (전체검색)
+                """)
+        void convertUserCursor_NextNonPage(String sortBy) {
+            // given
+            UserSearchRequest userSearchRequest = new UserSearchRequest(null, null, 5, sortBy, null, null, null, null);
+            List<User> userCursor = UserFixture.createUserCursor(3);
+
+            Slice<User> slice = new SliceImpl<>(userCursor, PageRequest.of(0, 5), false);
+
+            given(userRepository.findAllByKeywordLike(any())).willReturn(slice);
+            given(userRepository.countTotalElements(any())).willReturn(3L);
+            given(userMapper.toDto(any(User.class))).willReturn(null);
+
+            // when
+            CursorResponse<UserResponse> result = userService.getAllUsers(userSearchRequest);
+
+            // then
+            assertThat(result.hasNext()).isFalse();
+            assertThat(result.nextIdAfter()).isNull();
+        }
+
+        @Test
+        @DisplayName("검색 결과가 없으면 DB를 조회하지 않고 반환한다.")
+        void searchEmptyResult_nextNonPage() {
+            // given
+            UserSearchRequest userSearchRequest = new UserSearchRequest(null, null, 5, "createdAt", null, null, null, null);
+            Slice<User> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 5), false);
+            given(userRepository.findAllByKeywordLike(any())).willReturn(emptySlice);
+
+            // when
+            CursorResponse<UserResponse> result = userService.getAllUsers(userSearchRequest);
+
+            // then
+            assertThat(result.hasNext()).isFalse();
+            assertThat(result.nextIdAfter()).isNull();
+            assertThat(result.data()).isEmpty();
+            assertThat(result.nextCursor()).isNull();
+
 
         }
     }
