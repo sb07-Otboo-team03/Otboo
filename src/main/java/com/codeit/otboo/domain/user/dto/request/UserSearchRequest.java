@@ -18,7 +18,7 @@ public record UserSearchRequest(
         Boolean locked
 ) {
     public UserSearchRequest {
-        limit = Objects.requireNonNullElse(limit, 3); // 20
+        limit = Objects.requireNonNullElse(limit, 20);
         sortBy = Objects.requireNonNullElse(sortBy, SortBy.CREATED_AT.name());
         sortDirection = Objects.requireNonNullElse(sortDirection, SortDirection.DESCENDING);
     }
