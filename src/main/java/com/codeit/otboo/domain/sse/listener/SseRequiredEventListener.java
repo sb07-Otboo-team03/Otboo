@@ -52,6 +52,12 @@ public class SseRequiredEventListener {
     }
 
     @Async
+    @TransactionalEventListener
+    public void on(WeatherSseEvent event) {
+        sendSseEvent(event.notificationList);
+    }
+
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedCreatedEvent event) {
         sendSseEvent(event.notificationList);

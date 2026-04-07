@@ -30,7 +30,7 @@ public class YesterdayHourlyWeather extends BaseEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false)
+    @Column(name = "forecast_hour", nullable = false)
     private LocalTime hour;
 
     @Column(nullable = false)

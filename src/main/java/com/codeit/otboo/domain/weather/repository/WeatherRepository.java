@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.weather.repository;
 
 import com.codeit.otboo.domain.weather.entity.Weather;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,6 +45,17 @@ public interface WeatherRepository extends JpaRepository<Weather, UUID> {
             @Param("forecastedAt") LocalDateTime forecastedAt,
             @Param("x") Integer x,
             @Param("y") Integer y,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Modifying // 변경이 일어나는 쿼리 실행 시 사용
+    @Query("""
+        delete from Weather w
+        where w.forecastedAt >= :start
+          and w.forecastedAt < :end
+    """)
+    void deleteByForecastedAtBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );

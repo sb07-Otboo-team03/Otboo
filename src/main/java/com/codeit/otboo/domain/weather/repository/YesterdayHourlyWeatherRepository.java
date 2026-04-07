@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface YesterdayHourlyWeatherRepository extends JpaRepository<YesterdayHourlyWeather, UUID> {
-    Optional<YesterdayHourlyWeather> findByDateAndHour(LocalDate date, LocalTime hour);
 
     @Query("""
     select y
