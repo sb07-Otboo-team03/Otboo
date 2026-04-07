@@ -27,7 +27,6 @@ logging:
     org.springframework.web.messaging: debug
     org.springframework.security: debug
     org.hibernate.SQL: debug
-    org.hibernate.orm.sql.exec: info
     org.hibernate.type.descriptor.sql.basic: trace
     com.codeit.otboo: debug
 
