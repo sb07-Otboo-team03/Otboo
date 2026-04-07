@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.weather.service;
 
 import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
+import com.codeit.otboo.domain.weather.exception.KmaApiErrorException;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
@@ -26,6 +27,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -333,7 +335,7 @@ class WeatherServiceImplTest {
         }
 
         @Test
-        @DisplayName("어제 날씨 정보가 없으면 저장 후 반환한다")
+        @DisplayName("어제 날씨 정보가 없으면 2일 전 23시 발표 데이터를 저장 후 반환한다")
         void getAll_savesYesterdayWeather_whenYesterdayWeatherNotExists() {
             // given
             double longitude = 126.8216;
@@ -370,10 +372,13 @@ class WeatherServiceImplTest {
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(savedYesterdayWeather));
 
+            String primaryBaseDate = fixedNow.toLocalDate().minusDays(2)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
             List<KmaWeatherItem> yesterdayItems = List.of(mock(KmaWeatherItem.class));
             List<YesterdayHourlyWeather> mappedYesterdayWeathers = List.of(mock(YesterdayHourlyWeather.class));
 
-            when(kmaWeatherClient.callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(300)))
+            when(kmaWeatherClient.callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300)))
                     .thenReturn(yesterdayItems);
 
             when(kmaWeatherMapper.toYesterdayWeathers(x, y, yesterdayItems))
@@ -387,27 +392,132 @@ class WeatherServiceImplTest {
             List<WeatherResponse> result = weatherService.getAll(longitude, latitude);
 
             // then
-            assertThat(result).isNotNull();
             assertThat(result).isEqualTo(expected);
 
-            verify(locationNameMapRepository, times(1)).findByLongitudeAndLatitude(longitude, latitude);
-            verify(locationNameMapRepository, never()).save(any(LocationNameMap.class));
+            verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
+            verify(kmaWeatherClient, never()).callWeatherApi(anyString(), eq("0200"), eq(x), eq(y), eq(300));
+            verify(kmaWeatherMapper).toYesterdayWeathers(x, y, yesterdayItems);
+            verify(yesterdayHourlyWeatherRepository).saveAll(mappedYesterdayWeathers);
+        }
+
+        @Test
+        @DisplayName("어제 날씨 정보가 없고 2일 전 23시 발표 조회가 03 오류면 1일 전 02시 발표로 fallback 저장 후 반환한다")
+        void getAll_savesYesterdayWeather_withFallback_whenPrimaryBaseTimeNotFound() {
+            // given
+            double longitude = 126.8216;
+            double latitude = 37.5295;
+
+            int x = 57;
+            int y = 126;
+
+            LocationNameMap location = mock(LocationNameMap.class);
+
+            when(locationNameMapRepository.findByLongitudeAndLatitude(longitude, latitude))
+                    .thenReturn(Optional.of(location));
+
+            LocalDateTime fixedNow = setFixedTime(2026, 3, 20, 19, 0);
+            LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
+            LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
             for (int i = 0; i < 4; i++) {
-                verify(weatherRepository).findByForecastedAtAndForecastAtAndXAndY(
+                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
                         eq(forecastedAt),
                         eq(forecastAt.plusDays(i)),
                         eq(x),
                         eq(y)
-                );
+                )).thenReturn(Optional.of(mock(Weather.class)));
             }
 
-            verify(yesterdayHourlyWeatherRepository, times(2)).findByXAndYAndDateAndHour(any(), any(), any(), any());
-            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(300));
-            verify(kmaWeatherMapper, times(1)).toYesterdayWeathers(x, y, yesterdayItems);
-            verify(yesterdayHourlyWeatherRepository,times(1)).saveAll(mappedYesterdayWeathers);
+            when(location.getX()).thenReturn(x);
+            when(location.getY()).thenReturn(y);
 
-            verify(weatherMapper, times(1)).toDto(anyList(), eq(location), eq(savedYesterdayWeather));
+            YesterdayHourlyWeather savedYesterdayWeather = mock(YesterdayHourlyWeather.class);
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(savedYesterdayWeather));
+
+            String primaryBaseDate = fixedNow.toLocalDate().minusDays(2)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String fallbackBaseDate = fixedNow.toLocalDate().minusDays(1)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            List<KmaWeatherItem> fallbackItems = List.of(mock(KmaWeatherItem.class));
+            List<YesterdayHourlyWeather> mappedYesterdayWeathers = List.of(mock(YesterdayHourlyWeather.class));
+
+            when(kmaWeatherClient.callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300)))
+                    .thenThrow(new KmaApiErrorException("03", "NO_DATA"));
+
+            when(kmaWeatherClient.callWeatherApi(eq(fallbackBaseDate), eq("0200"), eq(x), eq(y), eq(300)))
+                    .thenReturn(fallbackItems);
+
+            when(kmaWeatherMapper.toYesterdayWeathers(x, y, fallbackItems))
+                    .thenReturn(mappedYesterdayWeathers);
+
+            List<WeatherResponse> expected = List.of(mock(WeatherResponse.class));
+            when(weatherMapper.toDto(anyList(), eq(location), eq(savedYesterdayWeather)))
+                    .thenReturn(expected);
+
+            // when
+            List<WeatherResponse> result = weatherService.getAll(longitude, latitude);
+
+            // then
+            assertThat(result).isEqualTo(expected);
+
+            verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
+            verify(kmaWeatherClient).callWeatherApi(eq(fallbackBaseDate), eq("0200"), eq(x), eq(y), eq(300));
+            verify(kmaWeatherMapper).toYesterdayWeathers(x, y, fallbackItems);
+            verify(yesterdayHourlyWeatherRepository).saveAll(mappedYesterdayWeathers);
+            verify(yesterdayHourlyWeatherRepository, times(2))
+                    .findByXAndYAndDateAndHour(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("어제 날씨 정보가 없고 2일 전 23시 발표 조회가 03이 아닌 오류면 예외를 그대로 던진다")
+        void getAll_throwsException_whenPrimaryYesterdayWeatherFetchFailsWithNon03Error() {
+            // given
+            double longitude = 126.8216;
+            double latitude = 37.5295;
+
+            int x = 57;
+            int y = 126;
+
+            LocationNameMap location = mock(LocationNameMap.class);
+
+            when(locationNameMapRepository.findByLongitudeAndLatitude(longitude, latitude))
+                    .thenReturn(Optional.of(location));
+
+            LocalDateTime fixedNow = setFixedTime(2026, 3, 20, 19, 0);
+            LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
+            LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
+
+            for (int i = 0; i < 4; i++) {
+                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
+                        eq(forecastedAt),
+                        eq(forecastAt.plusDays(i)),
+                        eq(x),
+                        eq(y)
+                )).thenReturn(Optional.of(mock(Weather.class)));
+            }
+
+            when(location.getX()).thenReturn(x);
+            when(location.getY()).thenReturn(y);
+
+            when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
+                    .thenReturn(Optional.empty());
+
+            String primaryBaseDate = fixedNow.toLocalDate().minusDays(2)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            when(kmaWeatherClient.callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300)))
+                    .thenThrow(new KmaApiErrorException("99", "INTERNAL_ERROR"));
+
+            // when & then
+            assertThatThrownBy(() -> weatherService.getAll(longitude, latitude))
+                    .isInstanceOf(KmaApiErrorException.class);
+
+            verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
+            verify(kmaWeatherClient, never()).callWeatherApi(anyString(), eq("0200"), eq(x), eq(y), eq(300));
+            verify(yesterdayHourlyWeatherRepository, never()).saveAll(anyList());
         }
     }
 

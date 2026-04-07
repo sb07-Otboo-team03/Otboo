@@ -10,6 +10,7 @@ import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
 import com.codeit.otboo.domain.weather.entity.LocationNameMap;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
+import com.codeit.otboo.domain.weather.exception.KmaApiErrorException;
 import com.codeit.otboo.domain.weather.exception.YesterdayWeatherNotFoundException;
 import com.codeit.otboo.domain.weather.repository.LocationNameMapRepository;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
@@ -21,7 +22,6 @@ import com.codeit.otboo.global.util.KmaGridConverter.GridResult;
 import com.codeit.otboo.global.util.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -137,10 +137,28 @@ public class WeatherServiceImpl implements WeatherService{
 
     private void addYesterdayWeatherInfo(int x, int y) {
 
-        // 어제 정보를 00시 ~ 23시 전부 불러오기 위해 2일 전 23시 발표 정보 조회
-        String baseDate = timeProvider.nowDate().minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String baseTime = "2300";
+        try {
+            // 어제 정보를 00시 ~ 23시 전부 불러오기 위해 2일 전 23시 발표 정보 조회
+            saveYesterdayWeatherFromBaseTime(x, y,
+                    timeProvider.nowDate().minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    "2300");
+        } catch (KmaApiErrorException e) {
+            // 23시 발표 정보가 없는 03코드 이외에는 예외 발생
+            if (!"03".equals(e.getDetails().get("resultCode"))) {
+                throw e;
+            }
 
+            log.warn("2일 전 23시 발표 정보가 없어 fallback으로 1일 전 02시 발표 정보를 조회합니다. x={}, y={}", x, y);
+
+            // 02시 발표로 가져와서 어제 00시 01시 02시 날씨 정보는 가져오지 못한다.
+            saveYesterdayWeatherFromBaseTime(x, y,
+                    timeProvider.nowDate().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    "0200");
+        }
+
+    }
+
+    private void saveYesterdayWeatherFromBaseTime(int x, int y, String baseDate, String baseTime) {
         List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 300);
         List<YesterdayHourlyWeather> yesterdayWeathers = kmaWeatherMapper.toYesterdayWeathers(x, y, items);
 
