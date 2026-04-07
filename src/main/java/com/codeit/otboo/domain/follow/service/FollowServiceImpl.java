@@ -46,9 +46,6 @@ public class FollowServiceImpl implements FollowService {
     @Transactional
     public FollowResponse create(FollowCreateRequest request) {
 
-        Optional<Follow> optionalFollow = followRepository.findByFollowerIdAndFolloweeId(
-            request.followerId(), request.followeeId());
-
         User followee = userRepository.findById(request.followeeId())
             .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
 
@@ -66,9 +63,6 @@ public class FollowServiceImpl implements FollowService {
 
     @Override // 팔로우 요약 정보 조회
     public FollowSummaryResponse getFollowSummary(UUID followeeId, OtbooUserDetails userDetails) {
-
-        log.debug("🔥 followeeId = {}", followeeId);
-        log.debug("🔥 userDetails = {}", userDetails);
 
         userRepository.findById(followeeId)
             .orElseThrow(() -> new UserNotFoundException(followeeId));
