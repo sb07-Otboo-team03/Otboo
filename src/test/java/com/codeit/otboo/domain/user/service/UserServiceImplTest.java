@@ -283,12 +283,12 @@ class UserServiceImplTest {
 
             // then
             assertThat(result.hasNext()).isTrue();
-            User lastFeed = userList.get(5);
+            User lastUser = userList.get(5);
             assertThat(result.nextIdAfter()).isEqualTo(userList.get(5).getId());
             if("createdAt".equals(sortBy))
-                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastFeed.getCreatedAt()));
+                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastUser.getCreatedAt()));
             else
-                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastFeed.getEmail()));
+                assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastUser.getEmail()));
         }
 
         @ParameterizedTest

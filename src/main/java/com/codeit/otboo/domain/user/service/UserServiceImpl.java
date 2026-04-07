@@ -119,12 +119,12 @@ public class UserServiceImpl implements UserService{
         UUID nextIdAfter = null;
 
         if (userPage.hasNext()) {
-            User lastFeed = content.get(data.size() - 1);
+            User lastUser = content.get(data.size() - 1);
 
             nextCursor = request.sortBy().equals("createdAt") ?
-                    String.valueOf(lastFeed.getCreatedAt()) :
-                    String.valueOf(lastFeed.getEmail());
-            nextIdAfter = lastFeed.getId();
+                    String.valueOf(lastUser.getCreatedAt()) :
+                    String.valueOf(lastUser.getEmail());
+            nextIdAfter = lastUser.getId();
         }
 
         return new CursorResponse<>(data, nextCursor, nextIdAfter,

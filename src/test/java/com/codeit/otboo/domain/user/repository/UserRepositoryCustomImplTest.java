@@ -263,7 +263,7 @@ class UserRepositoryCustomImplTest {
     @DisplayName("총 갯수")
     class ToTalCountTest {
         @Test
-        @DisplayName("피드의 총 갯수")
+        @DisplayName("유저의 총 갯수")
         void countTotal() {
             // given
             saveUser(10);
