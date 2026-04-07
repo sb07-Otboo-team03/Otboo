@@ -54,9 +54,6 @@ management:
     web:
       exposure:
         include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
 
 info:
   app:
