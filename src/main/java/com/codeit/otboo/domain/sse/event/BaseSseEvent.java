@@ -1,15 +1,14 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
-import java.util.List;
+import com.codeit.otboo.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class BaseSseEvent {
-    private final List<Notification> notificationList;
+    String title;
+    String content;
+    User user;
 }
 

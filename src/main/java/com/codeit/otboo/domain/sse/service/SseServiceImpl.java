@@ -54,7 +54,7 @@ public class SseServiceImpl implements SseService {
                             try {
                                 sseEmitter.send(sseMessage.toEvent());
                             } catch (IOException e) {
-                                log.error("🚨 {}", e.getMessage(), e);
+                                log.error(e.getMessage(), e);
                                 sseEmitterRepository.delete(receiverId, sseEmitter);
                             }
                         });
@@ -75,7 +75,7 @@ public class SseServiceImpl implements SseService {
                 try {
                     sseEmitter.send(event);
                 } catch (IOException e) {
-                    log.error("🚨🚨 {}",e.getMessage(), e);
+                    log.error(e.getMessage(), e);
                 }
             });
     }
@@ -88,7 +88,7 @@ public class SseServiceImpl implements SseService {
                 try {
                     sseEmitter.send(event);
                 } catch (IOException e) {
-                    log.error("🚨🚨🚨 {}",e.getMessage(), e);
+                    log.error(e.getMessage(), e);
                 }
             });
     }
@@ -108,7 +108,7 @@ public class SseServiceImpl implements SseService {
                 .build());
             return true;
         } catch (IOException e) {
-            log.error("🚨Failed to send ping event", e);
+            log.error("Failed to send ping event", e);
             return false;
         }
     }

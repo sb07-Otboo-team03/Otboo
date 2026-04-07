@@ -1,10 +1,9 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
-import java.util.List;
+import com.codeit.otboo.domain.user.entity.User;
 
 public class DirectMessageSseEvent extends BaseSseEvent {
-    public DirectMessageSseEvent(List<Notification> notificationList) {
-        super(notificationList);
+    public DirectMessageSseEvent(String title, String content, User user) {
+        super(title, content, user);
     }
 }

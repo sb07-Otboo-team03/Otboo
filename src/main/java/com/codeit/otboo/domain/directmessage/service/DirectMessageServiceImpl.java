@@ -6,8 +6,6 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -61,14 +59,8 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             )
         );
 
-        Notification notification = Notification.builder()
-            .title("[DM]" + response.sender().name())
-            .content(response.content())
-            .level(NotificationLevel.INFO)
-            .receiver(receiver)
-            .build();
-
-        eventPublisher.publishEvent( new DirectMessageSseEvent(List.of(notification)));
+        String title = "[DM]" + response.sender().name();
+        eventPublisher.publishEvent( new DirectMessageSseEvent(title, response.content(), receiver));
 
         return response;
     }
