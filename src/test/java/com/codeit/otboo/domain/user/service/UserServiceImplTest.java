@@ -3,10 +3,6 @@ package com.codeit.otboo.domain.user.service;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
-import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
-import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
-import com.codeit.otboo.domain.feed.entity.Feed;
-import com.codeit.otboo.domain.feed.fixture.FeedFixture;
 import com.codeit.otboo.domain.profile.ProfileFixture;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Profile;
@@ -25,9 +21,7 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,12 +37,14 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
