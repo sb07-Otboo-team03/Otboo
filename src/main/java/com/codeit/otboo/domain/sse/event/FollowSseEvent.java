@@ -5,7 +5,10 @@ import lombok.Getter;
 
 @Getter
 public class FollowSseEvent extends BaseSseEvent {
+    private UUID userId;
+
     public FollowSseEvent(String title, String content, UUID userId) {
-        super(title, content, userId);
+        super(title, content);
+        this.userId = userId;
     }
 }

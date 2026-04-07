@@ -1,11 +1,9 @@
 package com.codeit.otboo.domain.sse.event;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
-public class ClothesAttributeDefSseEvent {
-    String title;
-    String content;
+public class ClothesAttributeDefSseEvent extends BaseSseEvent {
+    public ClothesAttributeDefSseEvent(String title, String content, UUID userId) {
+        super(title, content);
+    }
 }
