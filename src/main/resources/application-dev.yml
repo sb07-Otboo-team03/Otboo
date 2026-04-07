@@ -4,10 +4,9 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/otboo
-    username: otboo
-    password: otboo123
+    username: otboo_user
+    password: otboo1234
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,6 +18,9 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+  elasticsearch:
+    uris: http://localhost:9200
 
 logging:
   level:

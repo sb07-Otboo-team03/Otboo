@@ -24,6 +24,9 @@ spring:
     init:
       mode: never
 
+  elasticsearch:
+    uris: http://localhost:9200
+
 otboo:
   storage:
     type: mock
