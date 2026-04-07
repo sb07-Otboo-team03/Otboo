@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.like.service;
 
+import com.codeit.otboo.domain.feed.elasticsearch.event.LikeUpdatedEvent;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
@@ -7,22 +8,18 @@ import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.sse.event.SseEvent;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.exception.ErrorCode;
-import com.codeit.otboo.global.exception.OtbooException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -47,20 +44,18 @@ public class LikeServiceImpl implements LikeService {
             throw new LikeAlreadyExistsException(feedId, userId);
 
         Like like = new Like(user, feed);
-        LocalDateTime now = LocalDateTime.now();
         likeRepository.save(like);
         feed.increaseLike();
+        eventPublisher.publishEvent(new LikeUpdatedEvent(feed.getId(), feed.getLikeCount()));
 
-        NotificationDto eventData = NotificationDto.builder()
-                .id(like.getId())
-                .createdAt(now)
-                .receiverId(feed.getAuthor().getId())
+        Notification notification = Notification.builder()
                 .title(user.getProfile().getName() + "님이 내 피드를 좋아합니다.")
                 .content(feed.getContent())
                 .level(NotificationLevel.INFO)
+                .receiver(feed.getAuthor())
                 .build();
 
-        eventPublisher.publishEvent(new SseEvent(eventData));
+        eventPublisher.publishEvent(new FeedLikedEvent(List.of(notification)));
     }
 
     @Override
