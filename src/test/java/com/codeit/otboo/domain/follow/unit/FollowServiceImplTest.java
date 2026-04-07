@@ -1,17 +1,14 @@
-package com.codeit.otboo.domain.follow.service;
+package com.codeit.otboo.domain.follow.unit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 
-import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowDto;
@@ -20,9 +17,8 @@ import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
-import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.follow.service.FollowServiceImpl;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;

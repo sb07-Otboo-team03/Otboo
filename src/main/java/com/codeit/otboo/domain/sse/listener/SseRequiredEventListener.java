@@ -1,11 +1,14 @@
 package com.codeit.otboo.domain.sse.listener;
 
+import static com.codeit.otboo.domain.notification.entity.QNotification.notification;
+
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.BaseSseEvent;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
@@ -58,6 +61,26 @@ public class SseRequiredEventListener {
             .build();
 
         sendSseEvent(List.of(notification));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(ClothesAttributeDefSseEvent event) {
+
+        String title = event.getTitle();
+        String content = event.getContent();
+
+        List<Notification> notificationList = userService.getAllUsers()
+            .stream()
+            .map(user -> Notification.builder()
+                .title(title)
+                .content(content)
+                .level(NotificationLevel.INFO)
+                .receiver(user)
+                .build())
+            .toList();
+
+        sendSseEvent(notificationList);
     }
 
     @Async

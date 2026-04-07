@@ -15,6 +15,7 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,6 +38,11 @@ public class UserServiceImpl implements UserService{
     public User getUser(UUID userId) {
         return userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException(userId));
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
 
