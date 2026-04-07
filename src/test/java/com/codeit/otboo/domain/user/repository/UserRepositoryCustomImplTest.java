@@ -151,11 +151,12 @@ class UserRepositoryCustomImplTest {
 
         @Test
         @DisplayName("""
-                cursor 혹은 idAfter가 null이라면 전체 조회
+                cursor 파라미터 혹은 idAfter 파라미터가 null 이라면,
+                첫번째 Slice를 조회한다.
                 """)
         void searchUserBySort_NullCursorOrIdAfter() {
             // given
-            saveUser(8);
+            saveUser(5);
             UserSearchCondition condition1 = UserSearchCondition.builder()
                     .limit(5)
                     .cursor(LocalDateTime.now().toString())
@@ -167,21 +168,17 @@ class UserRepositoryCustomImplTest {
             List<User> firstPageList = page1.getContent();
             assertThat(firstPageList.size()).isEqualTo(5);
 
-            User lastUser = firstPageList.get(firstPageList.size() - 1);
-            String lastCursor = createCursor(lastUser, "createdAt");
-            UUID lastId = lastUser.getId();
 
             UserSearchCondition condition2 = UserSearchCondition.builder()
                     .limit(5)
-                    .idAfter(lastId)
-                    .cursor(lastCursor)
+                    .idAfter(UUID.randomUUID())
                     .sortBy("createdAt")
                     .sortDirection(SortDirection.DESCENDING)
                     .build();
 
             Slice<User> page2 = userRepository.findAllByKeywordLike(condition2);
             List<User> lastPageList = page2.getContent();
-            assertThat(lastPageList.size()).isEqualTo(3);
+            assertThat(lastPageList.size()).isEqualTo(5);
         }
 
     }
