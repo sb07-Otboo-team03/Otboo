@@ -67,6 +67,9 @@ public enum ErrorCode {
     // Validation
     VALIDATION_ERROR("유효성 검사에 실패하였습니다."),
 
+    // Batch
+    BATCH_JOB_EXECUTION_FAILED("배치 Job 실행 중 오류가 발생했습니다."),
+
     // Internal
     INTERNAL_SERVER_ERROR("서버 에러가 발생했습니다.");
 

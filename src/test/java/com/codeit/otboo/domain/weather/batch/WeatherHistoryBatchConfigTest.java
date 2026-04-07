@@ -102,8 +102,7 @@ class WeatherHistoryBatchConfigTest {
         weatherRepository.saveAll(List.of(yesterdayWeather1, yesterdayWeather2, todayWeather));
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("targetDate", "2026-04-05")
-                .addString("requestedAt", "2026-04-06T00:00:00")
+                .addString("requestedAt", LocalDateTime.now().toString())
                 .toJobParameters();
 
         // when
@@ -151,8 +150,7 @@ class WeatherHistoryBatchConfigTest {
         weatherRepository.save(todayWeather);
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("targetDate", "2026-04-05")
-                .addString("requestedAt", "2026-04-06T00:00:00")
+                .addString("requestedAt", LocalDateTime.now().toString())
                 .toJobParameters();
 
         // when

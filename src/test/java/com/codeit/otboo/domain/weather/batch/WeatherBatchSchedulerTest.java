@@ -2,11 +2,11 @@ package com.codeit.otboo.domain.weather.batch;
 
 import com.codeit.otboo.domain.weather.batch.scheduler.WeatherBatchScheduler;
 import com.codeit.otboo.global.util.TimeProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.Job;
@@ -28,17 +28,30 @@ class WeatherBatchSchedulerTest {
     @Mock
     private JobLauncher jobLauncher;
 
-    @Mock
+    @Mock(name = "weatherForecastCollectionJob")
     private Job weatherForecastCollectionJob;
 
-    @Mock
+    @Mock(name = "deleteYesterdayWeatherJob")
     private Job deleteYesterdayWeatherJob;
+
+    @Mock(name = "weatherAlertJob")
+    private Job weatherAlertJob;
 
     @Mock
     private TimeProvider timeProvider;
 
-    @InjectMocks
     private WeatherBatchScheduler weatherBatchScheduler;
+
+    @BeforeEach
+    void setUp() { // Job을 직접 주입
+        weatherBatchScheduler = new WeatherBatchScheduler(
+                jobLauncher,
+                weatherForecastCollectionJob,
+                deleteYesterdayWeatherJob,
+                weatherAlertJob,
+                timeProvider
+        );
+    }
 
     @Test
     @DisplayName("날씨 조회 배치 실행 시 baseDate, baseTime, requestedAt 파라미터를 생성한다")
@@ -62,7 +75,7 @@ class WeatherBatchSchedulerTest {
     }
 
     @Test
-    @DisplayName("어제 날씨 이관/삭제 배치 실행 시 targetDate와 requestedAt 파라미터를 생성한다")
+    @DisplayName("어제 날씨 이관/삭제 배치 실행 시 requestedAt 파라미터를 생성한다")
     void runDeleteYesterdayWeatherBatch() throws Exception {
         // given
         given(timeProvider.nowDate()).willReturn(LocalDate.of(2026, 4, 6));
@@ -76,7 +89,23 @@ class WeatherBatchSchedulerTest {
         verify(jobLauncher).run(eq(deleteYesterdayWeatherJob), captor.capture());
 
         JobParameters jobParameters = captor.getValue();
-        assertThat(jobParameters.getString("targetDate")).isEqualTo("2026-04-05");
         assertThat(jobParameters.getString("requestedAt")).isEqualTo("2026-04-06T00:00");
+    }
+
+    @Test
+    @DisplayName("날씨 알림 배치 실행 시 requestedAt 파라미터를 생성한다")
+    void runWeatherAlertBatch() throws Exception {
+        // given
+        given(timeProvider.nowDateTime()).willReturn(LocalDateTime.of(2026, 4, 6, 6, 0));
+
+        // when
+        weatherBatchScheduler.runWeatherAlertBatch();
+
+        // then
+        ArgumentCaptor<JobParameters> captor = ArgumentCaptor.forClass(JobParameters.class);
+        verify(jobLauncher).run(eq(weatherAlertJob), captor.capture());
+
+        JobParameters jobParameters = captor.getValue();
+        assertThat(jobParameters.getString("requestedAt")).isEqualTo("2026-04-06T06:00");
     }
 }
