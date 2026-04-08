@@ -11,17 +11,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * 요청 시작 시 세팅
- * 요청 종료 시 정리
- */
+
 @Component
 public class RequestMdcFilter extends OncePerRequestFilter {
 
-    public static final String TRACE_ID = "traceId";
-    public static final String METHOD = "method";
-    public static final String URI = "uri";
-    public static final String USER_ID = "userId";
+    public static final String TRACE_ID = "traceId"; // 요청 식별 고유 ID
+    public static final String METHOD = "method"; // HTTP METHOD
+    public static final String URI = "uri"; // 엔드포인트
+    public static final String USER_ID = "userId"; // 식별자 (로그인 없으면 없음)
 
     @Override
     protected boolean shouldNotFilterAsyncDispatch() {
