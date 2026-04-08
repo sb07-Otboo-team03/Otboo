@@ -35,12 +35,14 @@ public class UserServiceImpl implements UserService{
     private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public User getUser(UUID userId) {
         return userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException(userId));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
