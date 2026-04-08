@@ -8,8 +8,6 @@ import com.codeit.otboo.domain.like.entity.Like;
 import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
 import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -19,7 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -48,14 +45,10 @@ public class LikeServiceImpl implements LikeService {
         feed.increaseLike();
         eventPublisher.publishEvent(new LikeUpdatedEvent(feed.getId(), feed.getLikeCount()));
 
-        Notification notification = Notification.builder()
-                .title(user.getProfile().getName() + "님이 내 피드를 좋아합니다.")
-                .content(feed.getContent())
-                .level(NotificationLevel.INFO)
-                .receiver(feed.getAuthor())
-                .build();
-
-        eventPublisher.publishEvent(new FeedLikedEvent(List.of(notification)));
+        String title = user.getProfile().getName() + "님이 내 피드를 좋아합니다.";
+        String content = feed.getContent();
+        UUID receiverId = feed.getAuthor().getId();
+        eventPublisher.publishEvent(new FeedLikedEvent(title, content, receiverId));
     }
 
     @Override

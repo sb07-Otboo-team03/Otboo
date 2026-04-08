@@ -1,13 +1,15 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class FeedCreatedEvent {
-    List<Notification> notificationList;
+    String title;
+    String content;
+    List<UUID> receiverIds;
 }

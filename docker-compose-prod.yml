@@ -35,6 +35,7 @@ services:
 
       - NAVER_MAIL_ID=${NAVER_MAIL_ID}
       - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
+    restart: on-failure
     depends_on:
       - db
       - es
@@ -57,7 +58,7 @@ services:
   es:
     build:
       context: .
-      dockerfile: elasticsearch.Dockerfile
+      dockerfile: elasticsearch/elasticsearch.Dockerfile
     container_name: otboo-es
     environment:
       - discovery.type=single-node
