@@ -81,21 +81,6 @@ class FollowServiceImplTest {
     @DisplayName("팔로우 생성")
     class CreateFollow {
 
-        @Mock
-        private FollowRepository followRepository;
-
-        @Mock
-        private UserRepository userRepository;
-
-        @Mock
-        private FollowMapper followMapper;
-
-        @Mock
-        private ApplicationEventPublisher eventPublisher;
-
-        @InjectMocks
-        private FollowServiceImpl followService;
-
         private UUID followerId;
         private UUID followeeId;
         private FollowCreateRequest request;
@@ -110,13 +95,10 @@ class FollowServiceImplTest {
         @Test
         @DisplayName("팔로우 생성 실패 - 팔로위 없음")
         void create_fail_followee_not_found() {
-            // given
-            FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
             given(userRepository.findById(followeeId))
                 .willReturn(Optional.empty());
 
-            // 🔥 중요: 다른 호출도 stub
             given(userRepository.findById(followerId))
                 .willReturn(Optional.of(mock(User.class)));
 
@@ -128,10 +110,7 @@ class FollowServiceImplTest {
         @Test
         @DisplayName("팔로우 생성 실패 - 팔로워 없음")
         void create_fail_follower_not_found() {
-            // given
-            FollowCreateRequest request = new FollowCreateRequest(followerId, followeeId);
 
-            // ❗ 이거 하나만 필요
             given(userRepository.findById(followerId))
                 .willReturn(Optional.empty());
 
@@ -150,7 +129,6 @@ class FollowServiceImplTest {
         void getFollowSummary_notFollowing() {
             // given
             UUID myId = UUID.randomUUID();
-            UUID followeeId = UUID.randomUUID();
 
             OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
             UserResponse userResponse = UserResponse.builder().id(myId).build();
@@ -200,7 +178,6 @@ class FollowServiceImplTest {
 
             given(follow.getId()).willReturn(followId);
 
-            // 팔로우 관계 있음
             given(followRepository.findByFollowerIdAndFolloweeId(myId, followeeId))
                 .willReturn(Optional.of(follow));
 
