@@ -15,7 +15,7 @@ services:
   es:
     build:
       context: .
-      dockerfile: elasticsearch.Dockerfile
+      dockerfile: elasticsearch/elasticsearch.Dockerfile
     container_name: otboo-es
     environment:
       - discovery.type=single-node
