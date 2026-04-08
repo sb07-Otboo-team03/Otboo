@@ -133,6 +133,7 @@ public class WeatherServiceImpl implements WeatherService{
         List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, false);
         weatherForecastUpsertService.upsert(weathers);
     }
+
     private void addYesterdayWeatherInfo(int x, int y) {
 
         try {
