@@ -14,6 +14,8 @@ import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.domain.user.service.UserService;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
+import com.codeit.otboo.global.slice.dto.CursorResponse;
+import com.codeit.otboo.global.slice.dto.SortDirection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +32,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -200,9 +204,38 @@ class UserControllerTest {
             then(userService).should(never())
                     .updateUserPassword(any(UUID.class), any(UpdatePasswordRequest.class));
         }
-
-
-
     }
+    
+    @Nested
+    @DisplayName("유저 목록 조회")
+    class UserSearch {
+        @Test
+        @DisplayName("유저 목록 조회 - 성공")
+        void userSearchList_success() throws Exception {
+            User user = UserFixture.create();
+            UserResponse userResponse = UserResponseFixture.create(user);
+            List<UserResponse> userResponseList = new ArrayList<>();
+            userResponseList.add(userResponse);
 
+            CursorResponse<UserResponse> userResponseCursor = new CursorResponse<>(userResponseList, null, null, false, 1L, "createdAt", SortDirection.DESCENDING);
+            
+            given(userService.getAllUsers(any())).willReturn(userResponseCursor);
+            
+            mockMvc.perform(get("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(userResponseCursor)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].email").value(user.getEmail()))
+                    .andExpect(jsonPath("$.nextCursor").isEmpty());
+        }
+
+        @Test
+        @DisplayName("유저 목록 조회 - 실패 (limit 음수)")
+        void userSearchList_fail_badRequest() throws Exception {
+            mockMvc.perform(get("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .param("limit", "-1"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 }
