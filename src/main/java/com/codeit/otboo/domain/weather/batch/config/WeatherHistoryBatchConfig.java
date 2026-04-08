@@ -128,7 +128,7 @@ public class WeatherHistoryBatchConfig {
 
     // Delete Tasklet
     // Weather 테이블: 오늘 이전 데이터 삭제 (어제 포함)
-// YesterdayHourlyWeather 테이블: 어제 이전 데이터 삭제 (그제 포함)
+    // YesterdayHourlyWeather 테이블: 어제 이전 데이터 삭제 (그제 포함)
     @Bean
     @StepScope
     public Tasklet deleteYesterdayWeatherTasklet() {
