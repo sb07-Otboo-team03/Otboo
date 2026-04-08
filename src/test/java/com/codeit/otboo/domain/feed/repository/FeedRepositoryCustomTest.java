@@ -159,7 +159,7 @@ class FeedRepositoryCustomTest {
                     .build();
 
             Slice<Feed> page2 = feedRepository.findAllByKeywordLike(condition2);
-            List<Feed> list2 = page.getContent();
+            List<Feed> list2 = page2.getContent();
 
             // then
             assertThat(list.size()).isEqualTo(5);

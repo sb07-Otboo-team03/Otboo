@@ -27,6 +27,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -40,14 +44,14 @@ public class SseRequiredEventListener {
     private void sendSseEvent(List<Notification> notification) {
 
         notification.stream()
-            .map(notificationService::create)
-            .map(notificationMapper::toDto)
-            .forEach(notificationDto ->
-                sseService.send(
-                    Set.of(notificationDto.receiverId()),
-                    "notifications",
-                    notificationDto)
-            );
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .forEach(notificationDto ->
+                        sseService.send(
+                                Set.of(notificationDto.receiverId()),
+                                "notifications",
+                                notificationDto)
+                );
     }
 
     public Notification parsingSseEvent(UUID userId, BaseSseEvent event) {
@@ -107,11 +111,18 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedCreatedEvent event) {
-        for(UUID receiverId : event.receiverIds()) {
-            NotificationDto notificationDto = NotificationDto.from(event, receiverId);
-            sseService.send(Set.of(receiverId), "notifications", notificationDto);
-        }
+        sendSseEvent(event.notificationList);
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedLikedEvent event) {
+        sendSseEvent(event.notificationList);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(CommentCreatedEvent event) { sendSseEvent(event.notificationList); }
 
     // TODO: 삭제 예정
     @Async

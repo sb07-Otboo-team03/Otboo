@@ -1,3 +1,4 @@
+# docker-compose-prod.yml
 services:
   app:
     image: otboo:local
@@ -9,9 +10,15 @@ services:
       - "8081:80"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+
+      - SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
+      - SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+      - SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+
       - JWT_SECRET=${JWT_SECRET}
       - ACCESS_TOKEN_EXPIRATION=${ACCESS_TOKEN_EXPIRATION}
       - REFRESH_TOKEN_EXPIRATION=${REFRESH_TOKEN_EXPIRATION}
@@ -22,11 +29,14 @@ services:
       - AWS_REGION=${AWS_REGION}
       - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
       - KMA_API_KEY=${KMA_API_KEY}
+
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+
       - NAVER_MAIL_ID=${NAVER_MAIL_ID}
       - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
-
+    depends_on:
+      - db
 
   db:
     image: postgres:15
@@ -43,8 +53,28 @@ services:
       # schema.sql 자동 실행 (컨테이너 시작 시)
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
+  es:
+    build:
+      context: .
+      dockerfile: elasticsearch.Dockerfile
+    container_name: otboo-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=${SPRING_ELASTICSEARCH_JAVA_OPTS}
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
 volumes:
   db-data:
     driver: local
-  storage_data:
+  es-data:
     driver: local
