@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <property name="LOGS_HOME" value="./.logs"/>
+    <property name="LOG_PATTERN"
+              value="%d{yy-MM-dd HH:mm:ss} [%thread] [%-5level] %logger{36} [%X{traceId} | %X{method} | %X{uri} | %X{userId}] - %msg%n"/>
 
     <!-- 콘솔 출력 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yy-MM-dd HH:mm:ss} [%thread] [%-5level] %logger{36}[%X{requestId} | %X{requestMethod} | %X{requestUrl}] - %msg%n
-            </pattern>
+            <pattern>${LOG_PATTERN}</pattern>
         </encoder>
     </appender>
 
@@ -15,17 +16,12 @@
         <file>${LOGS_HOME}/app_current.log</file>
 
         <encoder>
-            <pattern>%d{yy-MM-dd HH:mm:ss} [%thread] [%-5level] %logger{36} [%X{requestId} | %X{requestMethod} |
-                %X{requestUrl}] - %msg%n
-            </pattern>
+            <pattern>${LOG_PATTERN}</pattern>
         </encoder>
 
         <!-- 날짜별 롤링 + 30일 보관 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 매일 파일 생성 -->
             <fileNamePattern>${LOGS_HOME}/archived/app_%d{yyyy-MM-dd}.log</fileNamePattern>
-
-            <!-- 보관 기간 -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
     </appender>
