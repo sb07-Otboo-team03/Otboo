@@ -6,15 +6,16 @@ import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
 import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
+import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 
-import com.codeit.otboo.domain.user.entity.User;
 import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
     User getUser(UUID userId);
     List<User> getAllUsers();
+    List<User> getAllUserByIds(List<UUID> userIds);
 
     UserResponse createUser(UserCreateRequest userCreateRequest);
 
