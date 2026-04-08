@@ -93,7 +93,16 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
-        sendSseEvent(event.getNotificationList());
+        event.notificationCommands().stream()
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .forEach(notificationDto ->
+                        sseService.send(
+                                Set.of(notificationDto.receiverId()),
+                                "notifications",
+                                notificationDto
+                        )
+                );
     }
 
     @Async
