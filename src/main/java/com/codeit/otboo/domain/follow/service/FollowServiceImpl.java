@@ -6,6 +6,8 @@ import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
+import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
+import com.codeit.otboo.domain.follow.exception.follow.FollowException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
@@ -45,6 +47,13 @@ public class FollowServiceImpl implements FollowService {
     @Override
     @Transactional
     public FollowResponse create(FollowCreateRequest request) {
+
+        Optional<Follow> byFollowerIdAndFolloweeId = followRepository.findByFollowerIdAndFolloweeId(
+            request.followerId(), request.followeeId());
+
+        if(byFollowerIdAndFolloweeId.isPresent()) {
+            throw new DuplicateFollowException(request.followerId(), request.followeeId());
+        }
 
         User followee = userRepository.findById(request.followeeId())
             .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
