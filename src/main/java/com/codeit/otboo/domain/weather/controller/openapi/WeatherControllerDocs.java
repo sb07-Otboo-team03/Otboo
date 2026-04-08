@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
-@Tag(name = "날씨 관리(WeatherController", description = "날씨 조회를 관리하는 API 입니다.")
+@Tag(name = "날씨 관리(WeatherController)", description = "날씨 조회를 관리하는 API 입니다.")
 public interface WeatherControllerDocs {
 
     @Operation(
@@ -29,7 +29,7 @@ public interface WeatherControllerDocs {
                     
                     ## 응답 데이터
                     - 성공 시 조회된 날씨 정보 리스트를 반환합니다.
-            """
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
