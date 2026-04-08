@@ -28,8 +28,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -44,6 +47,8 @@ class WeatherServiceImplTest {
 
     @Mock
     private WeatherForecastUpsertService weatherForecastUpsertService;
+    @Mock
+    private WeatherRedisCacheService weatherRedisCacheService;
     @Mock
     private WeatherRepository weatherRepository;
     @Mock
@@ -75,6 +80,19 @@ class WeatherServiceImplTest {
     @DisplayName("getAll()")
     class GetAllTest {
 
+        @SuppressWarnings("unchecked")
+        private void mockCachePassThrough(int x, int y, LocalDateTime forecastAt) {
+            when(weatherRedisCacheService.getOrLoad(
+                    eq(x),
+                    eq(y),
+                    eq(forecastAt),
+                    any()
+            )).thenAnswer(invocation -> {
+                Supplier<List<WeatherResponse>> loader = invocation.getArgument(3);
+                return loader.get();
+            });
+        }
+
         @Test
         @DisplayName("최초 조회 시 지역 정보와 날씨 정보를 저장하고 날씨를 반환한다")
         void getAll_savesLocationAndWeather_whenLocationNotExists() {
@@ -103,20 +121,25 @@ class WeatherServiceImplTest {
             when(kakaoLocalUtil.getAddressLevels(longitude, latitude, KakaoRegionType.H))
                     .thenReturn(List.of("경기도", "부천시 오정구", "고강본동", ""));
 
-            // 날씨 조회 여부 (처음 없음 → 이후 존재)
-            for (int i = 0; i < 4; i++) {
-                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                        eq(forecastedAt),
-                        eq(forecastAt.plusDays(i)),
-                        eq(x),
-                        eq(y)
-                ))
-                        .thenReturn(Optional.empty())
-                        .thenReturn(Optional.of(mock(Weather.class)));
-            }
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
+
+            List<Weather> loadedWeathers = List.of(
+                    mock(Weather.class),
+                    mock(Weather.class),
+                    mock(Weather.class),
+                    mock(Weather.class)
+            );
+
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(List.of())          // 첫 조회: 없음
+                    .thenReturn(loadedWeathers);    // 저장 후 재조회: 있음
 
             when(savedLocation.getX()).thenReturn(x);
             when(savedLocation.getY()).thenReturn(y);
+
+            mockCachePassThrough(x, y, forecastAt);
 
             List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
@@ -148,15 +171,9 @@ class WeatherServiceImplTest {
             verify(locationNameMapRepository, times(1)).findByLongitudeAndLatitude(longitude, latitude);
             verify(locationNameMapRepository, times(1)).save(any(LocationNameMap.class));
 
-            for (int i = 0; i < 4; i++) {
-                verify(weatherRepository, times(2))
-                        .findByForecastedAtAndForecastAtAndXAndY(
-                                eq(forecastedAt),
-                                eq(forecastAt.plusDays(i)),
-                                eq(x),
-                                eq(y)
-                        );
-            }
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
+
+            verify(weatherRepository, times(2)).findTargetWeathers(x, y, forecastedAt, targetTimes);
 
             verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
@@ -183,22 +200,25 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
-            // addWeathers()
-            // 처음에는 새로운 지역이 들어와서 값이 없으므로 빈 값을 전달
-            // 두번째는 날씨 데이터를 추가한 뒤에 호출되어 날씨 객체 값을 전달
-            for (int i = 0; i < 4; i++) {
-                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                        eq(forecastedAt),
-                        eq(forecastAt.plusDays(i)),
-                        eq(x),
-                        eq(y)
-                ))
-                        .thenReturn(Optional.empty())
-                        .thenReturn(Optional.of(mock(Weather.class)));
-            }
-
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
+
+            mockCachePassThrough(x, y, forecastAt);
+
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
+
+            List<Weather> loadedWeathers = List.of(
+                    mock(Weather.class),
+                    mock(Weather.class),
+                    mock(Weather.class),
+                    mock(Weather.class)
+            );
+
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(List.of())          // 첫 조회: 없음
+                    .thenReturn(loadedWeathers);    // 저장 후 재조회: 있음
 
             List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
@@ -222,21 +242,13 @@ class WeatherServiceImplTest {
             List<WeatherResponse> result = weatherService.getAll(longitude, latitude);
 
             // then
-            assertThat(result).isNotNull();
             assertThat(result).isEqualTo(expected);
 
             verify(locationNameMapRepository, times(1)).findByLongitudeAndLatitude(longitude, latitude);
             verify(locationNameMapRepository, never()).save(any(LocationNameMap.class));
 
-            for (int i = 0; i < 4; i++) {
-                verify(weatherRepository, times(2))
-                        .findByForecastedAtAndForecastAtAndXAndY(
-                                eq(forecastedAt),
-                                eq(forecastAt.plusDays(i)),
-                                eq(x),
-                                eq(y)
-                        );
-            }
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
+            verify(weatherRepository, times(2)).findTargetWeathers(x, y, forecastedAt, targetTimes);
 
             verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
@@ -267,26 +279,19 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
+            mockCachePassThrough(x, y, forecastAt);
+
             // addWeathers() 결과가 정확히 3개가 되도록 설정
             Weather day0Weather = mock(Weather.class);
             Weather day1Weather = mock(Weather.class);
             Weather day2Weather = mock(Weather.class);
 
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(forecastedAt), eq(forecastAt), eq(x), eq(y)
-            )).thenReturn(Optional.of(day0Weather));
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
 
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(forecastedAt), eq(forecastAt.plusDays(1)), eq(x), eq(y)
-            )).thenReturn(Optional.of(day1Weather));
-
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(forecastedAt), eq(forecastAt.plusDays(2)), eq(x), eq(y)
-            )).thenReturn(Optional.of(day2Weather));
-
-            when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                    eq(forecastedAt), eq(forecastAt.plusDays(3)), eq(x), eq(y)
-            )).thenReturn(Optional.empty());
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(new ArrayList<>(List.of(day0Weather, day1Weather, day2Weather)));
 
             // findClosestWeather()에서 사용할 후보들
             LocalDateTime target = forecastAt.plusDays(3);
@@ -322,7 +327,9 @@ class WeatherServiceImplTest {
 
             verify(locationNameMapRepository).findByLongitudeAndLatitude(longitude, latitude);
             verify(locationNameMapRepository, never()).save(any(LocationNameMap.class));
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
 
+            verify(weatherRepository).findTargetWeathers(x, y, forecastedAt, targetTimes);
             verify(weatherRepository).findByXAndYAndForecastAtBetween(x, y, start, end);
 
             List<Weather> capturedWeathers = weatherListCaptor.getValue();
@@ -356,18 +363,22 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
-            // 오늘/미래 날씨는 이미 존재한다고 가정
-            for (int i = 0; i < 4; i++) {
-                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                        eq(forecastedAt),
-                        eq(forecastAt.plusDays(i)),
-                        eq(x),
-                        eq(y)
-                )).thenReturn(Optional.of(mock(Weather.class)));
-            }
-
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
+
+            mockCachePassThrough(x, y, forecastAt);
+
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
+
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(List.of(
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class)
+                    ));
 
             // 어제 날씨는 처음엔 없음 -> 저장 후 다시 조회하면 있음
             YesterdayHourlyWeather savedYesterdayWeather = mock(YesterdayHourlyWeather.class);
@@ -397,6 +408,9 @@ class WeatherServiceImplTest {
             // then
             assertThat(result).isEqualTo(expected);
 
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
+            verify(weatherRepository).findTargetWeathers(x, y, forecastedAt, targetTimes);
+
             verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
             verify(kmaWeatherClient, never()).callWeatherApi(anyString(), eq("0200"), eq(x), eq(y), eq(300));
             verify(kmaWeatherMapper).toYesterdayWeathers(x, y, yesterdayItems);
@@ -422,17 +436,22 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
-            for (int i = 0; i < 4; i++) {
-                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                        eq(forecastedAt),
-                        eq(forecastAt.plusDays(i)),
-                        eq(x),
-                        eq(y)
-                )).thenReturn(Optional.of(mock(Weather.class)));
-            }
-
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
+
+            mockCachePassThrough(x, y, forecastAt);
+
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
+
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(List.of(
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class)
+                    ));
 
             YesterdayHourlyWeather savedYesterdayWeather = mock(YesterdayHourlyWeather.class);
             when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
@@ -466,6 +485,9 @@ class WeatherServiceImplTest {
             // then
             assertThat(result).isEqualTo(expected);
 
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
+            verify(weatherRepository).findTargetWeathers(x, y, forecastedAt, targetTimes);
+
             verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
             verify(kmaWeatherClient).callWeatherApi(eq(fallbackBaseDate), eq("0200"), eq(x), eq(y), eq(300));
             verify(kmaWeatherMapper).toYesterdayWeathers(x, y, fallbackItems);
@@ -493,17 +515,22 @@ class WeatherServiceImplTest {
             LocalDateTime forecastedAt = fixedNow.toLocalDate().atStartOfDay();
             LocalDateTime forecastAt = fixedNow.withMinute(0).withSecond(0).withNano(0);
 
-            for (int i = 0; i < 4; i++) {
-                when(weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                        eq(forecastedAt),
-                        eq(forecastAt.plusDays(i)),
-                        eq(x),
-                        eq(y)
-                )).thenReturn(Optional.of(mock(Weather.class)));
-            }
-
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
+
+            mockCachePassThrough(x, y, forecastAt);
+
+            List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                    .mapToObj(forecastAt::plusDays)
+                    .toList();
+
+            when(weatherRepository.findTargetWeathers(x, y, forecastedAt, targetTimes))
+                    .thenReturn(List.of(
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class),
+                            mock(Weather.class)
+                    ));
 
             when(yesterdayHourlyWeatherRepository.findByXAndYAndDateAndHour(any(), any(), any(), any()))
                     .thenReturn(Optional.empty());
@@ -517,6 +544,9 @@ class WeatherServiceImplTest {
             // when & then
             assertThatThrownBy(() -> weatherService.getAll(longitude, latitude))
                     .isInstanceOf(KmaApiErrorException.class);
+
+            verify(weatherRedisCacheService).getOrLoad(eq(x), eq(y), eq(forecastAt), any());
+            verify(weatherRepository).findTargetWeathers(x, y, forecastedAt, targetTimes);
 
             verify(kmaWeatherClient).callWeatherApi(eq(primaryBaseDate), eq("2300"), eq(x), eq(y), eq(300));
             verify(kmaWeatherClient, never()).callWeatherApi(anyString(), eq("0200"), eq(x), eq(y), eq(300));
