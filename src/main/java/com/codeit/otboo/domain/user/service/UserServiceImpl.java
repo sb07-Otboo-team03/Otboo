@@ -143,6 +143,4 @@ public class UserServiceImpl implements UserService{
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 userPage.hasNext(), totalCount, request.sortBy(), request.sortDirection());
     }
-
-
 }
