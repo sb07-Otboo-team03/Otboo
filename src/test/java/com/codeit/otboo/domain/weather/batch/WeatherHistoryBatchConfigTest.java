@@ -1,5 +1,7 @@
 package com.codeit.otboo.domain.weather.batch;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.codeit.otboo.domain.feed.elasticsearch.repository.FeedDocumentRepository;
 import com.codeit.otboo.domain.weather.batch.scheduler.WeatherBatchScheduler;
 import com.codeit.otboo.domain.weather.entity.*;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
@@ -14,6 +16,7 @@ import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -34,6 +37,15 @@ import static org.mockito.BDDMockito.given;
 @SpringBatchTest
 @ActiveProfiles("test")
 class WeatherHistoryBatchConfigTest {
+
+    @MockitoBean
+    private ElasticsearchOperations elasticsearchOperations;
+
+    @MockitoBean
+    private ElasticsearchClient elasticsearchClient;
+
+    @MockitoBean
+    private FeedDocumentRepository feedDocumentRepository;
 
     @Autowired
     private JobLauncherTestUtils jobLauncherTestUtils;

@@ -15,8 +15,6 @@ import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
-import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.service.UserService;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -26,6 +24,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -107,11 +109,18 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedCreatedEvent event) {
-        for(UUID receiverId : event.receiverIds()) {
-            NotificationDto notificationDto = NotificationDto.from(event, receiverId);
-            sseService.send(Set.of(receiverId), "notifications", notificationDto);
-        }
+        sendSseEvent(event.notificationList);
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedLikedEvent event) {
+        sendSseEvent(event.notificationList);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(CommentCreatedEvent event) { sendSseEvent(event.notificationList); }
 
     // TODO: 삭제 예정
     @Async

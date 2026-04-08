@@ -1,10 +1,13 @@
 package com.codeit.otboo.domain.user.fixture;
 
+import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class UserFixture {
@@ -48,5 +51,19 @@ public class UserFixture {
         ReflectionTestUtils.setField(user,"id", userId);
 
         return user;
+    }
+
+    public static List<User> createUserCursor(int count) {
+        List<User> userList = new ArrayList<>();
+
+        for(int i=0 ;i<count;i++) {
+            User user = UserFixture.create("test" + i + "@test.com", "test12345");
+            Profile profile = new Profile(user, "test");
+            user.setProfile(profile);
+            ReflectionTestUtils.setField(user, "createdAt", LocalDateTime.now().minusDays(i));
+            userList.add(user);
+        }
+
+        return userList;
     }
 }

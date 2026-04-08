@@ -6,8 +6,8 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class FeedCreatedEvent extends BaseSseEvent {
-    public FeedCreatedEvent(List<Notification> notificationList) {
+public class CommentCreatedEvent extends BaseSseEvent{
+    public CommentCreatedEvent(List<Notification> notificationList) {
         super(notificationList);
     }
 }

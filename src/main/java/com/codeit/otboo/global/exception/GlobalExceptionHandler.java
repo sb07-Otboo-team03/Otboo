@@ -1,10 +1,10 @@
 package com.codeit.otboo.global.exception;
 
-import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -70,6 +70,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("Access Denied: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .exceptionName(e.getClass().getSimpleName())
+                .message("요청하신 작업에 대한 권한이 없습니다.")
+                .details(null)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
         return ResponseEntity.badRequest().body("필수 파라미터가 없습니다.");
@@ -78,10 +91,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> OtbooException(Exception e) {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+
+        Map<String, String> details = Map.of(
+                "exceptionClass", e.getClass().getSimpleName(),
+                "exceptionMessage", Objects.requireNonNullElse(e.getMessage(), "No message available")
+        );
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .exceptionName(errorCode.name())
                 .message(errorCode.getMessage())
-                .details(null)
+                .details(details)
                 .build();
         log.error("Exception : {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
