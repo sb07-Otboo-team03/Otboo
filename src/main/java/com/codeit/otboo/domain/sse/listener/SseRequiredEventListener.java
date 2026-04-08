@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.sse.listener;
 
-import static com.codeit.otboo.domain.notification.entity.QNotification.notification;
-
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
@@ -9,12 +7,16 @@ import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.BaseSseEvent;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
+import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
+import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.service.UserService;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -24,10 +26,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -109,18 +107,20 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedCreatedEvent event) {
-        sendSseEvent(event.notificationList);
+        sendSseEvent(event.getNotificationList());
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedLikedEvent event) {
-        sendSseEvent(event.notificationList);
+        sendSseEvent(event.getNotificationList());
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(CommentCreatedEvent event) { sendSseEvent(event.notificationList); }
+    public void on(CommentCreatedEvent event) {
+        sendSseEvent(event.getNotificationList());
+    }
 
     // TODO: 삭제 예정
     @Async
