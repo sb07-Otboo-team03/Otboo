@@ -43,6 +43,7 @@ class RecommendationServiceTest {
     private Clothes createClothes(ClothesType type) {
         Clothes clothes = mock(Clothes.class);
         when(clothes.getType()).thenReturn(type);
+
         return clothes;
     }
 
