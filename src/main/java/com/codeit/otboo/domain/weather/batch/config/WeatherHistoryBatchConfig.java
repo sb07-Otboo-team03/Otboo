@@ -92,8 +92,8 @@ public class WeatherHistoryBatchConfig {
 
         reader.setQueryString("""
             SELECT w FROM Weather w
-            WHERE w.forecastedAt >= :start
-              AND w.forecastedAt < :end
+            WHERE w.forecastAt >= :start
+              AND w.forecastAt < :end
             ORDER BY w.id
         """);
 
