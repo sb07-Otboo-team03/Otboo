@@ -49,6 +49,7 @@ public class WeatherServiceImpl implements WeatherService{
     private final KmaGridConverter kmaGridConverter;
 
     private final WeatherForecastUpsertService weatherForecastUpsertService;
+    private final WeatherRedisCacheService weatherRedisCacheService;
 
     @Override
     @Transactional
@@ -84,6 +85,24 @@ public class WeatherServiceImpl implements WeatherService{
                 .withSecond(0)
                 .withNano(0);
 
+        int x = location.getX();
+        int y = location.getY();
+
+        LocationNameMap finalLocation = location;
+
+        return weatherRedisCacheService.getOrLoad(
+                x,
+                y,
+                forecastAt,
+                () -> loadWeatherResponses(forecastedAt, forecastAt, finalLocation) // 캐시 miss시 실행할 실제 조회 코드
+        );
+    }
+
+    private List<WeatherResponse> loadWeatherResponses(
+            LocalDateTime forecastedAt,
+            LocalDateTime forecastAt,
+            LocationNameMap location
+    ) {
         List<Weather> weathers = new ArrayList<>();
         addWeathers(forecastedAt, forecastAt, location, weathers); // 조회 시간에 맞추어 (오늘, 내일, 모레, 4일뒤, 5일뒤) 데이터 조회 및 리스트에 추가
 
