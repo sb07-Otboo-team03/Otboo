@@ -4,10 +4,7 @@ import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.dto.mapper.FeedMapper;
-import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.otboo.domain.feed.dto.request.FeedSearchCondition;
-import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
-import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.otboo.domain.feed.dto.request.*;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.domain.feed.elasticsearch.document.FeedDocument;
 import com.codeit.otboo.domain.feed.elasticsearch.event.FeedDeletedEvent;
@@ -84,9 +81,12 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = new Feed(request.content(), author, weather, clothesList);
         feedRepository.save(feed);
 
-        eventPublisher.publishEvent(new FeedSyncEvent(feed.getId(), feed.getContent(),
-                feed.getWeather().getSkyStatus().name(), feed.getWeather().getPrecipitationType().name(),
-                feed.getCreatedAt(), feed.getLikeCount()));
+        eventPublisher.publishEvent(new FeedSyncEvent(feed.getId(),
+                feed.getContent(),
+                feed.getWeather().getSkyStatus().name(),
+                feed.getWeather().getPrecipitationType().name(),
+                feed.getCreatedAt(),
+                feed.getLikeCount()));
 
         Set<UUID> followerIds = followRepository.findAllFollowerIdsByFolloweeId(author.getId());
 
