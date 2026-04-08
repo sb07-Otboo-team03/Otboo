@@ -100,18 +100,8 @@ class NotificationControllerTest {
             given(notificationService.getNotifications(eq(userId), any()))
                 .willReturn(response);
 
-            // when & then
-//            mockMvc.perform(get("/api/notifications")
-//                    .with(user(userDetails))
-//                )
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.data[0].id").value(notificationId.toString()))
-//                .andExpect(jsonPath("$.data[0].receiverId").value(userId.toString()))
-//                .andExpect(jsonPath("$.data[0].title").value("title"))
-//                .andExpect(jsonPath("$.data[0].content").value("content"));
-
             mockMvc.perform(get("/api/notifications")
-                    .param("limit", "10")   // ⭐ 이거 추가
+                    .param("limit", "10")
                     .with(user(userDetails))
                 )
                 .andExpect(status().isOk())
@@ -120,7 +110,6 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.data[0].title").value("title"))
                 .andExpect(jsonPath("$.data[0].content").value("content"));
 
-            // 🔥 핵심 검증
             verify(notificationService).getNotifications(eq(userId), any());
         }
     }
@@ -139,7 +128,6 @@ class NotificationControllerTest {
                 )
                 .andExpect(status().isNoContent());
 
-            // 🔥 핵심 검증
             verify(notificationService)
                 .deleteNotification(eq(userId), eq(notificationId));
         }

@@ -47,9 +47,6 @@ class NotificationServiceImplTest {
 
     private final TestFixture fixture = new TestFixture();
 
-    /**
-     * 🎯 알림 조회 - hasNext = true
-     */
     @Test
     @DisplayName("알림 조회 - hasNext = true (커서 페이징 정상 동작)")
     void getNotifications_hasNext_true() {
@@ -101,9 +98,6 @@ class NotificationServiceImplTest {
         assertThat(captor.getValue().getPageSize()).isEqualTo(limit + 1);
     }
 
-    /**
-     * 🎯 알림 조회 - hasNext = false
-     */
     @Test
     @DisplayName("알림 조회 - 마지막 페이지 (hasNext = false)")
     void getNotifications_hasNext_false() {
@@ -142,9 +136,6 @@ class NotificationServiceImplTest {
         assertThat(result.nextIdAfter()).isEqualTo(last.id());
     }
 
-    /**
-     * 🎯 알림 삭제 성공
-     */
     @Test
     @DisplayName("알림 삭제 성공 ⭕️")
     void deleteNotification_success() {
@@ -162,9 +153,6 @@ class NotificationServiceImplTest {
         verify(notificationRepository).delete(notification);
     }
 
-    /**
-     * 🎯 알림 삭제 실패 - 존재하지 않음
-     */
     @Test
     @DisplayName("알림 삭제 실패 ❌ - 존재하지 않음")
     void deleteNotification_notFound() {
