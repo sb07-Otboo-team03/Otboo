@@ -1,7 +1,11 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.profile.ProfileFixture;
+import com.codeit.otboo.domain.profile.dto.request.LocationRequest;
+import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
 import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
@@ -29,9 +33,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +46,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.never;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -62,6 +70,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private BinaryContentMapper binaryContentMapper;
 
 
     @Nested
@@ -205,7 +216,7 @@ class UserControllerTest {
                     .updateUserPassword(any(UUID.class), any(UpdatePasswordRequest.class));
         }
     }
-    
+
     @Nested
     @DisplayName("유저 목록 조회")
     class UserSearch {
@@ -218,9 +229,9 @@ class UserControllerTest {
             userResponseList.add(userResponse);
 
             CursorResponse<UserResponse> userResponseCursor = new CursorResponse<>(userResponseList, null, null, false, 1L, "createdAt", SortDirection.DESCENDING);
-            
+
             given(userService.getAllUsers(any())).willReturn(userResponseCursor);
-            
+
             mockMvc.perform(get("/api/users")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userResponseCursor)))
@@ -237,5 +248,130 @@ class UserControllerTest {
                             .param("limit", "-1"))
                     .andExpect(status().isBadRequest());
         }
+    }
+
+    @Nested
+    @DisplayName("유저 프로필 업데이트")
+    class ProfileUpdate {
+        @Test
+        @DisplayName("유저 프로필 업데이트 - 성공")
+        void userUpdate_success() throws Exception {
+            // given
+            User user = UserFixture.create();
+            UUID userId = UUID.randomUUID();
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    "새 이름",
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    3
+            );
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(profileUpdateRequest)
+            );
+
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user, null, profileUpdateRequest);
+
+            given(userService.updateProfile(userId, profileUpdateRequest, null))
+                    .willReturn(profileResponse);
+
+            // when
+            mockMvc.perform(multipart("/api/users/{userId}/profiles", userId)
+                            .file(requestPart)
+                            .with(servletRequest -> {
+                                servletRequest.setMethod("PATCH");
+                                return servletRequest;
+                            }))
+                    .andExpect(status().isOk());
+
+            // then
+            then(userService).should().updateProfile(userId, profileUpdateRequest, null);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "' ', 3",
+                "이, 3",
+                "이름, -1",
+                "이름, 6"
+        })
+        @DisplayName("유저 프로필 업데이트 - 실패 (Bad Request) - 이름 길이를 충족하지 못하거나, ")
+        void userUpdate_fail(String name, String temperatureSensitivity) throws Exception {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    name,
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    Integer.parseInt(temperatureSensitivity)
+            );
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(profileUpdateRequest)
+            );
+
+
+            // when
+            mockMvc.perform(multipart("/api/users/{userId}/profiles", userId)
+                            .file(requestPart)
+                            .with(servletRequest -> {
+                                servletRequest.setMethod("PATCH");
+                                return servletRequest;
+                            }))
+                    .andExpect(status().isBadRequest());
+
+            // then
+            then(userService).should(never()).updateProfile(userId, profileUpdateRequest, null);
+        }
+
+        @Test
+        @DisplayName("업데이트 실패 - 존재하지 않는 유저")
+        void userUpdate_fail_notFound() throws Exception {
+            // given
+            UUID notFoundUserId = UUID.randomUUID();
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    "새 이름",
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    3
+            );
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(profileUpdateRequest)
+            );
+
+            // when
+            willThrow(new UserNotFoundException(notFoundUserId))
+                    .given(userService)
+                    .updateProfile(notFoundUserId, profileUpdateRequest, null);
+
+            mockMvc.perform(multipart("/api/users/{userId}/profiles", notFoundUserId)
+                            .file(requestPart)
+                            .with(servletRequest -> {
+                                servletRequest.setMethod("PATCH");
+                                return servletRequest;
+                            }))
+                    .andExpect(status().isNotFound());
+
+            // then
+            then(userService).should().updateProfile(notFoundUserId, profileUpdateRequest, null);
+        }
+
+
     }
 }
