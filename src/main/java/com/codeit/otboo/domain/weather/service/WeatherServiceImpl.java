@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.weather.service;
 
-import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.KmaWeatherMapper;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
@@ -49,7 +48,6 @@ public class WeatherServiceImpl implements WeatherService{
     private final KakaoLocalUtil kakaoLocalUtil;
     private final KmaGridConverter kmaGridConverter;
 
-    private final WeatherForecastBatchService weatherForecastBatchService;
     private final WeatherForecastUpsertService weatherForecastUpsertService;
 
     @Override
@@ -131,8 +129,9 @@ public class WeatherServiceImpl implements WeatherService{
         String baseDate = timeProvider.nowDate().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = "2300";
 
-        ForecastBatchResult result = weatherForecastBatchService.collect(x, y, baseDate, baseTime);
-        weatherForecastUpsertService.upsert(result.weathers());
+        List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
+        List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, false);
+        weatherForecastUpsertService.upsert(weathers);
     }
 
     private void addYesterdayWeatherInfo(int x, int y) {
