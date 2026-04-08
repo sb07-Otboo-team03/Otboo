@@ -35,6 +35,7 @@ services:
 
       - NAVER_MAIL_ID=${NAVER_MAIL_ID}
       - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
+    restart: on-failure
     depends_on:
       - db
       - es
