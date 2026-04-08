@@ -18,15 +18,14 @@ import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +37,20 @@ public class UserServiceImpl implements UserService{
     private final ProfileMapper profileMapper;
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public User getUser(UUID userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException(userId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
 
     @Override
     @Transactional
@@ -130,6 +143,4 @@ public class UserServiceImpl implements UserService{
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 userPage.hasNext(), totalCount, request.sortBy(), request.sortDirection());
     }
-
-
 }

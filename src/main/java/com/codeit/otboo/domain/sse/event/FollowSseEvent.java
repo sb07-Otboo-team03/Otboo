@@ -1,12 +1,14 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
-import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 
 @Getter
 public class FollowSseEvent extends BaseSseEvent {
-    public FollowSseEvent(List<Notification> notificationList) {
-        super(notificationList);
+    private UUID userId;
+
+    public FollowSseEvent(String title, String content, UUID userId) {
+        super(title, content);
+        this.userId = userId;
     }
 }

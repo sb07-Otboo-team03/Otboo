@@ -8,9 +8,14 @@ import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 
+import com.codeit.otboo.domain.user.entity.User;
+import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
+    User getUser(UUID userId);
+    List<User> getAllUsers();
+
     UserResponse createUser(UserCreateRequest userCreateRequest);
 
     UserResponse updateUserRole(UUID userId, Role role);

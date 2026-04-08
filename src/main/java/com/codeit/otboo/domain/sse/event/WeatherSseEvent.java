@@ -3,7 +3,11 @@ package com.codeit.otboo.domain.sse.event;
 import com.codeit.otboo.domain.notification.entity.Notification;
 
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public class WeatherSseEvent extends BaseSseEvent{
-    public WeatherSseEvent(List<Notification> notificationList) { super(notificationList);}
+@Getter
+@AllArgsConstructor
+public class WeatherSseEvent {
+    List<Notification> notificationList;
 }
