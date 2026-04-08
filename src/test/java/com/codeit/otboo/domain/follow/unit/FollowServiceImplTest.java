@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
@@ -17,9 +19,12 @@ import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.follow.service.FollowServiceImpl;
+import com.codeit.otboo.domain.profile.ProfileFixture;
+import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
@@ -90,6 +95,36 @@ class FollowServiceImplTest {
             followerId = UUID.randomUUID();
             followeeId = UUID.randomUUID();
             request = new FollowCreateRequest(followerId, followeeId);
+        }
+
+        @Test
+        @DisplayName("팔로우 생성 성공")
+        void create_success() {
+            // given
+            User follower = UserFixture.create();
+            ProfileFixture.create(follower);
+            User followee = UserFixture.create();
+            FollowCreateRequest createRequest = new FollowCreateRequest(
+                followee.getId(), follower.getId());
+
+            given(userRepository.findById(followee.getId()))
+                .willReturn(Optional.of(followee));
+            given(userRepository.findById(follower.getId()))
+                .willReturn(Optional.of(follower));
+            given(followRepository.save(any(Follow.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+            given(followMapper.toDto(any(Follow.class)))
+                .willReturn(mock(FollowResponse.class));
+
+            // when
+            FollowResponse result = followService.create(createRequest);
+
+            // then
+            then(followRepository).should(times(1)).save(any(Follow.class));
+            then(eventPublisher).should().publishEvent(any(FollowSseEvent.class));
+            then(followMapper).should().toDto(any(Follow.class));
+
+            assertThat(result).isNotNull();
         }
 
         @Test
