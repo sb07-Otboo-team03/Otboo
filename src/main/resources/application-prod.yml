@@ -18,6 +18,10 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
+  elasticsearch:
+    uris: ${SPRING_ELASTICSEARCH_URIS}
+    username: ${SPRING_ELASTICSEARCH_USERNAME}
+    password: ${SPRING_ELASTICSEARCH_PASSWORD}
 
 logging:
   level:

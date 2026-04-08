@@ -15,11 +15,6 @@ import java.util.UUID;
 
 public class FeedFixture {
 
-    public static FeedCreateRequest dummyFeedRequest(UUID userId, UUID weatherId) {
-
-        return new FeedCreateRequest(userId, weatherId, null, "content");
-    }
-
     public static Feed create(FeedCreateRequest request) {
 
         User user = new User("otboo@a.a", "otboo123");
