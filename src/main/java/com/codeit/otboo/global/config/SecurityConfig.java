@@ -1,5 +1,6 @@
 package com.codeit.otboo.global.config;
 
+import com.codeit.otboo.global.filter.RequestMdcFilter;
 import com.codeit.otboo.global.security.Http401AuthenticationEntryPoint;
 import com.codeit.otboo.global.security.Http403ForbiddenAccessDeniedHandler;
 import com.codeit.otboo.global.security.SpaCsrfTokenRequestHandler;
@@ -14,13 +15,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
@@ -42,16 +42,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            ObjectMapper objectMapper,
-                                           JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+                                           JwtAuthenticationFilter jwtAuthenticationFilter,
+                                           RequestMdcFilter mdcFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        // PUBLIC
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/auth/sign-in", "/api/auth/sign-out",
                                 "/api/auth/reset-password", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll()
-                        .requestMatchers("/actuator/**", "/actuator", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/**","/actuator/health",  "/swagger-ui.html").permitAll()
                         .requestMatchers("/", "/assets/**", "index.html", "/favicon.ico", "/*.svg").permitAll()
+                        .requestMatchers("/error").permitAll()
+
+                        // ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                        .requestMatchers("/api/clothes/attribute-defs/**", "/api/clothes/attribute-defs").hasRole("ADMIN")
+
+                        // AUTHENTICATED
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
@@ -63,6 +72,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(new Http403ForbiddenAccessDeniedHandler(objectMapper))
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(mdcFilter, SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
