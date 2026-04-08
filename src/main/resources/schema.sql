@@ -439,3 +439,7 @@ ALTER TABLE follows
             ON DELETE CASCADE;
 
 ALTER TABLE yesterday_hourly_weather RENAME COLUMN "hour" TO forecast_hour;
+
+create index idx_weather_xy_forecasted_forecast on weather (x, y, forecasted_at, forecast_at);
+create index idx_yesterday_weather_xy_date_hour on yesterday_hourly_weather (x, y, date, forecast_hour);
+create index idx_location_lon_lat on location_name_map (longitude, latitude);
