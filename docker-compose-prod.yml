@@ -37,6 +37,7 @@ services:
       - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
     depends_on:
       - db
+      - es
 
   db:
     image: postgres:15
