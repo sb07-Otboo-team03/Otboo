@@ -34,7 +34,7 @@ public class FeedMapper {
                 .updatedAt(feed.getUpdatedAt())
                 .author(userMapper.toAuthorDto(feed.getAuthor().getId(),
                     feed.getAuthor().getProfile().getName(),
-                    feed.getAuthor().getProfile().getId()))
+                    feed.getAuthor().getProfile().getBinaryContent().getId()))
                 .weather(weatherMapper.toSummaryDto(feed.getWeather()))
                 .ootds(toOotdDto(feed.getClothesList()))
                 .content(feed.getContent())

@@ -1,13 +1,16 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.List;
+import java.util.UUID;
 
 @Getter
-@AllArgsConstructor
-public class CommentCreatedEvent {
-    List<Notification> notificationList;
+public class CommentCreatedEvent extends BaseSseEvent {
+
+    private final UUID receiverId;
+
+    public CommentCreatedEvent(String title, String content, UUID receiverId) {
+        super(title, content);
+        this.receiverId = receiverId;
+    }
 }
