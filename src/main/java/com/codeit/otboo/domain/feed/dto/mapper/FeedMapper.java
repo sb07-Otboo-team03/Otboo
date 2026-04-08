@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.feed.dto.mapper;
 
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.feed.dto.response.FeedOotdResponse;
 import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
@@ -9,8 +10,10 @@ import com.codeit.otboo.domain.weather.dto.mapper.WeatherMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class FeedMapper {
 
     private final UserMapper userMapper;
     private final WeatherMapper weatherMapper;
+    private final OotdMapper ootdMapper;
 
     public FeedResponse toDto(Feed feed) {
         return toDto(feed, false); // Feed 생성 시 기본 false
@@ -40,8 +44,22 @@ public class FeedMapper {
                 .build();
     }
 
-    private static List<FeedOotdResponse> toOotdDto(List<Clothes> clothes) {
-        return Collections.emptyList();
-        // TODO
+    private List<FeedOotdResponse> toOotdDto(List<Clothes> clothes) {
+        return clothes.stream().map(c -> {
+            List<ClothesAttributeValue> values = c.getValues();
+            Map<UUID, List<String>> uuidListMap = groupSelectableValuesByAttributeId(values);
+            return ootdMapper.toDto(c, uuidListMap);
+        }).toList();
+    }
+
+    private Map<UUID, List<String>> groupSelectableValuesByAttributeId(
+            List<ClothesAttributeValue> allSelectableValues
+    ){
+        if(allSelectableValues.isEmpty()) return Map.of();
+        return allSelectableValues.stream()
+                .collect(Collectors.groupingBy(
+                        attributeValue -> attributeValue.getAttributeDef().getId(),
+                        Collectors.mapping(ClothesAttributeValue::getSelectableValue, Collectors.toList())
+                ));
     }
 }
