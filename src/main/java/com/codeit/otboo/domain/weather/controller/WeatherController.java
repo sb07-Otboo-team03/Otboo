@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.weather.controller;
 
+import com.codeit.otboo.domain.weather.controller.openapi.WeatherControllerDocs;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
 import com.codeit.otboo.domain.weather.service.WeatherService;
@@ -15,7 +16,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/weathers")
-public class WeatherController {
+public class WeatherController implements WeatherControllerDocs {
 
     private final WeatherService weatherService;
 
