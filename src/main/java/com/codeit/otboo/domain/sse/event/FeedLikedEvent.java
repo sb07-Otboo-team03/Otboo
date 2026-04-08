@@ -1,13 +1,15 @@
 package com.codeit.otboo.domain.sse.event;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
 import lombok.Getter;
 
-import java.util.List;
+import java.util.UUID;
 
 @Getter
 public class FeedLikedEvent extends BaseSseEvent {
-    public FeedLikedEvent(List<Notification> notificationList) {
-        super(notificationList);
+    private final UUID receiverId;
+
+    public FeedLikedEvent(String title, String content, UUID receiverId) {
+        super(title, content);
+        this.receiverId = receiverId;
     }
 }

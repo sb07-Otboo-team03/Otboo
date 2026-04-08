@@ -17,8 +17,6 @@ import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
 import com.codeit.otboo.domain.like.repository.LikeRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -89,22 +87,10 @@ public class FeedServiceImpl implements FeedService {
                 feed.getLikeCount()));
 
         Set<UUID> followerIds = followRepository.findAllFollowerIdsByFolloweeId(author.getId());
-
-        if (!followerIds.isEmpty()) {
-            List<Notification> notifications = followerIds.stream()
-                    .map(followerId -> {
-                        User receiver = userRepository.getReferenceById(followerId);
-
-                        return Notification.builder()
-                                .title(author.getProfile().getName() + "님이 새로운 피드를 작성했어요.")
-                                .content(feed.getContent())
-                                .level(NotificationLevel.INFO)
-                                .receiver(receiver)
-                                .build();
-                    }).toList();
-
-            eventPublisher.publishEvent(new FeedCreatedEvent(notifications));
-        }
+        String title = author.getProfile().getName() + "님이 새로운 피드를 작성했어요.";
+        String content = feed.getContent();
+        List<UUID> receiverIds = followerIds.stream().toList();
+        eventPublisher.publishEvent(new FeedCreatedEvent(title, content, receiverIds));
 
         return feedMapper.toDto(feed);
     }

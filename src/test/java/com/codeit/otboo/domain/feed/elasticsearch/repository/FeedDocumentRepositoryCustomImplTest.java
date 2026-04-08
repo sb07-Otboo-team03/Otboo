@@ -45,7 +45,7 @@ class FeedDocumentRepositoryCustomImplTest {
             new GenericContainer<>(
                     new ImageFromDockerfile()
                             // 프로젝트 폴더 최상단에 있는 도커 파일 읽어오기
-                            .withDockerfile(Paths.get("elasticsearch.Dockerfile").toAbsolutePath())
+                            .withDockerfile(Paths.get("elasticsearch/elasticsearch.Dockerfile").toAbsolutePath())
             )
                     .withExposedPorts(9200)
                     .withEnv("discovery.type", "single-node")

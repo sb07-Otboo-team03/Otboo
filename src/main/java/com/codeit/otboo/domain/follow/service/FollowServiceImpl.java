@@ -6,11 +6,10 @@ import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
 import com.codeit.otboo.domain.follow.entity.Follow;
-import com.codeit.otboo.domain.follow.exception.follow.FollowNotFoundException;
+import com.codeit.otboo.domain.follow.exception.follow.DuplicateFollowException;
+import com.codeit.otboo.domain.follow.exception.follow.FollowException;
 import com.codeit.otboo.domain.follow.mapper.FollowMapper;
 import com.codeit.otboo.domain.follow.repository.FollowRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -49,8 +48,12 @@ public class FollowServiceImpl implements FollowService {
     @Transactional
     public FollowResponse create(FollowCreateRequest request) {
 
-        Optional<Follow> optionalFollow = followRepository.findByFollowerIdAndFolloweeId(
+        Optional<Follow> byFollowerIdAndFolloweeId = followRepository.findByFollowerIdAndFolloweeId(
             request.followerId(), request.followeeId());
+
+        if(byFollowerIdAndFolloweeId.isPresent()) {
+            throw new DuplicateFollowException(request.followerId(), request.followeeId());
+        }
 
         User followee = userRepository.findById(request.followeeId())
             .orElseThrow(() -> new UserNotFoundException(request.followeeId()));
@@ -61,23 +64,14 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = new Follow(follower, followee);
         Follow savedFollow = followRepository.save(follow);
 
-        Notification notification = Notification.builder()
-            .title(follower.getProfile().getName() + "님이 나를 팔로우했어요.")
-            .content("")
-            .level(NotificationLevel.INFO)
-            .receiver(followee)
-            .build();
-
-        eventPublisher.publishEvent( new FollowSseEvent(List.of(notification)));
+        String title = follower.getProfile().getName() + "님이 나를 팔로우했어요.";
+        eventPublisher.publishEvent( new FollowSseEvent(title, "", followee.getId()));
 
         return followMapper.toDto(savedFollow);
     }
 
     @Override // 팔로우 요약 정보 조회
     public FollowSummaryResponse getFollowSummary(UUID followeeId, OtbooUserDetails userDetails) {
-
-        log.debug("🔥 followeeId = {}", followeeId);
-        log.debug("🔥 userDetails = {}", userDetails);
 
         userRepository.findById(followeeId)
             .orElseThrow(() -> new UserNotFoundException(followeeId));

@@ -8,8 +8,6 @@ import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
 import com.codeit.otboo.domain.feed.repository.FeedRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -51,15 +49,10 @@ public class CommentServiceImpl implements CommentService{
         commentRepository.save(comment);
         feed.increaseComment();
 
-        Notification notification = Notification.builder()
-                .title(user.getProfile().getName() + "님이 댓글을 달았어요.")
-                .content(comment.getContent())
-                .level(NotificationLevel.INFO)
-                .receiver(feed.getAuthor())
-                .build();
-
-
-        eventPublisher.publishEvent(new CommentCreatedEvent(List.of(notification)));
+        String title = user.getProfile().getName() + "님이 댓글을 달았어요.";
+        String content = comment.getContent();
+        UUID receiverId = feed.getAuthor().getId();
+        eventPublisher.publishEvent(new CommentCreatedEvent(title, content, receiverId));
 
         return commentMapper.toDto(comment);
     }

@@ -40,6 +40,25 @@ public class UserServiceImpl implements UserService{
     private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Override
+    @Transactional(readOnly = true)
+    public User getUser(UUID userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException(userId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Override
+    public List<User> getAllUserByIds(List<UUID> userIds) {
+        return userRepository.findAllById(userIds);
+    }
+
+
+    @Override
     @Transactional
     public UserResponse createUser(UserCreateRequest userCreateRequest) {
         boolean exists = userRepository.existsByEmail(userCreateRequest.email());
@@ -130,6 +149,4 @@ public class UserServiceImpl implements UserService{
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 userPage.hasNext(), totalCount, request.sortBy(), request.sortDirection());
     }
-
-
 }
