@@ -77,16 +77,16 @@ public class FollowServiceImpl implements FollowService {
             .orElseThrow(() -> new UserNotFoundException(followeeId));
 
         UUID myId = userDetails.getUserResponse().id();
-        int followerCount = followRepository.countByFollowerId(followeeId);
-        int followingCount = followRepository.countByFolloweeId(followeeId);
+        int followingCount = followRepository.countByFollowerId(followeeId);
+        int followerCount = followRepository.countByFolloweeId(followeeId);
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId);
         boolean isEmpty = follow.isEmpty();
 
         FollowSummaryResponse response = new FollowSummaryResponse(
             followeeId,
-            followingCount,
             followerCount,
+            followingCount,
             !isEmpty,
             isEmpty ? null : follow.get().getId(),
             !isEmpty

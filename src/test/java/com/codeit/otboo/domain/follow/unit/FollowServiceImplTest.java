@@ -171,8 +171,8 @@ class FollowServiceImplTest {
             given(userDetails.getUserResponse()).willReturn(userResponse);
             given(userRepository.findById(followeeId)).willReturn(Optional.of(mock(User.class)));
 
-            given(followRepository.countByFollowerId(followeeId)).willReturn(10);
-            given(followRepository.countByFolloweeId(followeeId)).willReturn(5);
+            given(followRepository.countByFollowerId(followeeId)).willReturn(5);
+            given(followRepository.countByFolloweeId(followeeId)).willReturn(10);
 
             // 팔로우 관계 없음
             given(followRepository.findByFollowerIdAndFolloweeId(myId, followeeId))
@@ -184,8 +184,8 @@ class FollowServiceImplTest {
 
             // then
             assertThat(result.followeeId()).isEqualTo(followeeId);
-            assertThat(result.followerCount()).isEqualTo(5);
-            assertThat(result.followingCount()).isEqualTo(10);
+            assertThat(result.followerCount()).isEqualTo(10);
+            assertThat(result.followingCount()).isEqualTo(5);
 
             assertThat(result.followedByMe()).isFalse();
             assertThat(result.followedByMeId()).isNull();
