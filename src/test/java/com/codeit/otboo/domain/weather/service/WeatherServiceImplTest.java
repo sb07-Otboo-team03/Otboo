@@ -43,8 +43,6 @@ class WeatherServiceImplTest {
     private WeatherServiceImpl weatherService;
 
     @Mock
-    private WeatherForecastBatchService weatherForecastBatchService;
-    @Mock
     private WeatherForecastUpsertService weatherForecastUpsertService;
     @Mock
     private WeatherRepository weatherRepository;
@@ -120,11 +118,13 @@ class WeatherServiceImplTest {
             when(savedLocation.getX()).thenReturn(x);
             when(savedLocation.getY()).thenReturn(y);
 
+            List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
-            ForecastBatchResult batchResult = new ForecastBatchResult(x, y, mappedWeathers);
 
-            when(weatherForecastBatchService.collect(eq(x), eq(y), anyString(), eq("2300")))
-                    .thenReturn(batchResult);
+            when(kmaWeatherClient.callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052)))
+                    .thenReturn(items);
+            when(kmaWeatherMapper.toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false)))
+                    .thenReturn(mappedWeathers);
 
             // 어제 날씨
             YesterdayHourlyWeather yesterdayHourlyWeather = mock(YesterdayHourlyWeather.class);
@@ -158,7 +158,8 @@ class WeatherServiceImplTest {
                         );
             }
 
-            verify(weatherForecastBatchService, times(1)).collect(eq(x), eq(y), anyString(), eq("2300"));
+            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
+            verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
             verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
@@ -199,11 +200,12 @@ class WeatherServiceImplTest {
             when(location.getX()).thenReturn(x);
             when(location.getY()).thenReturn(y);
 
+            List<KmaWeatherItem> items = List.of(mock(KmaWeatherItem.class));
             List<Weather> mappedWeathers = List.of(mock(Weather.class));
-            ForecastBatchResult batchResult = new ForecastBatchResult(x, y, mappedWeathers);
-
-            when(weatherForecastBatchService.collect(eq(x), eq(y), anyString(), eq("2300")))
-                    .thenReturn(batchResult);
+            when(kmaWeatherClient.callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052)))
+                    .thenReturn(items);
+            when(kmaWeatherMapper.toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false)))
+                    .thenReturn(mappedWeathers);
 
 
             // 어제 습도, 온도 값 저장
@@ -236,7 +238,8 @@ class WeatherServiceImplTest {
                         );
             }
 
-            verify(weatherForecastBatchService, times(1)).collect(eq(x), eq(y), anyString(), eq("2300"));
+            verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
+            verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
             verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
 
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
