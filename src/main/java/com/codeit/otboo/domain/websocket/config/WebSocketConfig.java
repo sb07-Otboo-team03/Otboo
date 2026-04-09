@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.websocket.config;
 
 import com.codeit.otboo.domain.user.entity.Role;
-import com.codeit.otboo.domain.websocket.auth.JwtAuthenticationChannelInterceptor;
+import com.codeit.otboo.global.security.jwt.JwtAuthenticationChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
