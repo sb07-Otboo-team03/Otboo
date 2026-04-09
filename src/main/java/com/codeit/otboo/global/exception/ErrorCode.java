@@ -57,6 +57,9 @@ public enum ErrorCode {
     INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
     FILE_UPLOAD_MAXIMUM_SIZE("파일이 너무 큽니다."),
 
+    // Profile
+    PROFILE_NOT_FOUND("프로필 정보를 찾을 수 없습니다."),
+
     // JWT
     INVALID_SIGNATURE("JWT 서명 검증 실패"),
     EXPIRED_TOKEN("JWT 토큰 만료"),
