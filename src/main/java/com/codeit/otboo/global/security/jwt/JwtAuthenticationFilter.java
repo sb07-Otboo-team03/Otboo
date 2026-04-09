@@ -1,5 +1,6 @@
 package com.codeit.otboo.global.security.jwt;
 
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -8,10 +9,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -53,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (!redisRegistry.isValidSession(userId, sessionId)) {
                 throw new BadCredentialsException("유효하지 않은 세션입니다.");
             }
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            OtbooUserDetails userDetails = (OtbooUserDetails) userDetailsService.loadUserByUsername(email);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
@@ -64,6 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            MDC.put("userId", String.valueOf(userDetails.getUserResponse().id()));
 
         } catch (JwtException | BadCredentialsException e) {
             SecurityContextHolder.clearContext();
@@ -73,8 +75,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    // DispatcherType.ASYNC 요청에서는 이 필터를 실행하지 않음
     @Override
     protected boolean shouldNotFilterAsyncDispatch() {
+        return true;
+    }
+
+    // DispatcherType.ERROR 요청에서는 필터를 실행하지 않겠다
+    // 컨트롤러 or 필터에서 예외 발생
+    // 내부적으로 /error로 재디스패치
+    // 이때 DispatcherType = ERROR
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
         return true;
     }
 

@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -63,7 +64,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .exceptionName(e.getClass().getSimpleName())
-                .message("자격 증명에 실패하였습니다.") // 로그와 메시지 통일
+                .message("자격 증명에 실패하였습니다.")
                 .details(null)
                 .build();
 
@@ -72,7 +73,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e) {
-        log.warn("Access Denied: {}", e.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .exceptionName(e.getClass().getSimpleName())
@@ -85,13 +85,33 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
-        return ResponseEntity.badRequest().body("필수 파라미터가 없습니다.");
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .exceptionName("MISSING_REQUEST_PARAMETER")
+                .message("필수 파라미터가 없습니다.")
+                .details(Map.of("parameter", e.getParameterName()))
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ErrorResponse> handleMissingCookie(MissingRequestCookieException e) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .exceptionName("MISSING_COOKIE")
+                .message("필수 쿠키가 존재하지 않습니다.")
+                .details(Map.of(
+                        "cookieName", e.getCookieName()
+                ))
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> OtbooException(Exception e) {
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+    public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        // 500 에러는 예상하지 못한 에러이기에, stack Trace 로그 출력
+        log.error("Unhandled exception", e);
 
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         Map<String, String> details = Map.of(
                 "exceptionClass", e.getClass().getSimpleName(),
                 "exceptionMessage", Objects.requireNonNullElse(e.getMessage(), "No message available")
@@ -102,7 +122,6 @@ public class GlobalExceptionHandler {
                 .message(errorCode.getMessage())
                 .details(details)
                 .build();
-        log.error("Exception : {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
