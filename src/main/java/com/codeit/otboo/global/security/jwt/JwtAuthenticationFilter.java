@@ -82,6 +82,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response,
                     new BadCredentialsException("유효하지 않은 access token입니다.", e)
             );
+            return;
         } catch (AuthenticationException e) {
             SecurityContextHolder.clearContext();
             authenticationEntryPoint.commence(request, response, e);
