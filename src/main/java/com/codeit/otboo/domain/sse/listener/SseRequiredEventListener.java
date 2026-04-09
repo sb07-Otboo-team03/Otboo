@@ -138,4 +138,11 @@ public class SseRequiredEventListener {
         Notification notification = parsingSseEvent(event.getReceiverId(), event);
         sendSseEvent(List.of(notification));
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(UserRoleUpdatedEvent event) {
+        Notification notification = parsingSseEvent(event.getReceiverId(), event);
+        sendSseEvent(List.of(notification));
+    }
 }

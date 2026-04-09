@@ -9,8 +9,10 @@ import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Location;
 import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserEmailDuplicateException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -226,14 +228,19 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateUserRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+        Role beforeRole = user.getRole();
+        Role afterRole = userRoleUpdateRequest.role();
 
-        if (user.getRole() != userRoleUpdateRequest.role()) {
-            user.updateRole(userRoleUpdateRequest.role());
+        if (beforeRole != afterRole) {
+            user.updateRole(afterRole);
 
             eventPublisher.publishEvent(new SessionDeletedRequestEvent(
                     userId,
-                    SessionInvalidationReason.ACCOUNT_LOCKED
+                    SessionInvalidationReason.ROLE_CHANGED
             ));
+            String title = "내 권한이 변경되었어요.";
+            String content = "내 권한이 [%s]에서 [%s]로 변경되었어요.".formatted(beforeRole, afterRole);
+            eventPublisher.publishEvent(new UserRoleUpdatedEvent(title, content, userId));
         }
         return userMapper.toDto(user);
     }

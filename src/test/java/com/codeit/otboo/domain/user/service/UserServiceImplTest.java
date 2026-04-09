@@ -12,6 +12,7 @@ import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
@@ -527,6 +528,7 @@ class UserServiceImplTest {
             SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
                     userId,
                     SessionInvalidationReason.ROLE_CHANGED);
+            UserRoleUpdatedEvent userRoleUpdatedEvent = new UserRoleUpdatedEvent("알림 제목", "알림 내용", userId);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(userMapper.toDto(user)).willReturn(userResponse);
 
@@ -534,14 +536,24 @@ class UserServiceImplTest {
             UserResponse result = userService.updateUserRole(userId, userRoleUpdateRequest);
 
             // then
+            then(applicationEventPublisher).should()
+                    .publishEvent(any(SessionDeletedRequestEvent.class));
+
+            ArgumentCaptor<UserRoleUpdatedEvent> eventCaptor = ArgumentCaptor.forClass(UserRoleUpdatedEvent.class);
+            then(applicationEventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            UserRoleUpdatedEvent captured = eventCaptor.getValue();
+            assertThat(captured.getReceiverId()).isEqualTo(userId);
+            assertThat(captured.getTitle()).isEqualTo("내 권한이 변경되었어요.");
             assertThat(result.role()).isNotEqualTo(beforeRole);
+
             then(userRepository).should().findById(userId);
             then(userMapper).should().toDto(user);
-            then(applicationEventPublisher).should().publishEvent(sessionDeletedRequestEvent);
         }
 
         @Test
-        @DisplayName("잠금상태 변경실패 - 존재하지 않는 유저")
+        @DisplayName("권한상태 변경실패 - 존재하지 않는 유저")
         void userLock_fail_user_notFound() {
             // given
             UUID userId = UUID.randomUUID();
@@ -558,7 +570,7 @@ class UserServiceImplTest {
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
             then(userRepository).should().findById(userId);
-            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(applicationEventPublisher).should(never()).publishEvent(any());
             then(userMapper).should(never()).toDto(any());
         }
     }
