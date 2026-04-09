@@ -116,10 +116,8 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new AccessDeniedException("feedId=" + id
-                    + "\nauthorId=" + feed.getAuthor().getId()
-                    + "\nuserId=" + authorId
-            );
+            throw new AccessDeniedException(String.format("피드 권한 없음 [feedId: %s, authorId: %s, requestUserId: %s]",
+                    id, feed.getAuthor().getId(), authorId));
 
         feed.updateContent(request.content());
         eventPublisher.publishEvent(new FeedUpdatedEvent(feed.getId(), feed.getContent()));
@@ -134,10 +132,8 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new AccessDeniedException("feedId=" + id
-                    + "\nauthorId=" + feed.getAuthor().getId()
-                    + "\nuserId=" + authorId
-            );
+            throw new AccessDeniedException(String.format("피드 권한 없음 [feedId: %s, authorId: %s, requestUserId: %s]",
+                    id, feed.getAuthor().getId(), authorId));
 
         likeRepository.deleteAllByFeedId(id);
         commentRepository.deleteAllByFeedId(id);
