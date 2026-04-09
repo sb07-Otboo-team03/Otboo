@@ -4,10 +4,7 @@ import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequ
 import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
-import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
-import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserLockUpdateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
+import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.service.UserService;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
@@ -70,6 +67,12 @@ public class UserController {
     @PatchMapping(value = "/{userId}/lock")
     public ResponseEntity<UserResponse> updateUserLock(@PathVariable UUID userId, @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
         UserResponse userResponse = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+        return ResponseEntity.ok(userResponse);
+    }
+
+    @PatchMapping(value = "/{userId}/role")
+    public ResponseEntity<UserResponse> updateUserRole(@PathVariable UUID userId, @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
+        UserResponse userResponse = userService.updateUserRole(userId, userRoleUpdateRequest);
         return ResponseEntity.ok(userResponse);
     }
 
