@@ -31,4 +31,6 @@ public interface YesterdayHourlyWeatherRepository extends JpaRepository<Yesterda
     );
 
     Optional<YesterdayHourlyWeather> findByXAndYAndDateAndHour(Integer x, Integer y, LocalDate date, LocalTime hour);
+
+    void deleteByDateBefore(LocalDate dateBefore);
 }

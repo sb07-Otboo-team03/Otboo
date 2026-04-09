@@ -70,6 +70,10 @@ public enum ErrorCode {
     // Batch
     BATCH_JOB_EXECUTION_FAILED("배치 Job 실행 중 오류가 발생했습니다."),
 
+    // Kakao API
+    KAKAO_API_ERROR("외부 API 호출 중 오류가 발생했습니다."),
+    KAKAO_API_INVALID_RESPONSE("외부 API 응답 형식이 올바르지 않습니다."),
+
     // Internal
     INTERNAL_SERVER_ERROR("서버 에러가 발생했습니다.");
 

@@ -174,6 +174,81 @@ class WeatherHistoryBatchConfigTest {
         assertThat(weatherRepository.findAll()).hasSize(1);
     }
 
+    @Test
+    @DisplayName("어제 시각에 해당하는 날씨 데이터만 YesterdayHourlyWeather로 이관한다")
+    void migrateYesterdayWeather_onlyYesterdayForecastAt() throws Exception {
+        // given
+        LocalDate today = LocalDate.of(2026, 4, 6);
+        LocalDate yesterday = today.minusDays(1);
+
+        // 저장되어야 하는 데이터: forecastAt이 어제
+        weatherRepository.save(createWeather(
+                yesterday.atStartOfDay(),
+                yesterday.atTime(0, 0),
+                57, 126, 5.0, 65.0
+        ));
+        weatherRepository.save(createWeather(
+                yesterday.atStartOfDay(),
+                yesterday.atTime(23, 0),
+                57, 126, 7.0, 70.0
+        ));
+
+        // 저장되면 안 되는 데이터 1: forecastedAt은 어제지만 forecastAt은 오늘
+        weatherRepository.save(createWeather(
+                yesterday.atStartOfDay(),
+                today.atTime(0, 0),
+                57, 126, 8.0, 80.0
+        ));
+        weatherRepository.save(createWeather(
+                yesterday.atStartOfDay(),
+                today.atTime(1, 0),
+                57, 126, 9.0, 85.0
+        ));
+
+        // 저장되면 안 되는 데이터 2: forecastAt이 그제
+        weatherRepository.save(createWeather(
+                yesterday.minusDays(1).atStartOfDay(),
+                yesterday.minusDays(1).atTime(23, 0),
+                57, 126, 3.0, 60.0
+        ));
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("requestedAt", "2026-04-06T00:00:00")
+                .toJobParameters();
+
+        // when
+        JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
+
+        // then
+        assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+
+        List<YesterdayHourlyWeather> results = yesterdayHourlyWeatherRepository.findAll();
+
+        assertThat(results).hasSize(2);
+
+        assertThat(results)
+                .extracting(
+                        YesterdayHourlyWeather::getX,
+                        YesterdayHourlyWeather::getY,
+                        YesterdayHourlyWeather::getDate,
+                        YesterdayHourlyWeather::getHour,
+                        YesterdayHourlyWeather::getTemperature,
+                        YesterdayHourlyWeather::getHumidity
+                )
+                .containsExactlyInAnyOrder(
+                        tuple(57, 126, yesterday, LocalTime.of(0, 0), 5.0, 65.0),
+                        tuple(57, 126, yesterday, LocalTime.of(23, 0), 7.0, 70.0)
+                );
+
+        assertThat(results)
+                .extracting(YesterdayHourlyWeather::getDate)
+                .containsOnly(yesterday);
+
+        assertThat(results)
+                .extracting(YesterdayHourlyWeather::getHour)
+                .doesNotContain(LocalTime.of(1, 0));
+    }
+
     private Weather createWeather(
             LocalDateTime forecastedAt,
             LocalDateTime forecastAt,

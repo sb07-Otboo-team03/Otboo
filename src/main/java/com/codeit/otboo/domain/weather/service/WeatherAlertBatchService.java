@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
+import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
@@ -84,9 +84,9 @@ public class WeatherAlertBatchService {
             return new RegionAlertResult(target.x(), target.y(), List.of());
         }
 
-        List<Notification> notifications = new ArrayList<>();
+        List<NotificationCreateCommand> commands = new ArrayList<>();
 
-        notifications.addAll(buildTemperatureGapNotifications(
+        commands.addAll(buildTemperatureGapNotifications(
                 target.profiles(),
                 target.x(),
                 target.y(),
@@ -94,15 +94,15 @@ public class WeatherAlertBatchService {
                 todayWeathers
         ));
 
-        notifications.addAll(buildPrecipitationChangeNotifications(
+        commands.addAll(buildPrecipitationChangeNotifications(
                 target.profiles(),
                 todayWeathers
         ));
 
-        return new RegionAlertResult(target.x(), target.y(), notifications);
+        return new RegionAlertResult(target.x(), target.y(), commands);
     }
 
-    private List<Notification> buildTemperatureGapNotifications(
+    private List<NotificationCreateCommand> buildTemperatureGapNotifications(
             List<Profile> regionProfiles,
             Integer x,
             Integer y,
@@ -128,16 +128,16 @@ public class WeatherAlertBatchService {
         }
 
         return regionProfiles.stream()
-                .map(profile -> new Notification(
+                .map(profile -> new NotificationCreateCommand(
+                        profile.getUser().getId(),
                         "어제와 기온 차가 커요",
                         summary.content(),
-                        NotificationLevel.INFO,
-                        profile.getUser()
+                        NotificationLevel.INFO
                 ))
                 .toList();
     }
 
-    private List<Notification> buildPrecipitationChangeNotifications(
+    private List<NotificationCreateCommand> buildPrecipitationChangeNotifications(
             List<Profile> regionProfiles,
             List<Weather> todayWeathers
     ) {
@@ -150,11 +150,11 @@ public class WeatherAlertBatchService {
         }
 
         return regionProfiles.stream()
-                .map(profile -> new Notification(
+                .map(profile -> new NotificationCreateCommand(
+                        profile.getUser().getId(),
                         "오늘 강수 예보가 바뀌어요",
                         summary.content(),
-                        NotificationLevel.INFO,
-                        profile.getUser()
+                        NotificationLevel.INFO
                 ))
                 .toList();
     }
@@ -164,7 +164,7 @@ public class WeatherAlertBatchService {
             return;
         }
 
-        eventPublisher.publishEvent(new WeatherSseEvent(result.notifications()));
+        eventPublisher.publishEvent(new WeatherSseEvent(result.commands()));
     }
 
     private List<HourlyTemperature> toTodayHourlyTemperatures(List<Weather> weathers) {

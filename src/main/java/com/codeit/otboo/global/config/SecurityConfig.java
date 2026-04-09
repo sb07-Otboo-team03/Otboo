@@ -52,8 +52,8 @@ public class SecurityConfig {
                                 "/api/auth/reset-password", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll()
-                        .requestMatchers("/actuator/**","/actuator/health",  "/swagger-ui.html").permitAll()
-                        .requestMatchers("/", "/assets/**", "index.html", "/favicon.ico", "/*.svg").permitAll()
+                        .requestMatchers("/actuator/**", "/actuator/health", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/", "/assets/**", "index.html", "/css/**", "/js/**", "/favicon.ico", "/*.svg").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // ADMIN

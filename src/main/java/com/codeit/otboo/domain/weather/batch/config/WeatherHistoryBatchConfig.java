@@ -92,8 +92,8 @@ public class WeatherHistoryBatchConfig {
 
         reader.setQueryString("""
             SELECT w FROM Weather w
-            WHERE w.forecastedAt >= :start
-              AND w.forecastedAt < :end
+            WHERE w.forecastAt >= :start
+              AND w.forecastAt < :end
             ORDER BY w.id
         """);
 
@@ -126,7 +126,9 @@ public class WeatherHistoryBatchConfig {
         return items -> yesterdayRepository.saveAll(items);
     }
 
-    // Delete Tasklet (어제 데이터만 삭제)
+    // Delete Tasklet
+    // Weather 테이블: 오늘 이전 데이터 삭제 (어제 포함)
+    // YesterdayHourlyWeather 테이블: 어제 이전 데이터 삭제 (그제 포함)
     @Bean
     @StepScope
     public Tasklet deleteYesterdayWeatherTasklet() {
@@ -135,10 +137,8 @@ public class WeatherHistoryBatchConfig {
             LocalDate today = timeProvider.nowDate();
             LocalDate yesterday = today.minusDays(1);
 
-            LocalDateTime start = yesterday.atStartOfDay();
-            LocalDateTime end = today.atStartOfDay();
-
-            weatherRepository.deleteByForecastedAtBetween(start, end);
+            weatherRepository.deleteByForecastedAtBefore(today.atStartOfDay()); // 오늘 이전 데이터 삭제
+            yesterdayRepository.deleteByDateBefore(yesterday); // 어제 데이터 저장하는 테이블에서도 어제 이전 데이터 삭제
 
             return RepeatStatus.FINISHED;
         };
