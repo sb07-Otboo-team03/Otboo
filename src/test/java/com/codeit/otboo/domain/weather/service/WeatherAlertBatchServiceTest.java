@@ -12,7 +12,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.profile.entity.Location;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
@@ -139,7 +140,7 @@ class WeatherAlertBatchServiceTest {
 
             // then
             assertThat(result.isEmpty()).isTrue();
-            assertThat(result.notifications()).isEmpty();
+            assertThat(result.commands()).isEmpty();
 
             verify(yesterdayRepository, never()).findYesterdayWeatherForAlertByRegion(any(), any(), any(), any(), any());
             verify(policyService, never()).summarize(anyList(), anyList());
@@ -229,12 +230,12 @@ class WeatherAlertBatchServiceTest {
 
             // then
             assertThat(result.isEmpty()).isFalse();
-            assertThat(result.notifications()).hasSize(2);
-            assertThat(result.notifications())
-                    .extracting(Notification::getTitle)
+            assertThat(result.commands()).hasSize(2);
+            assertThat(result.commands())
+                    .extracting(NotificationCreateCommand::title)
                     .containsOnly("어제와 기온 차가 커요");
-            assertThat(result.notifications())
-                    .extracting(Notification::getContent)
+            assertThat(result.commands())
+                    .extracting(NotificationCreateCommand::content)
                     .containsOnly("오늘은 어제보다 전반적으로 3도 낮아요.");
 
             verify(policyService, times(1)).summarize(anyList(), anyList());
@@ -282,12 +283,12 @@ class WeatherAlertBatchServiceTest {
 
             // then
             assertThat(result.isEmpty()).isFalse();
-            assertThat(result.notifications()).hasSize(2);
-            assertThat(result.notifications())
-                    .extracting(Notification::getTitle)
+            assertThat(result.commands()).hasSize(2);
+            assertThat(result.commands())
+                    .extracting(NotificationCreateCommand::title)
                     .containsOnly("오늘 강수 예보가 바뀌어요");
-            assertThat(result.notifications())
-                    .extracting(Notification::getContent)
+            assertThat(result.commands())
+                    .extracting(NotificationCreateCommand::content)
                     .containsOnly("오늘 오전 8시부터 비가 올 예정이에요.");
         }
 
@@ -325,7 +326,7 @@ class WeatherAlertBatchServiceTest {
 
             // then
             assertThat(result.isEmpty()).isTrue();
-            assertThat(result.notifications()).isEmpty();
+            assertThat(result.commands()).isEmpty();
         }
 
         @Test
@@ -371,9 +372,9 @@ class WeatherAlertBatchServiceTest {
             RegionAlertResult result = weatherAlertBatchService.buildRegionAlertResult(target);
 
             // then
-            assertThat(result.notifications()).hasSize(4);
-            assertThat(result.notifications())
-                    .extracting(Notification::getTitle)
+            assertThat(result.commands()).hasSize(4);
+            assertThat(result.commands())
+                    .extracting(NotificationCreateCommand::title)
                     .containsExactlyInAnyOrder(
                             "어제와 기온 차가 커요",
                             "어제와 기온 차가 커요",
@@ -407,20 +408,20 @@ class WeatherAlertBatchServiceTest {
             Profile profile1 = createProfile(UUID.randomUUID(), 60, 127);
             Profile profile2 = createProfile(UUID.randomUUID(), 60, 127);
 
-            Notification notification1 = new Notification(
+            NotificationCreateCommand command1 = new NotificationCreateCommand(
+                    profile1.getUser().getId(),
                     "어제와 기온 차가 커요",
                     "오늘은 어제보다 전반적으로 3도 낮아요.",
-                    com.codeit.otboo.domain.notification.dto.NotificationLevel.INFO,
-                    profile1.getUser()
+                    NotificationLevel.INFO
             );
-            Notification notification2 = new Notification(
+            NotificationCreateCommand command2 = new NotificationCreateCommand(
+                    profile2.getUser().getId(),
                     "어제와 기온 차가 커요",
                     "오늘은 어제보다 전반적으로 3도 낮아요.",
-                    com.codeit.otboo.domain.notification.dto.NotificationLevel.INFO,
-                    profile2.getUser()
+                    NotificationLevel.INFO
             );
 
-            RegionAlertResult result = new RegionAlertResult(60, 127, List.of(notification1, notification2));
+            RegionAlertResult result = new RegionAlertResult(60, 127, List.of(command1, command2));
 
             ArgumentCaptor<WeatherSseEvent> eventCaptor = ArgumentCaptor.forClass(WeatherSseEvent.class);
 
@@ -431,12 +432,12 @@ class WeatherAlertBatchServiceTest {
             verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
             WeatherSseEvent publishedEvent = eventCaptor.getValue();
-            assertThat(publishedEvent.getNotificationList()).hasSize(2);
-            assertThat(publishedEvent.getNotificationList())
-                    .extracting(Notification::getTitle)
+            assertThat(publishedEvent.notificationCommands()).hasSize(2);
+            assertThat(publishedEvent.notificationCommands())
+                    .extracting(NotificationCreateCommand::title)
                     .containsOnly("어제와 기온 차가 커요");
-            assertThat(publishedEvent.getNotificationList())
-                    .extracting(Notification::getContent)
+            assertThat(publishedEvent.notificationCommands())
+                    .extracting(NotificationCreateCommand::content)
                     .containsOnly("오늘은 어제보다 전반적으로 3도 낮아요.");
         }
     }

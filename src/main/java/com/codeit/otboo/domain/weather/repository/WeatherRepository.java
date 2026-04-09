@@ -17,19 +17,6 @@ public interface WeatherRepository extends JpaRepository<Weather, UUID> {
 
     List<Weather> findByXAndYAndForecastAtBetween(int x, int y, LocalDateTime start, LocalDateTime end);
 
-    @Query("""
-        SELECT w
-        FROM Weather w
-        WHERE w.forecastedAt = :forecastedAt
-          AND w.forecastAt >= :start
-          AND w.forecastAt < :end
-    """)
-    List<Weather> findYesterdayWeather(
-            @Param("forecastedAt") LocalDateTime forecastedAt,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
-    );
-
     void deleteByForecastedAtBefore(LocalDateTime forecastedAtBefore);
 
     @Query("""
@@ -49,14 +36,19 @@ public interface WeatherRepository extends JpaRepository<Weather, UUID> {
             @Param("end") LocalDateTime end
     );
 
-    @Modifying // 변경이 일어나는 쿼리 실행 시 사용
     @Query("""
-        delete from Weather w
-        where w.forecastedAt >= :start
-          and w.forecastedAt < :end
+        SELECT w
+        FROM Weather w
+        WHERE w.x = :x
+          AND w.y = :y
+          AND w.forecastedAt = :forecastedAt
+          AND w.forecastAt IN :forecastTimes
+        ORDER BY w.forecastAt ASC
     """)
-    void deleteByForecastedAtBetween(
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+    List<Weather> findTargetWeathers(
+            @Param("x") int x,
+            @Param("y") int y,
+            @Param("forecastedAt") LocalDateTime forecastedAt,
+            @Param("forecastTimes") List<LocalDateTime> forecastTimes
     );
 }

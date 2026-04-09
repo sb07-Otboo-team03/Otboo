@@ -7,7 +7,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "weather")
+@Table(
+        name = "weather",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_weather_forecasted_forecast_xy",
+                        columnNames = {"forecasted_at", "forecast_at", "x", "y"}
+                )
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

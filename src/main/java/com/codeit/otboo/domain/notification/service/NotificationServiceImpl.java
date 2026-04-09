@@ -1,12 +1,16 @@
 package com.codeit.otboo.domain.notification.service;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
+import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.exception.notification.NotificationNotFoundException;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
@@ -25,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
 
     private LocalDateTime toLocalDateTime(String cursor) {
@@ -86,6 +91,22 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public Notification create(Notification notification) {
+        return notificationRepository.save(notification);
+    }
+
+    @Override
+    @Transactional
+    public Notification create(NotificationCreateCommand command) {
+        User receiver = userRepository.findById(command.receiverId())
+                .orElseThrow(() -> new UserNotFoundException(command.receiverId()));
+
+        Notification notification = new Notification(
+                command.title(),
+                command.content(),
+                command.level(),
+                receiver
+        );
+
         return notificationRepository.save(notification);
     }
 }
