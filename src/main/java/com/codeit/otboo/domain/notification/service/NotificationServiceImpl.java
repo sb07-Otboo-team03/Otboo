@@ -95,6 +95,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public Notification create(NotificationCreateCommand command) {
         User receiver = userRepository.findById(command.receiverId())
                 .orElseThrow(() -> new UserNotFoundException(command.receiverId()));
