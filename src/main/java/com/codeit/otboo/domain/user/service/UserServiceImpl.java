@@ -9,10 +9,7 @@ import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Location;
 import com.codeit.otboo.domain.profile.entity.Profile;
-import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
-import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchCondition;
-import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
+import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
@@ -22,6 +19,7 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +41,7 @@ public class UserServiceImpl implements UserService{
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
     private final BinaryContentService binaryContentService;
+    private final RedisRegistry redisRegistry;
 
     @Override
     @Transactional(readOnly = true)
@@ -205,6 +204,16 @@ public class UserServiceImpl implements UserService{
 
 
         return profileMapper.toDto(user, resolveImageUrl(binaryContent));
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserLockStatus(UUID userId, UserLockUpdateRequest userLockUpdateRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateLockStatus(userLockUpdateRequest.locked());
+        redisRegistry.delete(userId);
+        return userMapper.toDto(user);
     }
 
     private String resolveImageUrl(BinaryContent binaryContent){

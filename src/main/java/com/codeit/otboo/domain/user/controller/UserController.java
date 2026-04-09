@@ -6,6 +6,7 @@ import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
 import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
+import com.codeit.otboo.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -64,6 +65,12 @@ public class UserController {
         BinaryContentCreateRequest binaryContentCreateRequest = binaryContentMapper.toRequestDto(image);
         ProfileResponse profileResponse = userService.updateProfile(userId, request, binaryContentCreateRequest);
         return ResponseEntity.ok(profileResponse);
+    }
+
+    @PatchMapping(value = "/{userId}/lock")
+    public ResponseEntity<UserResponse> updateUserLock(@PathVariable UUID userId, @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
+        UserResponse userResponse = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+        return ResponseEntity.ok(userResponse);
     }
 
 
