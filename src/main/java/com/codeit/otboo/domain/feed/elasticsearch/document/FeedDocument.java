@@ -8,7 +8,7 @@ import org.springframework.data.elasticsearch.annotations.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Document(indexName = "feeds-v1")
+@Document(indexName = "feeds-v2")
 public class FeedDocument {
 
     @Id

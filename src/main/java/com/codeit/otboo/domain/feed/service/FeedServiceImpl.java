@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,7 +116,10 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new IllegalArgumentException("Feed author is not the same as the request author"); // TODO
+            throw new AccessDeniedException("feedId=" + id
+                    + "\nauthorId=" + feed.getAuthor().getId()
+                    + "\nuserId=" + authorId
+            );
 
         feed.updateContent(request.content());
         eventPublisher.publishEvent(new FeedUpdatedEvent(feed.getId(), feed.getContent()));
@@ -130,7 +134,10 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new IllegalArgumentException("Feed author is not the same as the request author"); // TODO
+            throw new AccessDeniedException("feedId=" + id
+                    + "\nauthorId=" + feed.getAuthor().getId()
+                    + "\nuserId=" + authorId
+            );
 
         likeRepository.deleteAllByFeedId(id);
         commentRepository.deleteAllByFeedId(id);

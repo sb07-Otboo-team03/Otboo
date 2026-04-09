@@ -23,7 +23,6 @@ import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.domain.weather.dto.response.WeatherSummaryResponse;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.SkyStatus;
 import com.codeit.otboo.domain.weather.entity.Weather;
@@ -50,6 +49,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -459,7 +459,7 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.updateFeed(feedId, request, userId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(AccessDeniedException.class);
         }
     }
 
@@ -514,7 +514,7 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(AccessDeniedException.class);
         }
     }
 
