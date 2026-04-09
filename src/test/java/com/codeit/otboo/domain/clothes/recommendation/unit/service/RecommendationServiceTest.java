@@ -103,7 +103,12 @@ class RecommendationServiceTest {
         when(weatherRepository.findById(weatherId)).thenReturn(Optional.of(weather));
         when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
         when(clothesRepository.findByOwnerId(userId)).thenReturn(clothesList);
-        when(clothesMapper.toDto(any(), any(), any())).thenReturn(mock(ClothesResponse.class));
+//        when(clothesMapper.toDto(any(), any(), any())).thenReturn(mock(ClothesResponse.class));
+        when(clothesMapper.toDto(any(), any(), any())).thenAnswer(invocation -> {
+            Clothes clothes = invocation.getArgument(0);
+            return new ClothesResponse(UUID.randomUUID(), UUID.randomUUID(), clothes.getName(),
+                    null, null, null);
+        });
     }
 
 
@@ -149,6 +154,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("반팔티"));
     }
 
     @Test
@@ -171,6 +179,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("기모 맨투맨"));
     }
 
     @Test
@@ -193,6 +204,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("목폴라"));
     }
 
     @Test
@@ -215,6 +229,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("장화"));
     }
 
     @Test
@@ -237,6 +254,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("양털 부츠"));
     }
 
     @Test
@@ -249,16 +269,19 @@ class RecommendationServiceTest {
         Weather weather = mockWeather(15, PrecipitationType.NONE);
         Profile profile = mockProfile(2);
 
-        Clothes walker  = createClothes(ClothesType.SHOES, "워커");
+        Clothes runningShoes  = createClothes(ClothesType.SHOES, "운동화");
         Clothes rainShoes = createClothes(ClothesType.SHOES, "장화");
 
-        defaultSetting(weatherId, userId, weather, profile, List.of(walker, rainShoes));
+        defaultSetting(weatherId, userId, weather, profile, List.of(runningShoes, rainShoes));
 
         // when
         RecommendationResponse response = recommendationService.recommend(weatherId, userId);
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("운동화"));
     }
 
     @Test
@@ -282,6 +305,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("양털부츠") || name.contains("워커"));
     }
 
     @Test
@@ -305,6 +331,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("샌들"));
     }
 
     @Test
@@ -327,6 +356,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("원피스"));
     }
 
     @Test
@@ -350,6 +382,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("원피스"));
     }
 
     @Test
@@ -373,6 +408,12 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(2);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("뷔스티에"));
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("긴팔"));
     }
 
     @Test
@@ -398,6 +439,9 @@ class RecommendationServiceTest {
 
         // then
         assertThat(response.clothes()).hasSize(1);
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("긴팔"));
     }
 
     @Test
@@ -421,7 +465,9 @@ class RecommendationServiceTest {
         RecommendationResponse response = recommendationService.recommend(weatherId, userId);
         // when & then
         assertThat(response.clothes()).hasSize(1);
-
+        assertThat(response.clothes())
+                .extracting(ClothesResponse::name)
+                .anyMatch(name -> name.contains("반팔") || name.contains("긴팔"));
     }
 
     @Test
