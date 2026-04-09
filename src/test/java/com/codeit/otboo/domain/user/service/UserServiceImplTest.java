@@ -12,10 +12,9 @@ import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
-import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
-import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
+import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -27,6 +26,8 @@ import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionDeletedRequestEvent;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionInvalidationReason;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +39,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -74,6 +76,9 @@ class UserServiceImplTest {
 
     @Mock
     private BinaryContentService binaryContentService;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -505,6 +510,136 @@ class UserServiceImplTest {
             then(profileMapper).should(never()).toDto(any(), any());
 
         }
+    }
 
+    @Nested
+    @DisplayName("유저 권한 상태")
+    class userRoleUpdate {
+        @Test
+        @DisplayName("권한 상태 변경성공")
+        void userUpdateRole_success() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            Role beforeRole = user.getRole(); // 기본값 User
+            UserRoleUpdateRequest userRoleUpdateRequest = new UserRoleUpdateRequest(Role.ADMIN);
+            UserResponse userResponse = UserResponseFixture.create(user, userRoleUpdateRequest.role());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ROLE_CHANGED);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserRole(userId, userRoleUpdateRequest);
+
+            // then
+            assertThat(result.role()).isNotEqualTo(beforeRole);
+            then(userRepository).should().findById(userId);
+            then(userMapper).should().toDto(user);
+            then(applicationEventPublisher).should().publishEvent(sessionDeletedRequestEvent);
+        }
+
+        @Test
+        @DisplayName("잠금상태 변경실패 - 존재하지 않는 유저")
+        void userLock_fail_user_notFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> userService.updateUserLockStatus(userId, userLockUpdateRequest))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(userMapper).should(never()).toDto(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("유저 잠금 상태")
+    class userLockUpdate {
+        @Test
+        @DisplayName("잠금상태 변경성공 - 활성 -> 비활성화")
+        void userLock_success_false_true() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            boolean beforeLocked = user.isLocked(); // 기본값 false
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            UserResponse userResponse = UserResponseFixture.create(user, userLockUpdateRequest.locked());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+
+            // then
+            assertThat(result.locked()).isNotEqualTo(beforeLocked);
+            assertThat(result.locked()).isTrue();
+            then(userRepository).should().findById(userId);
+            then(userMapper).should().toDto(user);
+            then(applicationEventPublisher).should().publishEvent(sessionDeletedRequestEvent);
+        }
+
+        @Test
+        @DisplayName("잠금상태 변경 성공 - 비활성화->활성화")
+        void userLock_success_true_false() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            user.updateLockStatus(true);
+            boolean beforeLocked = user.isLocked();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(false);
+            UserResponse userResponse = UserResponseFixture.create(user, userLockUpdateRequest.locked());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+
+            // then
+            assertThat(result.locked()).isNotEqualTo(beforeLocked);
+            assertThat(result.locked()).isFalse();
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(userMapper).should().toDto(user);
+        }
+
+        @Test
+        @DisplayName("잠금상태 변경실패 - 존재하지 않는 유저")
+        void userLock_fail_user_notFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> userService.updateUserLockStatus(userId, userLockUpdateRequest))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(userMapper).should(never()).toDto(any());
+        }
     }
 }

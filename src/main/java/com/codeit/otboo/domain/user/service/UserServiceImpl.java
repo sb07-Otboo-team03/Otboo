@@ -218,7 +218,6 @@ public class UserServiceImpl implements UserService {
                 ));
             }
         }
-
         return userMapper.toDto(user);
     }
 
@@ -236,12 +235,6 @@ public class UserServiceImpl implements UserService {
                     SessionInvalidationReason.ACCOUNT_LOCKED
             ));
         }
-        user.updateRole(userRoleUpdateRequest.role());
-        eventPublisher.publishEvent(new SessionDeletedRequestEvent(
-                userId,
-                SessionInvalidationReason.ROLE_CHANGED
-        ));
-
         return userMapper.toDto(user);
     }
 
