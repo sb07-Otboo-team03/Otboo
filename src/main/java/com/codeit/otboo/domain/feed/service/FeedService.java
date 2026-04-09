@@ -12,7 +12,7 @@ public interface FeedService {
 
     FeedResponse createFeed(FeedCreateRequest request);
 
-    CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual);
+    CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID userId);
 
     FeedResponse updateFeed(UUID id, FeedUpdateRequest request, UUID authorId);
 

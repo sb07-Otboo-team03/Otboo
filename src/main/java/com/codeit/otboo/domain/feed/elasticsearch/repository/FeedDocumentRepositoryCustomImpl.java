@@ -53,6 +53,14 @@ public class FeedDocumentRepositoryCustomImpl implements FeedDocumentRepositoryC
             hasCondition = true;
         }
 
+        if (condition.authorIdEqual() != null) {
+            boolBuilder.filter(f -> f.term(t -> t
+                    .field("authorId")
+                    .value(condition.authorIdEqual().toString())
+            ));
+            hasCondition = true;
+        }
+
         Query query = hasCondition
                 ? Query.of(q -> q.bool(boolBuilder.build()))
                 : Query.of(q -> q.matchAll(m -> m));

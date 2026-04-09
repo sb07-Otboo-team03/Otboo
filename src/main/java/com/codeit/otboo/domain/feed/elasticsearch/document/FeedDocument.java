@@ -29,6 +29,9 @@ public class FeedDocument {
     @Field(type = FieldType.Keyword)
     private String precipitationType;
 
+    @Field(type = FieldType.Keyword)
+    private String authorId;
+
     @Field(type = FieldType.Long)
     private Long likeCount;
 

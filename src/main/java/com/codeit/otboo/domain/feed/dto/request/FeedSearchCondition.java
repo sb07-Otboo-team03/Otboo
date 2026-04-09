@@ -16,7 +16,8 @@ public record FeedSearchCondition(
     SortDirection sortDirection,
     String keywordLike,
     SkyStatus skyStatusEqual,
-    PrecipitationType precipitationTypeEqual
+    PrecipitationType precipitationTypeEqual,
+    UUID authorIdEqual
 ) {
     public static FeedSearchCondition from(FeedSearchRequest request) {
         return new FeedSearchCondition(
@@ -27,7 +28,8 @@ public record FeedSearchCondition(
                 request.sortDirection(),
                 request.keywordLike(),
                 request.skyStatusEqual(),
-                request.precipitationTypeEqual()
+                request.precipitationTypeEqual(),
+                request.authorIdEqual()
         );
     }
 }

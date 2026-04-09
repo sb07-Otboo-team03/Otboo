@@ -8,6 +8,7 @@ public record FeedSyncEvent(
         String content,
         String skyStatus,
         String precipitationType,
+        UUID authorId,
         LocalDateTime createdAt,
         Long likeCount
 ) {

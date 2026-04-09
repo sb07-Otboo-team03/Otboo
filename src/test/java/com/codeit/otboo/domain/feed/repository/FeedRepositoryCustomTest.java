@@ -240,6 +240,43 @@ class FeedRepositoryCustomTest {
     }
 
     @Nested
+    @DisplayName("자신(author)의 피드 조회")
+    class SearchByAuthorTest {
+
+        @Test
+        @DisplayName("""
+                프로필에서 자신의 피드를 조회할 수 있다.
+                AuthorIdEqual == authorId
+                """)
+        void searchFeedByAuthor() {
+            // given
+            saveFeed(5);
+            User author = new User("author@a.a", "otboo123");
+            entityManager.persist(author);
+            List<Feed> feedList = FeedFixture.createFeed(3, author);
+            feedList.forEach(entityManager::persist);
+
+            entityManager.flush();
+            entityManager.clear();
+
+            FeedSearchCondition condition = FeedSearchCondition.builder()
+                    .limit(5)
+                    .sortBy("createdAt")
+                    .sortDirection(SortDirection.DESCENDING)
+                    .authorIdEqual(author.getId())
+                    .build();
+
+            Slice<Feed> page = feedRepository.findAllByKeywordLike(condition);
+            List<Feed> list = page.getContent();
+
+            // then
+            assertThat(list.size()).isEqualTo(3);
+            assertThat(list).extracting(feed -> feed.getAuthor().getId())
+                    .containsOnly(author.getId());
+        }
+    }
+
+    @Nested
     @DisplayName("총 갯수")
     class CountTest {
 

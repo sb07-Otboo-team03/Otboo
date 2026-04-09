@@ -43,7 +43,7 @@ class FeedDocumentServiceImplTest {
     void createFeedDocument() {
         // given
         FeedSyncEvent event = new FeedSyncEvent(UUID.randomUUID(), "content",
-                SkyStatus.CLEAR.name(), PrecipitationType.NONE.name(), LocalDateTime.now(), 0L);
+                SkyStatus.CLEAR.name(), PrecipitationType.NONE.name(), UUID.randomUUID(), LocalDateTime.now(), 0L);
 
         // when
         feedDocumentService.toDocument(event);
@@ -85,7 +85,7 @@ class FeedDocumentServiceImplTest {
             String content = "newContent";
 
             FeedDocument doc = new FeedDocument(feedId.toString(), "content", null,
-                    null, null, null);
+                    null, UUID.randomUUID().toString(), null, null);
 
             given(feedDocumentRepository.findById(feedId.toString())).willReturn(Optional.of(doc));
 
@@ -125,7 +125,7 @@ class FeedDocumentServiceImplTest {
             long newLikeCount = 1L;
 
             FeedDocument doc = new FeedDocument(feedId.toString(), "content", null,
-                    null, 0L, null);
+                    null, UUID.randomUUID().toString(), 0L, null);
 
             given(feedDocumentRepository.findById(feedId.toString())).willReturn(Optional.of(doc));
 
@@ -164,7 +164,7 @@ class FeedDocumentServiceImplTest {
             UUID feedId = UUID.randomUUID();
 
             FeedDocument doc = new FeedDocument(feedId.toString(), "content", null,
-                    null, 0L, null);
+                    null, UUID.randomUUID().toString(), 0L, null);
 
             given(feedDocumentRepository.findById(feedId.toString())).willReturn(Optional.of(doc));
 
