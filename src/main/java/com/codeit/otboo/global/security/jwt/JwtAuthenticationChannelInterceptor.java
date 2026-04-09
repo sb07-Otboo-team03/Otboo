@@ -1,6 +1,5 @@
-package com.codeit.otboo.domain.websocket.auth;
+package com.codeit.otboo.global.security.jwt;
 
-import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.exception.JwtException;
 import com.codeit.otboo.global.security.jwt.exception.JwtInvalidTokenTypeException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
