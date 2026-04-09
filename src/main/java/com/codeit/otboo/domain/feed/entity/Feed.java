@@ -63,11 +63,6 @@ public class Feed extends BaseUpdatableEntity {
         likeCount = Math.max(0, likeCount - 1);
     }
 
-    // Protype X
-    public void decreaseComment() {
-        commentCount = Math.max(0, commentCount - 1);
-    }
-
     public void updateContent(String content) {
         this.content = content;
     }
