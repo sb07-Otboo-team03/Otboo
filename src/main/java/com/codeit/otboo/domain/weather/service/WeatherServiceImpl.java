@@ -26,9 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +49,7 @@ public class WeatherServiceImpl implements WeatherService{
     private final KmaGridConverter kmaGridConverter;
 
     private final WeatherForecastUpsertService weatherForecastUpsertService;
+    private final WeatherRedisCacheService weatherRedisCacheService;
 
     @Override
     @Transactional
@@ -84,15 +85,32 @@ public class WeatherServiceImpl implements WeatherService{
                 .withSecond(0)
                 .withNano(0);
 
-        List<Weather> weathers = new ArrayList<>();
-        addWeathers(forecastedAt, forecastAt, location, weathers); // 조회 시간에 맞추어 (오늘, 내일, 모레, 4일뒤, 5일뒤) 데이터 조회 및 리스트에 추가
+        int x = location.getX();
+        int y = location.getY();
+
+        LocationNameMap finalLocation = location;
+
+        return weatherRedisCacheService.getOrLoad(
+                x,
+                y,
+                forecastAt,
+                () -> loadWeatherResponses(forecastedAt, forecastAt, finalLocation) // 캐시 miss시 실행할 실제 조회 코드
+        );
+    }
+
+    private List<WeatherResponse> loadWeatherResponses(
+            LocalDateTime forecastedAt,
+            LocalDateTime forecastAt,
+            LocationNameMap location
+    ) {
+        List<Weather> weathers = getWeathers(forecastedAt, forecastAt, location);
 
         int x = location.getX();
         int y = location.getY();
 
         if (weathers.isEmpty()) {
             insertNewLocationWeather(x, y); // DB에 날씨 데이터 추가
-            addWeathers(forecastedAt, forecastAt, location, weathers);
+            weathers = getWeathers(forecastedAt, forecastAt, location);
         }
 
         // 3일 뒤 까지 날씨 정보 저장
@@ -177,15 +195,18 @@ public class WeatherServiceImpl implements WeatherService{
         weathers.add(weather3);
     }
 
-    private void addWeathers(LocalDateTime forecastedAt, LocalDateTime forecastAt, LocationNameMap location, List<Weather> weathers) {
-        for (int i = 0; i < 4; i++) {
-            weatherRepository.findByForecastedAtAndForecastAtAndXAndY(
-                            forecastedAt,
-                            forecastAt.plusDays(i),
-                            location.getX(),
-                            location.getY())
-                    .ifPresent(weathers::add);
-        }
+    private List<Weather> getWeathers(LocalDateTime forecastedAt, LocalDateTime forecastAt, LocationNameMap location) {
+        // 현재 시간의 오늘부터 3일 뒤 날씨 정보까지 가져오기
+        List<LocalDateTime> targetTimes = IntStream.range(0, 4)
+                .mapToObj(forecastAt::plusDays)
+                .toList();
+
+        return weatherRepository.findTargetWeathers(
+                location.getX(),
+                location.getY(),
+                forecastedAt,
+                targetTimes
+        );
     }
 
     @Transactional(readOnly = true)

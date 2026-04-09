@@ -51,7 +51,7 @@ public class KmaWeatherMapper {
 
         // 날짜 별로 데이터 정제
         return forecastDates.stream()
-                .flatMap(date -> refineWeatherInfo(date, filtered, nx, ny).stream())
+                .flatMap(date -> refineWeatherInfo(date, filtered, nx, ny, isScheduling).stream())
                 .toList();
     }
 
@@ -68,7 +68,7 @@ public class KmaWeatherMapper {
                 .toList();
     }
 
-    private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny) {
+    private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny, boolean isScheduling) {
 
         // fcstDate의 값을 가진 데이터만 필터링
         List<KmaWeatherItem> filteredDate = filterByForecastDate(fcstDate, filtered);
@@ -82,14 +82,18 @@ public class KmaWeatherMapper {
         // VALUE : 카테고리, 값 (WSD, 20)
         Map<String, Map<KmaCategory, String>> groupedByTime = groupByForecastTime(filteredDate);
 
-        // TODO: 최저온도, 최고온도가 null인 경우 어떻게 저장할지 고민해보기
         Double temperatureMin = extractTemperature(groupedByTime, MIN_TEMPERATURE_TIME, KmaCategory.TMN);
         Double temperatureMax = extractTemperature(groupedByTime, MAX_TEMPERATURE_TIME, KmaCategory.TMX);
+
+        LocalDateTime forecastedAt = isScheduling ?
+                LocalDate.now(SEOUL).plusDays(1).atStartOfDay() :
+                LocalDate.now(SEOUL).atStartOfDay();
 
         // 시간 별로 날씨 엔티티 생성
         return groupedByTime.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey()) // 시간순 정렬
                 .map(entry -> buildWeather(
+                        forecastedAt,
                         fcstDate,
                         entry.getKey(),
                         entry.getValue(),
@@ -144,6 +148,7 @@ public class KmaWeatherMapper {
     }
 
     private Weather buildWeather(
+            LocalDateTime forecastedAt,
             String fcstDate,
             String fcstTime,
             Map<KmaCategory, String> values,
@@ -180,7 +185,7 @@ public class KmaWeatherMapper {
         WindAsWord windAsWord = WindAsWord.from(windSpeed);
 
         return new Weather(
-                LocalDate.now(SEOUL).atStartOfDay(),
+                forecastedAt,
                 forecastAt,
                 nx,
                 ny,
