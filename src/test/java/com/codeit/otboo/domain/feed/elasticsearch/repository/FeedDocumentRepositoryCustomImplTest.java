@@ -2,10 +2,7 @@ package com.codeit.otboo.domain.feed.elasticsearch.repository;
 
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchCondition;
 import com.codeit.otboo.domain.feed.elasticsearch.document.FeedDocument;
-import com.codeit.otboo.domain.feed.entity.Feed;
 import com.codeit.otboo.domain.feed.fixture.FeedDocumentFixture;
-import com.codeit.otboo.domain.feed.fixture.FeedFixture;
-import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.SkyStatus;
 import com.codeit.otboo.global.slice.dto.SortDirection;
@@ -17,7 +14,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.elasticsearch.DataElasticsearchTest;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;

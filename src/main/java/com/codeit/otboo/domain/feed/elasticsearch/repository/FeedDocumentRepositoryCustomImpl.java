@@ -30,9 +30,9 @@ public class FeedDocumentRepositoryCustomImpl implements FeedDocumentRepositoryC
         boolean hasCondition = false;
 
         if (StringUtils.hasText(condition.keywordLike())) {
-            boolBuilder.must(m -> m.match(t -> t
-                    .field("content")
+            boolBuilder.must(m -> m.multiMatch(t -> t
                     .query(condition.keywordLike())
+                    .fields("content", "content.en")
             ));
             hasCondition = true;
         }
