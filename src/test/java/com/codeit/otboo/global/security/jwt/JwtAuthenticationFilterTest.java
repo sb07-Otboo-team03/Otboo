@@ -207,7 +207,7 @@ class JwtAuthenticationFilterTest {
         then(authenticationEntryPoint).should().commence(
                 eq(request),
                 eq(response),
-                any(BadCredentialsException.class)
+                any(UsernameNotFoundException.class)
         );
         then(filterChain).should(never()).doFilter(request, response);
         then(securityContext).should(never()).setAuthentication(any());
