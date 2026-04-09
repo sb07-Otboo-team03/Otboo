@@ -65,13 +65,13 @@ public class UserController {
     }
 
     @PatchMapping(value = "/{userId}/lock")
-    public ResponseEntity<UserResponse> updateUserLock(@PathVariable UUID userId, @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
+    public ResponseEntity<UserResponse> updateUserLock(@PathVariable UUID userId, @Valid @RequestBody UserLockUpdateRequest userLockUpdateRequest) {
         UserResponse userResponse = userService.updateUserLockStatus(userId, userLockUpdateRequest);
         return ResponseEntity.ok(userResponse);
     }
 
     @PatchMapping(value = "/{userId}/role")
-    public ResponseEntity<UserResponse> updateUserRole(@PathVariable UUID userId, @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
+    public ResponseEntity<UserResponse> updateUserRole(@PathVariable UUID userId, @Valid @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
         UserResponse userResponse = userService.updateUserRole(userId, userRoleUpdateRequest);
         return ResponseEntity.ok(userResponse);
     }
