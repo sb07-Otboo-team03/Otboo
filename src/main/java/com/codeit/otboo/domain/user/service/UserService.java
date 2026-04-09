@@ -3,10 +3,7 @@ package com.codeit.otboo.domain.user.service;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
-import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
-import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserLockUpdateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
+import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
@@ -24,8 +21,6 @@ public interface UserService {
 
     UserResponse createUser(UserCreateRequest userCreateRequest);
 
-    UserResponse updateUserRole(UUID userId, Role role);
-
     ProfileResponse getProfile(UUID userId);
 
     void updateUserPassword(UUID userId, UpdatePasswordRequest updatePasswordRequest);
@@ -35,4 +30,7 @@ public interface UserService {
     ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest, BinaryContentCreateRequest imageRequest);
 
     UserResponse updateUserLockStatus(UUID userId, UserLockUpdateRequest userLockUpdateRequest);
+
+    UserResponse updateUserRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest);
 }
+

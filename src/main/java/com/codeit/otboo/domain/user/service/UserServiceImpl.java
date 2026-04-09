@@ -11,7 +11,6 @@ import com.codeit.otboo.domain.profile.entity.Location;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserEmailDuplicateException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -19,20 +18,23 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionDeletedRequestEvent;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionInvalidationReason;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -41,7 +43,8 @@ public class UserServiceImpl implements UserService{
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
     private final BinaryContentService binaryContentService;
-    private final RedisRegistry redisRegistry;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     @Override
     @Transactional(readOnly = true)
@@ -86,12 +89,6 @@ public class UserServiceImpl implements UserService{
         return userMapper.toDto(savedUser);
     }
 
-
-    @Override
-    public UserResponse updateUserRole(UUID userId, Role role) {
-        return null;
-    }
-
     @Override
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(UUID userId) {
@@ -99,9 +96,9 @@ public class UserServiceImpl implements UserService{
                 () -> new UserNotFoundException(userId));
         String profileImageUrl = null;
         BinaryContent binaryContent = user.getProfile().getBinaryContent();
-        if (binaryContent!= null) {
+        if (binaryContent != null) {
             UUID binaryContentId = binaryContent.getId();
-                profileImageUrl = binaryContentUrlResolver.resolve(binaryContentId);
+            profileImageUrl = binaryContentUrlResolver.resolve(binaryContentId);
         }
         return profileMapper.toDto(user, profileImageUrl);
     }
@@ -171,7 +168,7 @@ public class UserServiceImpl implements UserService{
 
         if (imageRequest != null) {
             // TODO: 지혜님 코드 수정에 따라, 삭제할수도 있는 코드
-            if(oldBinaryContent != null){
+            if (oldBinaryContent != null) {
                 binaryContentService.delete(oldBinaryContent.getId());
             }
             newBinaryContent = binaryContentService.upload(imageRequest);
@@ -180,8 +177,8 @@ public class UserServiceImpl implements UserService{
 
         LocationRequest locationRequest = profileUpdateRequest.location();
         Location location = profile.getLocation();
-        if(locationRequest != null) {
-             location = Location.builder()
+        if (locationRequest != null) {
+            location = Location.builder()
                     .x(locationRequest.x())
                     .y(locationRequest.y())
                     .latitude(locationRequest.latitude())
@@ -211,13 +208,45 @@ public class UserServiceImpl implements UserService{
     public UserResponse updateUserLockStatus(UUID userId, UserLockUpdateRequest userLockUpdateRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        user.updateLockStatus(userLockUpdateRequest.locked());
-        redisRegistry.delete(userId);
+        if (user.isLocked() != userLockUpdateRequest.locked()) {
+            user.updateLockStatus(userLockUpdateRequest.locked());
+
+            if (user.isLocked()) {
+                eventPublisher.publishEvent(new SessionDeletedRequestEvent(
+                        userId,
+                        SessionInvalidationReason.ACCOUNT_LOCKED
+                ));
+            }
+        }
+
         return userMapper.toDto(user);
     }
 
-    private String resolveImageUrl(BinaryContent binaryContent){
-        if(binaryContent == null) return null;
+    @Override
+    @Transactional
+    public UserResponse updateUserRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (user.getRole() != userRoleUpdateRequest.role()) {
+            user.updateRole(userRoleUpdateRequest.role());
+
+            eventPublisher.publishEvent(new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED
+            ));
+        }
+        user.updateRole(userRoleUpdateRequest.role());
+        eventPublisher.publishEvent(new SessionDeletedRequestEvent(
+                userId,
+                SessionInvalidationReason.ROLE_CHANGED
+        ));
+
+        return userMapper.toDto(user);
+    }
+
+    private String resolveImageUrl(BinaryContent binaryContent) {
+        if (binaryContent == null) return null;
         return binaryContentUrlResolver.resolve(binaryContent.getId());
     }
 }
