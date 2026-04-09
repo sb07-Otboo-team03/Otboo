@@ -8,7 +8,6 @@ import org.springframework.data.elasticsearch.annotations.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Setting(settingPath = "elastic/ngram-settings.json")
 @Document(indexName = "feeds-v2")
 public class FeedDocument {
 
@@ -20,7 +19,7 @@ public class FeedDocument {
             mainField = @Field(type = FieldType.Text, analyzer = "nori"),
             otherFields = {
                     @InnerField(suffix = "keyword", type = FieldType.Keyword),
-                    @InnerField(suffix = "en", type = FieldType.Text, analyzer = "english_ngram_analyzer")
+                    @InnerField(suffix = "en", type = FieldType.Text, analyzer = "english")
             }
     )
     private String content;
