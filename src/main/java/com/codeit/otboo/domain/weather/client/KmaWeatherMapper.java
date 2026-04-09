@@ -47,28 +47,28 @@ public class KmaWeatherMapper {
                         .orElse(false)) // category를 enum으로 변환 실패시 필터로 거르겠다.
                 .toList();
 
-        List<String> forecastDates = resolveForecastDates(baseTime, isScheduling);
+        boolean shouldShiftToNextDay = isScheduling && "2300".equals(baseTime);
+        LocalDate today = LocalDate.now(SEOUL);
+        LocalDate baseDate = shouldShiftToNextDay ? today.plusDays(1) : today;
+
+        List<String> forecastDates = resolveForecastDates(baseDate);
 
         // 날짜 별로 데이터 정제
         return forecastDates.stream()
-                .flatMap(date -> refineWeatherInfo(date, filtered, nx, ny, isScheduling).stream())
+                .flatMap(date -> refineWeatherInfo(date, filtered, nx, ny, baseDate).stream())
                 .toList();
     }
 
-    private List<String> resolveForecastDates(String baseTime, boolean isScheduling) {
-        LocalDate startDate = ("2300".equals(baseTime) && isScheduling)
-                ? LocalDate.now(SEOUL).plusDays(1)
-                : LocalDate.now(SEOUL);
-
+    private List<String> resolveForecastDates(LocalDate baseDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
         return IntStream.range(0, 4)
-                .mapToObj(startDate::plusDays)
+                .mapToObj(baseDate::plusDays)
                 .map(date -> date.format(formatter))
                 .toList();
     }
 
-    private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny, boolean isScheduling) {
+    private List<Weather> refineWeatherInfo(String fcstDate, List<KmaWeatherItem> filtered, int nx, int ny, LocalDate baseDate) {
 
         // fcstDate의 값을 가진 데이터만 필터링
         List<KmaWeatherItem> filteredDate = filterByForecastDate(fcstDate, filtered);
@@ -85,9 +85,7 @@ public class KmaWeatherMapper {
         Double temperatureMin = extractTemperature(groupedByTime, MIN_TEMPERATURE_TIME, KmaCategory.TMN);
         Double temperatureMax = extractTemperature(groupedByTime, MAX_TEMPERATURE_TIME, KmaCategory.TMX);
 
-        LocalDateTime forecastedAt = isScheduling ?
-                LocalDate.now(SEOUL).plusDays(1).atStartOfDay() :
-                LocalDate.now(SEOUL).atStartOfDay();
+        LocalDateTime forecastedAt = baseDate.atStartOfDay();
 
         // 시간 별로 날씨 엔티티 생성
         return groupedByTime.entrySet().stream()
