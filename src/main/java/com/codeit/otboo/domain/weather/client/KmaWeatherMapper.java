@@ -2,6 +2,8 @@ package com.codeit.otboo.domain.weather.client;
 
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;
 import com.codeit.otboo.domain.weather.entity.*;
+import com.codeit.otboo.global.util.TimeProvider;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +16,11 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class KmaWeatherMapper {
+
+    private final TimeProvider timeProvider;
 
     private static final Set<KmaCategory> WEATHER_CATEGORIES = EnumSet.of(
             KmaCategory.POP,
@@ -48,7 +53,7 @@ public class KmaWeatherMapper {
                 .toList();
 
         boolean shouldShiftToNextDay = isScheduling && "2300".equals(baseTime);
-        LocalDate today = LocalDate.now(SEOUL);
+        LocalDate today = timeProvider.nowDate();
         LocalDate baseDate = shouldShiftToNextDay ? today.plusDays(1) : today;
 
         List<String> forecastDates = resolveForecastDates(baseDate);
