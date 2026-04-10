@@ -132,6 +132,7 @@ class FollowControllerTest {
                 "cursor",
                 UUID.randomUUID(),
                 true,
+                0L,
                 "createdAt",
                 SortDirection.DESCENDING
             );
@@ -165,6 +166,7 @@ class FollowControllerTest {
                 "cursor",
                 UUID.randomUUID(),
                 false,
+                0L,
                 "createdAt",
                 SortDirection.DESCENDING
             );
