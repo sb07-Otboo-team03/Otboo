@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @RequiredArgsConstructor
-@Component
+//@Component
 public class BinaryContentRequiredTopicListener {
 
     private final BinaryContentRetryService binaryContentRetryService;
