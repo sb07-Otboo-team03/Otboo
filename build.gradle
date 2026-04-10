@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.11'
@@ -13,6 +15,24 @@ java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
 	}
+}
+
+bootJar {
+    mainClass = 'com.codeit.otboo.OtbooApplication'
+}
+
+tasks.register('bootJarBatch', BootJar) {
+    group = 'build'
+    description = 'Builds the executable batch jar'
+
+    archiveClassifier.set('batch')
+    mainClass.set('com.codeit.otboo.batch.OtbooBatchApplication')
+
+    // 커스텀 BootJar 에 꼭 명시
+    classpath = sourceSets.main.runtimeClasspath
+
+    // targetJavaVersion 값 명시
+    targetJavaVersion.set(JavaVersion.VERSION_17)
 }
 
 configurations {

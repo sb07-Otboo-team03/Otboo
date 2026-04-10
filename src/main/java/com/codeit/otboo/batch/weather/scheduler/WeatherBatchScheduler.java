@@ -17,10 +17,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
-@Profile("batch")
+//@Profile("batch")
 public class WeatherBatchScheduler {
 
     private final JobLauncher jobLauncher;
