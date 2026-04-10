@@ -5,6 +5,6 @@ WORKDIR /app
 ARG JAR_FILE
 COPY ${JAR_FILE} app.jar
 
-ENV JVM_OPTS="-Xms512m -Xmx512m"
+ENV JAVA_TOOL_OPTIONS="-Xms512m -Xmx512m"
 
-ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar app.jar --spring.profiles.active=batch"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=batch"]
