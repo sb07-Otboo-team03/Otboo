@@ -60,7 +60,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         );
 
         String title = "[DM]" + response.sender().name();
-        eventPublisher.publishEvent( new DirectMessageSseEvent(title, response.content(), receiver.getId()));
+        eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId()));
 
         return response;
     }

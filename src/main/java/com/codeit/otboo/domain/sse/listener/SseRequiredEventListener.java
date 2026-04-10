@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
-@Component
+//@Component
 public class SseRequiredEventListener {
 
     private final SseService sseService;
@@ -42,7 +42,7 @@ public class SseRequiredEventListener {
             );
     }
 
-    public Notification parsingSseEvent(UUID userId, BaseSseEvent event) {
+    public Notification getNotification(UUID userId, BaseSseEvent event) {
 
         User user = userService.getUser(userId);
 
@@ -54,30 +54,9 @@ public class SseRequiredEventListener {
             .build();
     }
 
-    @Async
-    @TransactionalEventListener
-    public void on(DirectMessageSseEvent event) {
+    public List<Notification> getNotifications(String title, String content, List<User> users) {
 
-        Notification notification = parsingSseEvent(event.getUserId(), event);
-        sendSseEvent(List.of(notification));
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(FollowSseEvent event) {
-
-        Notification notification = parsingSseEvent(event.getUserId(), event);
-        sendSseEvent(List.of(notification));
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(ClothesAttributeDefSseEvent event) {
-
-        String title = event.getTitle();
-        String content = event.getContent();
-
-        List<Notification> notificationList = userService.getAllUsers()
+        return users
             .stream()
             .map(user -> Notification.builder()
                 .title(title)
@@ -86,7 +65,64 @@ public class SseRequiredEventListener {
                 .receiver(user)
                 .build())
             .toList();
+    }
 
+    @Async
+    @TransactionalEventListener
+    public void on(DirectMessageSseEvent event) {
+
+        Notification notification = getNotification(event.getUserId(), event);
+        sendSseEvent(List.of(notification));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(FollowSseEvent event) {
+
+        Notification notification = getNotification(event.getUserId(), event);
+        sendSseEvent(List.of(notification));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(CommentCreatedEvent event) {
+
+        Notification notification = getNotification(event.getReceiverId(), event);
+        sendSseEvent(List.of(notification));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedLikedEvent event) {
+
+        String title = event.getTitle();
+        String content = event.getContent();
+
+        Notification notification = getNotification(event.getReceiverId(), event);
+        sendSseEvent(List.of(notification));
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedCreatedEvent event) {
+
+        String title = event.getTitle();
+        String content = event.getContent();
+        List<User> users = userService.getAllUserByIds(event.getReceiverIds());
+
+        List<Notification> notificationList = getNotifications(title, content, users);
+        sendSseEvent(notificationList);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(ClothesAttributeDefSseEvent event) {
+
+        String title = event.getTitle();
+        String content = event.getContent();
+        List<User> users = userService.getAllUsers();
+
+        List<Notification> notificationList = getNotifications(title, content, users);
         sendSseEvent(notificationList);
     }
 
@@ -94,39 +130,5 @@ public class SseRequiredEventListener {
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
         sendSseEvent(event.getNotificationList());
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(FeedCreatedEvent event) {
-        String title = event.getTitle();
-        String content = event.getContent();
-        List<User> users = userService.getAllUserByIds(event.getReceiverIds());
-        List<Notification> notificationList = users.stream()
-            .map(user -> Notification.builder()
-                .title(title)
-                .content(content)
-                .level(NotificationLevel.INFO)
-                .receiver(user)
-                .build())
-            .toList();
-        sendSseEvent(notificationList);
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(FeedLikedEvent event) {
-        String title = event.getTitle();
-        String content = event.getContent();
-
-        Notification notification = parsingSseEvent(event.getReceiverId(), event);
-        sendSseEvent(List.of(notification));
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(CommentCreatedEvent event) {
-        Notification notification = parsingSseEvent(event.getReceiverId(), event);
-        sendSseEvent(List.of(notification));
     }
 }
