@@ -52,6 +52,7 @@ public class FeedRepositoryCustomImpl implements FeedRepositoryCustom{
                         keywordsContains(condition.keywordLike()),
                         skyStatusEqual(condition.skyStatusEqual()),
                         precipitationTypeEqual(condition.precipitationTypeEqual()),
+                        authorIdEqual(condition.authorIdEqual()),
                         cursorCondition
                 )
                 .orderBy(
@@ -82,6 +83,11 @@ public class FeedRepositoryCustomImpl implements FeedRepositoryCustom{
     BooleanExpression precipitationTypeEqual(PrecipitationType precipitationType) {
         if (precipitationType == null) return null;
         return feed.weather.precipitationType.eq(precipitationType);
+    }
+
+    BooleanExpression authorIdEqual(UUID authorId) {
+        if (authorId == null) return null;
+        return feed.author.id.eq(authorId);
     }
 
     private Predicate cursorCondition(String sortBy,
@@ -143,7 +149,8 @@ public class FeedRepositoryCustomImpl implements FeedRepositoryCustom{
                 .where(
                         keywordsContains(condition.keywordLike()),
                         skyStatusEqual(condition.skyStatusEqual()),
-                        precipitationTypeEqual(condition.precipitationTypeEqual())
+                        precipitationTypeEqual(condition.precipitationTypeEqual()),
+                        authorIdEqual(condition.authorIdEqual())
                 )
                 .fetchOne();
 

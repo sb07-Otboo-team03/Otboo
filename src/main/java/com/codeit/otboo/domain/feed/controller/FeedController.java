@@ -35,8 +35,8 @@ public class FeedController {
             @ParameterObject @ModelAttribute @Valid FeedSearchRequest request,
             @AuthenticationPrincipal OtbooUserDetails details
             ) {
-        UUID authorIdEqual = details.getUserResponse().id();
-        return ResponseEntity.ok(feedService.getAllFeed(request, authorIdEqual));
+        UUID userId = details.getUserResponse().id();
+        return ResponseEntity.ok(feedService.getAllFeed(request, userId));
     }
 
     @PatchMapping("/{feedId}")

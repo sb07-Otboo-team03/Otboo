@@ -28,13 +28,16 @@ public class FeedMapper {
     }
 
     public FeedResponse toDto(Feed feed, boolean likedByMe) {
+
+        UUID userImageId = feed.getAuthor().getProfile().getBinaryContent() != null ?
+                feed.getAuthor().getProfile().getBinaryContent().getId() : null;
+
         return FeedResponse.builder()
                 .id(feed.getId())
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
                 .author(userMapper.toAuthorDto(feed.getAuthor().getId(),
-                    feed.getAuthor().getProfile().getName(),
-                    feed.getAuthor().getProfile().getBinaryContent().getId()))
+                        feed.getAuthor().getProfile().getName(), userImageId))
                 .weather(weatherMapper.toSummaryDto(feed.getWeather()))
                 .ootds(toOotdDto(feed.getClothesList()))
                 .content(feed.getContent())
