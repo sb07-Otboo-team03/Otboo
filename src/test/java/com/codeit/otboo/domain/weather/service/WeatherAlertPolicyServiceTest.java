@@ -1,9 +1,10 @@
 package com.codeit.otboo.domain.weather.service;
 
-import com.codeit.otboo.domain.weather.dto.alert.HourlyPrecipitationStatus;
-import com.codeit.otboo.domain.weather.dto.alert.HourlyTemperature;
-import com.codeit.otboo.domain.weather.dto.alert.PrecipitationChangeSummary;
-import com.codeit.otboo.domain.weather.dto.alert.TemperatureGapSummary;
+import com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService;
+import com.codeit.otboo.batch.weather.alert.model.HourlyPrecipitationStatus;
+import com.codeit.otboo.batch.weather.alert.model.HourlyTemperature;
+import com.codeit.otboo.batch.weather.alert.model.PrecipitationChangeSummary;
+import com.codeit.otboo.batch.weather.alert.model.TemperatureGapSummary;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

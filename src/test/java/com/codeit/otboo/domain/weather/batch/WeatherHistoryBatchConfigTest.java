@@ -2,7 +2,7 @@ package com.codeit.otboo.domain.weather.batch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.codeit.otboo.domain.feed.elasticsearch.repository.FeedDocumentRepository;
-import com.codeit.otboo.domain.weather.batch.scheduler.WeatherBatchScheduler;
+import com.codeit.otboo.batch.weather.scheduler.WeatherBatchScheduler;
 import com.codeit.otboo.domain.weather.entity.*;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
 import com.codeit.otboo.domain.weather.repository.YesterdayHourlyWeatherRepository;

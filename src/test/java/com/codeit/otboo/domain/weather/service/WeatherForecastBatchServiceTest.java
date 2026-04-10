@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
-import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
+import com.codeit.otboo.batch.weather.forecast.model.ForecastBatchResult;
+import com.codeit.otboo.batch.weather.forecast.service.WeatherForecastBatchService;
 import com.codeit.otboo.domain.weather.client.KmaWeatherClient;
 import com.codeit.otboo.domain.weather.client.KmaWeatherMapper;
 import com.codeit.otboo.domain.weather.client.dto.KmaWeatherItem;

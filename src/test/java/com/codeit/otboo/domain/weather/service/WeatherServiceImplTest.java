@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.weather.service;
 
-import com.codeit.otboo.domain.weather.batch.dto.ForecastBatchResult;
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.exception.KmaApiErrorException;
 import com.codeit.otboo.global.util.KakaoLocalUtil;
@@ -46,7 +45,7 @@ class WeatherServiceImplTest {
     private WeatherServiceImpl weatherService;
 
     @Mock
-    private WeatherForecastUpsertService weatherForecastUpsertService;
+    private WeatherUpsertService weatherUpsertService;
     @Mock
     private WeatherRedisCacheService weatherRedisCacheService;
     @Mock
@@ -177,7 +176,7 @@ class WeatherServiceImplTest {
 
             verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
-            verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
+            verify(weatherUpsertService, times(1)).upsert(eq(mappedWeathers));
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper).toDto(anyList(), eq(savedLocation), eq(yesterdayHourlyWeather));
         }
@@ -252,7 +251,7 @@ class WeatherServiceImplTest {
 
             verify(kmaWeatherClient, times(1)).callWeatherApi(anyString(), eq("2300"), eq(x), eq(y), eq(1052));
             verify(kmaWeatherMapper, times(1)).toWeathers(eq("2300"), eq(x), eq(y), eq(items), eq(false));
-            verify(weatherForecastUpsertService, times(1)).upsert(eq(mappedWeathers));
+            verify(weatherUpsertService, times(1)).upsert(eq(mappedWeathers));
 
             verify(yesterdayHourlyWeatherRepository, times(1)).findByXAndYAndDateAndHour(any(), any(), any(), any());
             verify(weatherMapper, times(1)).toDto(anyList(), any(LocationNameMap.class), any(YesterdayHourlyWeather.class));

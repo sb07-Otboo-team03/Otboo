@@ -48,7 +48,7 @@ public class WeatherServiceImpl implements WeatherService{
     private final KakaoLocalUtil kakaoLocalUtil;
     private final KmaGridConverter kmaGridConverter;
 
-    private final WeatherForecastUpsertService weatherForecastUpsertService;
+    private final WeatherUpsertService weatherUpsertService;
     private final WeatherRedisCacheService weatherRedisCacheService;
 
     @Override
@@ -149,7 +149,7 @@ public class WeatherServiceImpl implements WeatherService{
 
         List<KmaWeatherItem> items = kmaWeatherClient.callWeatherApi(baseDate, baseTime, x, y, 1052);
         List<Weather> weathers = kmaWeatherMapper.toWeathers(baseTime, x, y, items, false);
-        weatherForecastUpsertService.upsert(weathers);
+        weatherUpsertService.upsert(weathers);
     }
 
     private void addYesterdayWeatherInfo(int x, int y) {

@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.weather.batch;
 
-import com.codeit.otboo.domain.weather.batch.scheduler.WeatherBatchScheduler;
+import com.codeit.otboo.batch.weather.scheduler.WeatherBatchScheduler;
 import com.codeit.otboo.global.util.TimeProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

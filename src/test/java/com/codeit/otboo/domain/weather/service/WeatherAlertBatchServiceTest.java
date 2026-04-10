@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.weather.service;
 
-import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.END_TIME;
-import static com.codeit.otboo.domain.weather.service.WeatherAlertPolicyService.START_TIME;
+import static com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService.END_TIME;
+import static com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService.START_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -12,6 +12,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codeit.otboo.batch.weather.alert.service.WeatherAlertBatchService;
+import com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService;
 import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.profile.entity.Location;
@@ -19,10 +21,10 @@ import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.weather.batch.dto.RegionAlertResult;
-import com.codeit.otboo.domain.weather.batch.dto.RegionAlertTarget;
-import com.codeit.otboo.domain.weather.dto.alert.PrecipitationChangeSummary;
-import com.codeit.otboo.domain.weather.dto.alert.TemperatureGapSummary;
+import com.codeit.otboo.batch.weather.alert.model.RegionAlertResult;
+import com.codeit.otboo.batch.weather.alert.model.RegionAlertTarget;
+import com.codeit.otboo.batch.weather.alert.model.PrecipitationChangeSummary;
+import com.codeit.otboo.batch.weather.alert.model.TemperatureGapSummary;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
