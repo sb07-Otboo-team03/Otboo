@@ -1,0 +1,10 @@
+FROM amazoncorretto:17-al2-jdk
+
+WORKDIR /app
+
+ARG JAR_FILE
+COPY ${JAR_FILE} app.jar
+
+ENV JVM_OPTS="-Xms512m -Xmx512m"
+
+ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar app.jar --spring.profiles.active=batch"]
