@@ -1,5 +1,7 @@
 package com.codeit.otboo.global.util;
 
+import com.codeit.otboo.global.exception.KakaoApiException;
+import com.codeit.otboo.global.exception.KakaoApiInvalidResponseException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -55,20 +57,34 @@ public class KakaoLocalUtil {
      * 내부 헬퍼 - 실제 API 호출 및 파싱
      */
     private Optional<JsonObject> getRegionInfo(double x, double y, KakaoRegionType regionType) {
-        String response = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host("dapi.kakao.com")
-                        .path("/v2/local/geo/coord2regioncode.json")
-                        .queryParam("x", x)
-                        .queryParam("y", y)
-                        .build())
-                .header("Authorization", "KakaoAK " + kakaoApiKey)
-                .retrieve()
-                .body(String.class);
+        String response;
 
-        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
-        JsonArray docs = root.getAsJsonArray("documents");
+        try {
+            response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .scheme("https")
+                            .host("dapi.kakao.com")
+                            .path("/v2/local/geo/coord2regioncode.json")
+                            .queryParam("x", x)
+                            .queryParam("y", y)
+                            .build())
+                    .header("Authorization", "KakaoAK " + kakaoApiKey)
+                    .retrieve()
+                    .body(String.class);
+        } catch (Exception e) {
+            throw new KakaoApiException("Kakao 지역 API 호출 실패");
+        }
+
+        JsonObject root;
+        JsonArray docs;
+
+        try {
+            root = JsonParser.parseString(response).getAsJsonObject();
+            docs = root.getAsJsonArray("documents");
+
+        } catch (Exception e) {
+            throw new KakaoApiInvalidResponseException("Invalid JSON structure");
+        }
 
         if (docs == null || docs.isEmpty()) {
             return Optional.empty();

@@ -27,19 +27,25 @@ public class UserMapper {
 
     public UserSummaryResponse toSummaryDto(UUID userId, String name, UUID binaryContentId) {
 
+        String url = binaryContentId != null ?
+                urlResolver.resolve(binaryContentId) : null;
+
         return UserSummaryResponse.builder()
             .userId(userId)
             .name(name)
-            .profileImageUrl(urlResolver.resolve(binaryContentId))
+            .profileImageUrl(url)
             .build();
     }
 
     public AuthorResponse toAuthorDto(UUID userId, String name, UUID binaryContentId) {
 
+        String url = binaryContentId != null ?
+                urlResolver.resolve(binaryContentId) : null;
+
         return AuthorResponse.builder()
                 .userId(userId)
                 .name(name)
-                .profileImageUrl(urlResolver.resolve(binaryContentId))
+                .profileImageUrl(url)
                 .build();
     }
 }

@@ -29,6 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -81,11 +82,6 @@ class FeedDocumentRepositoryCustomImplTest {
         feedDocumentRepository.saveAll(docs);
 
         elasticsearchOperations.indexOps(FeedDocument.class).refresh();
-    }
-
-    private Long createCursor(FeedDocument doc, String sortBy) {
-        if ("createdAt".equals(sortBy)) return doc.getCreatedAt();
-        else return doc.getLikeCount();
     }
 
     @Nested
@@ -192,8 +188,8 @@ class FeedDocumentRepositoryCustomImplTest {
                     .keywordLike(keyword)
                     .build();
 
-            SearchHits<FeedDocument> secondPage = feedDocumentRepository.searchFeed(condition);
-            List<FeedDocument> pageList = secondPage.stream().map(SearchHit::getContent).toList();
+            SearchHits<FeedDocument> page = feedDocumentRepository.searchFeed(condition);
+            List<FeedDocument> pageList = page.stream().map(SearchHit::getContent).toList();
             for (FeedDocument feedDocument : pageList) {
                 System.out.println(feedDocument.getContent());
             }
@@ -232,13 +228,53 @@ class FeedDocumentRepositoryCustomImplTest {
                     .skyStatusEqual(SkyStatus.CLEAR)
                     .precipitationTypeEqual(PrecipitationType.NONE)
                     .build();
-            SearchHits<FeedDocument> secondPage = feedDocumentRepository.searchFeed(condition);
-            List<FeedDocument> pageList = secondPage.stream().map(SearchHit::getContent).toList();
+            SearchHits<FeedDocument> page = feedDocumentRepository.searchFeed(condition);
+            List<FeedDocument> pageList = page.stream().map(SearchHit::getContent).toList();
 
             // then
             assertThat(pageList.size()).isEqualTo(2);
             assertThat(pageList.get(0).getSkyStatus()).isEqualTo(SkyStatus.CLEAR.name());
             assertThat(pageList.get(0).getPrecipitationType()).isEqualTo(PrecipitationType.NONE.name());
+        }
+    }
+
+    @Nested
+    @DisplayName("자신(author)의 피드 조회")
+    class SearchByAuthorTest {
+
+        @Test
+        @DisplayName("""
+                프로필에서 자신의 피드를 조회할 수 있다.
+                AuthorIdEqual == authorId
+                """)
+        void searchFeedDocumentByAuthor() {
+            //given
+            List<FeedDocument> docs = FeedDocumentFixture.createFeedDocument(5);
+            UUID authorId = UUID.randomUUID();
+            List<FeedDocument> authorDocs = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                docs.add(FeedDocument.builder()
+                        .id(UUID.randomUUID().toString())
+                        .authorId(authorId.toString())
+                        .createdAt(100L - i)
+                        .likeCount((long) i)
+                        .build());
+            }
+            saveDocsToES(docs);
+
+            FeedSearchCondition condition = FeedSearchCondition.builder()
+                    .limit(5)
+                    .sortBy("createdAt")
+                    .sortDirection(SortDirection.DESCENDING)
+                    .authorIdEqual(authorId)
+                    .build();
+
+            SearchHits<FeedDocument> page = feedDocumentRepository.searchFeed(condition);
+            List<FeedDocument> pageList = page.stream().map(SearchHit::getContent).toList();
+
+            // then
+            assertThat(pageList.size()).isEqualTo(3);
+            assertThat(pageList).extracting(FeedDocument::getAuthorId).containsOnly(authorId.toString());
         }
     }
 }

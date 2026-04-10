@@ -20,6 +20,7 @@ public class FeedDocumentFixture {
                     .content("content " + i % 2)
                     .skyStatus(i % 2 == 0 ? "CLEAR" : "CLOUDY")
                     .precipitationType(i % 2 == 0 ? "NONE" : "RAIN")
+                    .authorId(UUID.randomUUID().toString())
                     .createdAt(100L - i)
                     .likeCount((long) i)
                     .build());

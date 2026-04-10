@@ -17,7 +17,8 @@ public record FeedSearchRequest(
     SortDirection sortDirection,
     String keywordLike,
     SkyStatus skyStatusEqual,
-    PrecipitationType precipitationTypeEqual
+    PrecipitationType precipitationTypeEqual,
+    UUID authorIdEqual
 ) {
     public FeedSearchRequest {
         limit = Objects.requireNonNullElse(limit, 10);

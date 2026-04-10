@@ -131,4 +131,11 @@ public class SseRequiredEventListener {
     public void on(WeatherSseEvent event) {
         sendSseEvent(event.getNotificationList());
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(UserRoleUpdatedEvent event) {
+        Notification notification = parsingSseEvent(event.getReceiverId(), event);
+        sendSseEvent(List.of(notification));
+    }
 }

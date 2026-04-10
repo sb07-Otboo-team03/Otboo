@@ -57,6 +57,9 @@ public enum ErrorCode {
     INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
     FILE_UPLOAD_MAXIMUM_SIZE("파일이 너무 큽니다."),
 
+    // Profile
+    PROFILE_NOT_FOUND("프로필 정보를 찾을 수 없습니다."),
+
     // JWT
     INVALID_SIGNATURE("JWT 서명 검증 실패"),
     EXPIRED_TOKEN("JWT 토큰 만료"),
@@ -69,6 +72,10 @@ public enum ErrorCode {
 
     // Batch
     BATCH_JOB_EXECUTION_FAILED("배치 Job 실행 중 오류가 발생했습니다."),
+
+    // Kakao API
+    KAKAO_API_ERROR("외부 API 호출 중 오류가 발생했습니다."),
+    KAKAO_API_INVALID_RESPONSE("외부 API 응답 형식이 올바르지 않습니다."),
 
     // Internal
     INTERNAL_SERVER_ERROR("서버 에러가 발생했습니다.");

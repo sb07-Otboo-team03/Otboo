@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,6 +84,7 @@ public class FeedServiceImpl implements FeedService {
                 feed.getContent(),
                 feed.getWeather().getSkyStatus().name(),
                 feed.getWeather().getPrecipitationType().name(),
+                feed.getAuthor().getId(),
                 feed.getCreatedAt(),
                 feed.getLikeCount()));
 
@@ -96,17 +98,14 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
-    public CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID authorIdEqual) {
-        if (!userRepository.existsById(authorIdEqual))
-            throw new UserNotFoundException(authorIdEqual);
-
+    public CursorResponse<FeedResponse> getAllFeed(FeedSearchRequest request, UUID userId) {
         FeedSearchCondition condition = FeedSearchCondition.from(request);
 
         try {
-            return getFeedsFromElasticsearch(condition, authorIdEqual);
+            return getFeedsFromElasticsearch(condition, userId);
         } catch (Exception e) {
             log.warn("Elasticsearch 실패", e);
-            return getFeedsFromDatabase(condition, authorIdEqual);
+            return getFeedsFromDatabase(condition, userId);
         }
     }
 
@@ -117,7 +116,8 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new IllegalArgumentException("Feed author is not the same as the request author"); // TODO
+            throw new AccessDeniedException(String.format("피드 권한 없음 [feedId: %s, authorId: %s, requestUserId: %s]",
+                    id, feed.getAuthor().getId(), authorId));
 
         feed.updateContent(request.content());
         eventPublisher.publishEvent(new FeedUpdatedEvent(feed.getId(), feed.getContent()));
@@ -132,7 +132,8 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new FeedNotFoundException(id));
 
         if (!feed.getAuthor().getId().equals(authorId))
-            throw new IllegalArgumentException("Feed author is not the same as the request author"); // TODO
+            throw new AccessDeniedException(String.format("피드 권한 없음 [feedId: %s, authorId: %s, requestUserId: %s]",
+                    id, feed.getAuthor().getId(), authorId));
 
         likeRepository.deleteAllByFeedId(id);
         commentRepository.deleteAllByFeedId(id);
@@ -166,7 +167,7 @@ public class FeedServiceImpl implements FeedService {
                 .build();
     }
 
-    private CursorResponse<FeedResponse> getFeedsFromElasticsearch(FeedSearchCondition condition, UUID authorIdEqual) {
+    private CursorResponse<FeedResponse> getFeedsFromElasticsearch(FeedSearchCondition condition, UUID userId) {
         SearchHits<FeedDocument> searchHits = feedDocumentService.getAllByElasticsearch(condition);
         List<FeedDocument> content = searchHits.stream()
                 .map(SearchHit::getContent)
@@ -183,7 +184,7 @@ public class FeedServiceImpl implements FeedService {
         List<Feed> feeds = feedRepository.findAllById(feedIds);
 
         Map<UUID, Feed> feedMap = feeds.stream().collect(Collectors.toMap(Feed::getId, f -> f));
-        Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(authorIdEqual, feedIds);
+        Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(userId, feedIds);
 
         List<FeedResponse> data = feedIds.stream()
                 .map(feedMap::get)
@@ -205,7 +206,7 @@ public class FeedServiceImpl implements FeedService {
 
     }
 
-    private CursorResponse<FeedResponse> getFeedsFromDatabase(FeedSearchCondition condition, UUID authorIdEqual) {
+    private CursorResponse<FeedResponse> getFeedsFromDatabase(FeedSearchCondition condition, UUID userId) {
         Slice<Feed> feedPage = feedRepository.findAllByKeywordLike(condition);
         List<Feed> content = feedPage.getContent();
         if (content.isEmpty())
@@ -215,7 +216,7 @@ public class FeedServiceImpl implements FeedService {
         long totalCount = feedRepository.countTotalElements(condition);
 
         List<UUID> feedIds = content.stream().map(Feed::getId).toList();
-        Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(authorIdEqual, feedIds);
+        Set<UUID> likedFeedIds = likeRepository.findFeedIdsByUserIdAndFeedIdIn(userId, feedIds);
 
         List<FeedResponse> data = content.stream()
                 .map(feed -> {

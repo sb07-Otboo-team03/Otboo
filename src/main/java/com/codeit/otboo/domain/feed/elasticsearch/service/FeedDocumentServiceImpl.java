@@ -29,6 +29,7 @@ public class FeedDocumentServiceImpl implements FeedDocumentService {
                 .content(event.content())
                 .skyStatus(event.skyStatus())
                 .precipitationType(event.precipitationType())
+                .authorId(event.authorId().toString())
                 .likeCount(event.likeCount())
                 .createdAt(getEpochMilli(event.createdAt()))
                 .build();
@@ -78,7 +79,7 @@ public class FeedDocumentServiceImpl implements FeedDocumentService {
         feedDocumentRepository.saveAll(recentFeeds.stream().map(
                 feed -> new FeedDocument(feed.getId().toString(), feed.getContent(),
                         feed.getWeather().getSkyStatus().name(), feed.getWeather().getPrecipitationType().name(),
-                        feed.getLikeCount(), getEpochMilli(feed.getCreatedAt()))
+                        feed.getAuthor().getId().toString(),feed.getLikeCount(), getEpochMilli(feed.getCreatedAt()))
         ).toList());
     }
 

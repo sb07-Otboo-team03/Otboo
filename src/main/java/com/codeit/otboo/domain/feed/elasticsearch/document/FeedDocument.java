@@ -8,7 +8,7 @@ import org.springframework.data.elasticsearch.annotations.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Document(indexName = "feeds-v1")
+@Document(indexName = "feeds-v2")
 public class FeedDocument {
 
     @Id
@@ -18,7 +18,8 @@ public class FeedDocument {
     @MultiField(
             mainField = @Field(type = FieldType.Text, analyzer = "nori"),
             otherFields = {
-                    @InnerField(suffix = "keyword", type = FieldType.Keyword)
+                    @InnerField(suffix = "keyword", type = FieldType.Keyword),
+                    @InnerField(suffix = "en", type = FieldType.Text, analyzer = "english")
             }
     )
     private String content;
@@ -28,6 +29,9 @@ public class FeedDocument {
 
     @Field(type = FieldType.Keyword)
     private String precipitationType;
+
+    @Field(type = FieldType.Keyword)
+    private String authorId;
 
     @Field(type = FieldType.Long)
     private Long likeCount;

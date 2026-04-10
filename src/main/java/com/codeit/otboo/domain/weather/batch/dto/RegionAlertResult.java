@@ -1,15 +1,15 @@
 package com.codeit.otboo.domain.weather.batch.dto;
 
-import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 
 import java.util.List;
 
 public record RegionAlertResult(
         Integer x,
         Integer y,
-        List<Notification> notifications
+        List<NotificationCreateCommand> commands
 ) {
     public boolean isEmpty() {
-        return notifications == null || notifications.isEmpty();
+        return commands == null || commands.isEmpty();
     }
 }

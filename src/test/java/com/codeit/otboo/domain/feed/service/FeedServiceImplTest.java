@@ -23,7 +23,6 @@ import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
-import com.codeit.otboo.domain.weather.dto.response.WeatherSummaryResponse;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.SkyStatus;
 import com.codeit.otboo.domain.weather.entity.Weather;
@@ -50,6 +49,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -201,25 +201,6 @@ class FeedServiceImplTest {
     @DisplayName("피드 조회")
     class FeedSearch {
 
-        @ParameterizedTest
-        @CsvSource({
-                "createdAt",
-                "likeCount"
-        })
-        @DisplayName("피드를 조회하는 유저의 id가 존재하지 않으면 예외를 반환한다.")
-        void searchFeedList_Fail_NotFoundUser() {
-            // given
-            UUID userId = user.getId();
-
-            given(userRepository.existsById(userId)).willReturn(false);
-
-            // when & then
-            assertThatThrownBy(() -> feedService.getAllFeed(null, userId))
-                    .isInstanceOf(UserNotFoundException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
-        }
-
         @Nested
         @DisplayName("ES 검색 성공")
         class FeedSearchFromElasticsearch {
@@ -234,7 +215,7 @@ class FeedServiceImplTest {
                 // given
                 UUID userId = user.getId();
                 FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy,
-                        null, null, null, null);
+                        null, null, null, null, null);
                 List<Feed> feedList = FeedFixture.createFeedCursor(6);
                 if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
 
@@ -242,7 +223,6 @@ class FeedServiceImplTest {
                 SearchHits<FeedDocument> searchHits = createSearchHit(docs, 6);
                 List<UUID> expectedIds = feedList.subList(0, 5).stream().map(Feed::getId).toList();
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedDocumentService.getAllByElasticsearch(any())).willReturn(searchHits);
                 given(feedRepository.findAllById(expectedIds)).willReturn(feedList.subList(0, 5));
                 given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
@@ -272,14 +252,13 @@ class FeedServiceImplTest {
                 // given
                 UUID userId = user.getId();
                 FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null,
-                        null, null, null, null);
+                        null, null, null, null, null);
                 List<Feed> feedList = FeedFixture.createFeedCursor(5);
 
                 List<FeedDocument> docs = FeedDocumentFixture.createFeedDocument(feedList, 5);
                 SearchHits<FeedDocument> searchHits = createSearchHit(docs, 5);
                 List<UUID> expectedIds = feedList.subList(0, 5).stream().map(Feed::getId).toList();
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedDocumentService.getAllByElasticsearch(any())).willReturn(searchHits);
                 given(feedRepository.findAllById(expectedIds)).willReturn(feedList.subList(0, 5));
                 given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
@@ -300,11 +279,10 @@ class FeedServiceImplTest {
                 UUID userId = user.getId();
                 String keyword = "hello world";
                 FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null,
-                        null, keyword, null, null);
+                        null, keyword, null, null, null);
 
                 SearchHits<FeedDocument> emptyHit = mock(SearchHits.class);
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedDocumentService.getAllByElasticsearch(any())).willReturn(emptyHit);
 
                 // when
@@ -342,14 +320,13 @@ class FeedServiceImplTest {
                 // given
                 UUID userId = user.getId();
                 FeedSearchRequest request = new FeedSearchRequest(null, null, 5, sortBy,
-                        null, null, null, null);
+                        null, null, null, null, null);
                 List<Feed> feedList = FeedFixture.createFeedCursor(6);
                 if ("likeCount".equals(sortBy)) Collections.reverse(feedList);
 
                 List<Feed> expectedFeeds = feedList.subList(0, 5);
                 Slice<Feed> slice = new SliceImpl<>(expectedFeeds, PageRequest.of(0, 5), true);
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedRepository.findAllByKeywordLike(any())).willReturn(slice);
                 given(feedRepository.countTotalElements(any())).willReturn(6L);
                 given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
@@ -374,12 +351,11 @@ class FeedServiceImplTest {
                 // given
                 UUID userId = user.getId();
                 FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null,
-                        null, null, null, null);
+                        null, null, null, null, null);
                 List<Feed> feedList = FeedFixture.createFeedCursor(5);
 
                 Slice<Feed> slice = new SliceImpl<>(feedList, PageRequest.of(0, 5), false);
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedRepository.findAllByKeywordLike(any())).willReturn(slice);
                 given(feedRepository.countTotalElements(any())).willReturn(5L);
                 given(likeRepository.findFeedIdsByUserIdAndFeedIdIn(any(), any())).willReturn(Set.of());
@@ -398,10 +374,10 @@ class FeedServiceImplTest {
             void searchEmptyResult_ReturnNullCursorAndAfter() {
                 UUID userId = user.getId();
                 String keyword = "hello world";
-                FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null, null, keyword, null, null);
+                FeedSearchRequest request = new FeedSearchRequest(null, null, 5, null,
+                        null, keyword, null, null, null);
                 Slice<Feed> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 5), false);
 
-                given(userRepository.existsById(userId)).willReturn(true);
                 given(feedRepository.findAllByKeywordLike(any())).willReturn(emptySlice);
 
                 // when
@@ -483,7 +459,7 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.updateFeed(feedId, request, userId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(AccessDeniedException.class);
         }
     }
 
@@ -538,7 +514,7 @@ class FeedServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> feedService.deleteFeed(feedId, userId))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(AccessDeniedException.class);
         }
     }
 

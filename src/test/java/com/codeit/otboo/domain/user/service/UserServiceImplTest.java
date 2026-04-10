@@ -1,16 +1,21 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
+import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.profile.ProfileFixture;
+import com.codeit.otboo.domain.profile.dto.request.LocationRequest;
+import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.profile.entity.Gender;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.fixture.ProfileResponseFixture;
-import com.codeit.otboo.domain.user.dto.request.UpdatePasswordRequest;
-import com.codeit.otboo.domain.user.dto.request.UserCreateRequest;
-import com.codeit.otboo.domain.user.dto.request.UserSearchRequest;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
+import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
+import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserException;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -21,6 +26,9 @@ import com.codeit.otboo.domain.user.mapper.ProfileMapper;
 import com.codeit.otboo.domain.user.mapper.UserMapper;
 import com.codeit.otboo.domain.user.repository.TemporaryPasswordRepository;
 import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.global.exception.ErrorCode;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionDeletedRequestEvent;
+import com.codeit.otboo.global.security.jwt.registry.event.SessionInvalidationReason;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,12 +40,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,6 +74,12 @@ class UserServiceImplTest {
 
     @Mock
     private TemporaryPasswordRepository temporaryPasswordRepository;
+
+    @Mock
+    private BinaryContentService binaryContentService;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -221,14 +236,14 @@ class UserServiceImplTest {
 
             // when
             userService.updateUserPassword(userId, updatePasswordRequest);
-            
+
             // then
             then(userRepository).should().findById(userId);
             then(passwordEncoder).should().encode(password);
             then(temporaryPasswordRepository).should().deleteByUserId(userId);
 
             assertThat(user.getPassword()).isEqualTo(encodedPassword);
-            
+
         }
 
         @Test
@@ -285,7 +300,7 @@ class UserServiceImplTest {
             assertThat(result.hasNext()).isTrue();
             User lastUser = userList.get(5);
             assertThat(result.nextIdAfter()).isEqualTo(userList.get(5).getId());
-            if("createdAt".equals(sortBy))
+            if ("createdAt".equals(sortBy))
                 assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastUser.getCreatedAt()));
             else
                 assertThat(result.nextCursor()).isEqualTo(String.valueOf(lastUser.getEmail()));
@@ -338,8 +353,305 @@ class UserServiceImplTest {
             assertThat(result.nextIdAfter()).isNull();
             assertThat(result.data()).isEmpty();
             assertThat(result.nextCursor()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("프로필 업데이트")
+    class ProfileUpdate {
+        @Test
+        @DisplayName("프로필 업데이트 - 성공, 기존 이미지 삭제 후 새 이미지 등록")
+        void userUpdate_success_withImageRequest_whenProfileHave_Image() {
+            // given
+            String name = "새 이름";
+            String imageURl = "imageUrl.com";
+
+            User user = UserFixture.create();
+            Profile profile = ProfileFixture.create(user);
+            UUID userId = user.getId();
+
+            BinaryContent oldBinaryContent = BinaryContentFixture.create();
+            profile.update("기존 이름", null, null, null, null, oldBinaryContent); // setter 혹은 전용 메서드 활용
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    name,
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    3
+            );
+
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
+
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user, imageURl, profileUpdateRequest);
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(binaryContentService.upload(imageRequest)).willReturn(newBinarycontent);
+            given(binaryContentUrlResolver.resolve(newBinarycontent.getId())).willReturn(imageURl);
+            given(profileMapper.toDto(user, imageURl)).willReturn(profileResponse);
+
+            // when
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, imageRequest);
+
+            // then
+            assertThat(result.profileImageUrl()).isEqualTo(imageURl);
+            assertThat(result.name()).isEqualTo("새 이름");
+            assertThat(result.gender()).isEqualTo(Gender.MALE);
+            assertThat(result.birthDate()).isEqualTo(LocalDate.of(2000, 1, 1));
+
+            then(userRepository).should().findById(userId);
+            then(binaryContentService).should().delete(oldBinaryContent.getId());
+            then(binaryContentService).should().upload(imageRequest);
+            then(profileMapper).should().toDto(user, imageURl);
+        }
+
+        @Test
+        @DisplayName("프로필 업데이트 - 성공, 기존 이미지 없음 새 이미지 등록")
+        void userUpdate_success_withImageRequest_whenProfileHaveNot_Image() {
+            // given
+            String name = "새 이름";
+            String imageURl = "imageUrl.com";
+
+            User user = UserFixture.create();
+            Profile profile = ProfileFixture.create(user);
+            UUID userId = user.getId();
+
+            profile.update("기존 이름", null, null, null, null, null);
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    name,
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    3
+            );
+
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
+
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user, imageURl, profileUpdateRequest);
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(binaryContentService.upload(imageRequest)).willReturn(newBinarycontent);
+            given(binaryContentUrlResolver.resolve(newBinarycontent.getId())).willReturn(imageURl);
+            given(profileMapper.toDto(user, imageURl)).willReturn(profileResponse);
+
+            // when
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, imageRequest);
+
+            // then
+            assertThat(result.profileImageUrl()).isEqualTo(imageURl);
+            assertThat(result.name()).isEqualTo("새 이름");
+            assertThat(result.gender()).isEqualTo(Gender.MALE);
+            assertThat(result.birthDate()).isEqualTo(LocalDate.of(2000, 1, 1));
 
 
+            then(userRepository).should().findById(userId);
+            then(binaryContentService).should(never()).delete(any());
+            then(binaryContentService).should().upload(imageRequest);
+            then(profileMapper).should().toDto(user, imageURl);
+        }
+
+        @Test
+        @DisplayName("프로필 업데이트 - 성공, 이미지 Request 존재하지 않음.")
+        void userUpdate_success_withNotImageRequest() {
+            // given
+            String name = "새 이름";
+            User user = UserFixture.create();
+            Profile profile = ProfileFixture.create(user);
+            UUID userId = user.getId();
+
+            profile.update("기존 이름", null, null, null, null, null);
+
+            ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
+                    name,
+                    Gender.MALE,
+                    LocalDate.of(2000, 1, 1),
+                    new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
+                    3
+            );
+
+            ProfileResponse profileResponse = ProfileResponseFixture.create(user, null, profileUpdateRequest);
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(profileMapper.toDto(user, null)).willReturn(profileResponse);
+
+            // when
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, null);
+
+            // then
+            assertThat(result.profileImageUrl()).isNull();
+            assertThat(result.name()).isEqualTo("새 이름");
+            assertThat(result.gender()).isEqualTo(Gender.MALE);
+            assertThat(result.birthDate()).isEqualTo(LocalDate.of(2000, 1, 1));
+
+            then(userRepository).should().findById(userId);
+            then(binaryContentService).should(never()).delete(any());
+            then(binaryContentService).should(never()).upload(any());
+            then(profileMapper).should().toDto(user, null);
+        }
+
+        @Test
+        @DisplayName("프로필 업데이트 실패 - 존재하지 않는 유저")
+        void userUpdate_fail_userNotFound() {
+            UUID userId = UUID.randomUUID();
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updateProfile(userId, null, null))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            then(userRepository).should().findById(userId);
+            then(binaryContentService).should(never()).delete(any());
+            then(binaryContentService).should(never()).upload(any());
+            then(profileMapper).should(never()).toDto(any(), any());
+
+        }
+    }
+
+    @Nested
+    @DisplayName("유저 권한 상태")
+    class userRoleUpdate {
+        @Test
+        @DisplayName("권한 상태 변경성공")
+        void userUpdateRole_success() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            Role beforeRole = user.getRole(); // 기본값 User
+            UserRoleUpdateRequest userRoleUpdateRequest = new UserRoleUpdateRequest(Role.ADMIN);
+            UserResponse userResponse = UserResponseFixture.create(user, userRoleUpdateRequest.role());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ROLE_CHANGED);
+            UserRoleUpdatedEvent userRoleUpdatedEvent = new UserRoleUpdatedEvent("알림 제목", "알림 내용", userId);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserRole(userId, userRoleUpdateRequest);
+
+            // then
+            then(applicationEventPublisher).should()
+                    .publishEvent(any(SessionDeletedRequestEvent.class));
+
+            ArgumentCaptor<UserRoleUpdatedEvent> eventCaptor = ArgumentCaptor.forClass(UserRoleUpdatedEvent.class);
+            then(applicationEventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            UserRoleUpdatedEvent captured = eventCaptor.getValue();
+            assertThat(captured.getReceiverId()).isEqualTo(userId);
+            assertThat(captured.getTitle()).isEqualTo("내 권한이 변경되었어요.");
+            assertThat(result.role()).isNotEqualTo(beforeRole);
+
+            then(userRepository).should().findById(userId);
+            then(userMapper).should().toDto(user);
+        }
+
+        @Test
+        @DisplayName("권한상태 변경실패 - 존재하지 않는 유저")
+        void userLock_fail_user_notFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> userService.updateUserLockStatus(userId, userLockUpdateRequest))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(any());
+            then(userMapper).should(never()).toDto(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("유저 잠금 상태")
+    class userLockUpdate {
+        @Test
+        @DisplayName("잠금상태 변경성공 - 활성 -> 비활성화")
+        void userLock_success_false_true() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            boolean beforeLocked = user.isLocked(); // 기본값 false
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            UserResponse userResponse = UserResponseFixture.create(user, userLockUpdateRequest.locked());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+
+            // then
+            assertThat(result.locked()).isNotEqualTo(beforeLocked);
+            assertThat(result.locked()).isTrue();
+            then(userRepository).should().findById(userId);
+            then(userMapper).should().toDto(user);
+            then(applicationEventPublisher).should().publishEvent(sessionDeletedRequestEvent);
+        }
+
+        @Test
+        @DisplayName("잠금상태 변경 성공 - 비활성화->활성화")
+        void userLock_success_true_false() {
+            // given
+            User user = UserFixture.create();
+            UUID userId = user.getId();
+            user.updateLockStatus(true);
+            boolean beforeLocked = user.isLocked();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(false);
+            UserResponse userResponse = UserResponseFixture.create(user, userLockUpdateRequest.locked());
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userMapper.toDto(user)).willReturn(userResponse);
+
+            // when
+            UserResponse result = userService.updateUserLockStatus(userId, userLockUpdateRequest);
+
+            // then
+            assertThat(result.locked()).isNotEqualTo(beforeLocked);
+            assertThat(result.locked()).isFalse();
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(userMapper).should().toDto(user);
+        }
+
+        @Test
+        @DisplayName("잠금상태 변경실패 - 존재하지 않는 유저")
+        void userLock_fail_user_notFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UserLockUpdateRequest userLockUpdateRequest = new UserLockUpdateRequest(true);
+            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
+                    userId,
+                    SessionInvalidationReason.ACCOUNT_LOCKED);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> userService.updateUserLockStatus(userId, userLockUpdateRequest))
+                    .isInstanceOf(UserNotFoundException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            then(userRepository).should().findById(userId);
+            then(applicationEventPublisher).should(never()).publishEvent(sessionDeletedRequestEvent);
+            then(userMapper).should(never()).toDto(any());
         }
     }
 }

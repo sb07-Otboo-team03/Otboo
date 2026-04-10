@@ -30,9 +30,9 @@ public class FeedDocumentRepositoryCustomImpl implements FeedDocumentRepositoryC
         boolean hasCondition = false;
 
         if (StringUtils.hasText(condition.keywordLike())) {
-            boolBuilder.must(m -> m.match(t -> t
-                    .field("content")
+            boolBuilder.must(m -> m.multiMatch(t -> t
                     .query(condition.keywordLike())
+                    .fields("content", "content.en")
             ));
             hasCondition = true;
         }
@@ -49,6 +49,14 @@ public class FeedDocumentRepositoryCustomImpl implements FeedDocumentRepositoryC
             boolBuilder.filter(f -> f.term(t -> t
                     .field("precipitationType")
                     .value(condition.precipitationTypeEqual().name())
+            ));
+            hasCondition = true;
+        }
+
+        if (condition.authorIdEqual() != null) {
+            boolBuilder.filter(f -> f.term(t -> t
+                    .field("authorId")
+                    .value(condition.authorIdEqual().toString())
             ));
             hasCondition = true;
         }
