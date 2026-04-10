@@ -19,7 +19,7 @@ jobs:
         uses: fountainhead/action-wait-for-check@v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: CI - Test and Update Badge
+          checkName: CI Test Job
           ref: ${{ github.sha }}
 
       - name: Checkout

@@ -13,6 +13,7 @@ on:
 
 jobs:
   test-and-badge:
+    name: CI Test Job
     runs-on: ubuntu-latest
     permissions:
       contents: write
