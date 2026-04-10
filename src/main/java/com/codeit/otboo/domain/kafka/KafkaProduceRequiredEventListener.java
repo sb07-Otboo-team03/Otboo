@@ -8,6 +8,7 @@ import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -85,6 +86,12 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
+        sendToKafka(event);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(UserRoleUpdatedEvent event) {
         sendToKafka(event);
     }
 

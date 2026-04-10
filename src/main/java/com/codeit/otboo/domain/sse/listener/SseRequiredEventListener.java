@@ -127,15 +127,24 @@ public class SseRequiredEventListener {
     }
 
     @Async
-    @TransactionalEventListener
-    public void on(WeatherSseEvent event) {
-        sendSseEvent(event.getNotificationList());
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(UserRoleUpdatedEvent event) {
+        Notification notification = getNotification(event.getReceiverId(), event);
+        sendSseEvent(List.of(notification));
     }
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(UserRoleUpdatedEvent event) {
-        Notification notification = parsingSseEvent(event.getReceiverId(), event);
-        sendSseEvent(List.of(notification));
+    @TransactionalEventListener
+    public void on(WeatherSseEvent event) {
+        event.notificationCommands().stream()
+            .map(notificationService::create)
+            .map(notificationMapper::toDto)
+            .forEach(notificationDto ->
+                sseService.send(
+                    Set.of(notificationDto.receiverId()),
+                    "notifications",
+                    notificationDto
+                )
+            );
     }
 }

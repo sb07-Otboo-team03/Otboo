@@ -1,5 +1,7 @@
 package com.codeit.otboo.domain.kafka;
 
+import static org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event;
+
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
@@ -11,6 +13,7 @@ import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.sse.service.SseService;
 import com.codeit.otboo.domain.user.entity.User;
@@ -169,13 +172,37 @@ public class SseRequiredTopicListener {
         }
     }
 
+
+    @KafkaListener(topics = "otboo.UserRoleUpdatedEvent", groupId = "sse-${random.uuid}")
+    public void onUserRoleUpdatedEvent(String kafkaEvent) {
+        try {
+            UserRoleUpdatedEvent event =
+                objectMapper.readValue(kafkaEvent, UserRoleUpdatedEvent.class);
+
+            Notification notification = getNotification(event.getReceiverId(), event);
+            sendSseEvent(List.of(notification));
+        }
+        catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @KafkaListener(topics = "otboo.WeatherSseEvent", groupId = "sse-${random.uuid}")
     public void onWeatherSseEvent(String kafkaEvent) {
         try {
             WeatherSseEvent event =
                 objectMapper.readValue(kafkaEvent, WeatherSseEvent.class);
 
-            sendSseEvent(event.getNotificationList());
+            event.notificationCommands().stream()
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .forEach(notificationDto ->
+                    sseService.send(
+                        Set.of(notificationDto.receiverId()),
+                        "notifications",
+                        notificationDto
+                    )
+                );
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
