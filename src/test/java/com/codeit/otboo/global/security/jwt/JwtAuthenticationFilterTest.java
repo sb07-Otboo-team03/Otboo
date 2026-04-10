@@ -5,7 +5,6 @@ import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
 import com.codeit.otboo.domain.user.fixture.UserResponseFixture;
 import com.codeit.otboo.global.security.OtbooUserDetails;
-import com.codeit.otboo.global.security.jwt.exception.JwtException;
 import com.codeit.otboo.global.security.jwt.exception.JwtInvalidTokenTypeException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -24,10 +23,10 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +52,9 @@ class JwtAuthenticationFilterTest {
     @Mock
     private SecurityContext securityContext;
 
+    @Mock
+    private AuthenticationEntryPoint authenticationEntryPoint;
+
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     private OtbooUserDetails userDetails;
     private UUID userId;
@@ -75,7 +77,8 @@ class JwtAuthenticationFilterTest {
         jwtAuthenticationFilter = new JwtAuthenticationFilter(
                 jwtProvider,
                 redisRegistry,
-                userDetailsService
+                userDetailsService,
+                authenticationEntryPoint
         );
 
         userDetails = new OtbooUserDetails(userResponse, password);
@@ -84,7 +87,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("Jwt 인증 - 유효한 토큰")
-    void doFilter_ValidToken_SetsAuthentication() throws Exception{
+    void doFilter_ValidToken_SetsAuthentication() throws Exception {
         // given
         String accessToken = "valid-access-token";
         given(request.getHeader("Authorization")).willReturn("Bearer " + accessToken);
@@ -93,7 +96,7 @@ class JwtAuthenticationFilterTest {
         given(jwtProvider.getEmail(accessToken)).willReturn(email);
         given(redisRegistry.isValidSession(userId, sessionId)).willReturn(true);
         given(userDetailsService.loadUserByUsername(email)).willReturn(userDetails);
-        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtProvider, redisRegistry, userDetailsService);
+        jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtProvider, redisRegistry, userDetailsService, authenticationEntryPoint);
 
         // when
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
@@ -122,7 +125,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("Bearer가 유효하지 않으면 그대로 다음 필터로 전달한다")
-    void doFilter_Bearer_isNotValid () throws Exception {
+    void doFilter_Bearer_isNotValid() throws Exception {
         // given
         given(request.getHeader("Authorization")).willReturn("Bearerrrrr");
 
@@ -139,17 +142,22 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("access 토큰이 유효하지 않으면 예외를 발생한다")
-    void doFilter_accessToken_isNotValid () throws Exception {
+    void doFilter_accessToken_isNotValid() throws Exception {
         // given
         String accessToken = "invalid-access-token";
         given(request.getHeader("Authorization")).willReturn("Bearer " + accessToken);
         given(jwtProvider.validateAccessToken(accessToken))
                 .willThrow(new JwtInvalidTokenTypeException());
 
-        // when & then
-        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilter(request, response, filterChain))
-                .isInstanceOf(BadCredentialsException.class);
+        // when
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
+        // then
+        then(authenticationEntryPoint).should().commence(
+                eq(request),
+                eq(response),
+                any(BadCredentialsException.class)
+        );
         then(userDetailsService).shouldHaveNoInteractions();
         then(filterChain).should(never()).doFilter(request, response);
         then(securityContext).should(never()).setAuthentication(any());
@@ -157,7 +165,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("Session Id가 유효하지 않으면, 예외가 발생한다.")
-    void doFilter_sessionId_isNotValid() throws Exception{
+    void doFilter_sessionId_isNotValid() throws Exception {
         String accessToken = "valid-access-token";
         given(request.getHeader("Authorization")).willReturn("Bearer " + accessToken);
         given(jwtProvider.validateAccessToken(accessToken)).willReturn(claimsSet);
@@ -165,10 +173,15 @@ class JwtAuthenticationFilterTest {
         given(jwtProvider.getEmail(accessToken)).willReturn(email);
         given(redisRegistry.isValidSession(userId, sessionId)).willReturn(false);
 
-        // when & then
-        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilter(request, response, filterChain))
-                .isInstanceOf(BadCredentialsException.class);
 
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
+
+        // then
+        then(authenticationEntryPoint).should().commence(
+                eq(request),
+                eq(response),
+                any(BadCredentialsException.class)
+        );
         then(userDetailsService).shouldHaveNoInteractions();
         then(filterChain).should(never()).doFilter(request, response);
         then(securityContext).should(never()).setAuthentication(any());
@@ -187,10 +200,15 @@ class JwtAuthenticationFilterTest {
         given(userDetailsService.loadUserByUsername(email))
                 .willThrow(new UsernameNotFoundException("user not found"));
 
-        // when & then
-        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilter(request, response, filterChain))
-                .isInstanceOf(UsernameNotFoundException.class);
+        // when
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
+        // then
+        then(authenticationEntryPoint).should().commence(
+                eq(request),
+                eq(response),
+                any(UsernameNotFoundException.class)
+        );
         then(filterChain).should(never()).doFilter(request, response);
         then(securityContext).should(never()).setAuthentication(any());
     }

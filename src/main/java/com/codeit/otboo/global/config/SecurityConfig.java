@@ -40,10 +40,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    public Http401AuthenticationEntryPoint http401AuthenticationEntryPoint(ObjectMapper objectMapper) {
+        return new Http401AuthenticationEntryPoint(objectMapper);
+    }
+
+    @Bean
+    public Http403ForbiddenAccessDeniedHandler http403ForbiddenAccessDeniedHandler(ObjectMapper objectMapper) {
+        return new Http403ForbiddenAccessDeniedHandler(objectMapper);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            ObjectMapper objectMapper,
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
-                                           RequestMdcFilter mdcFilter) throws Exception {
+                                           RequestMdcFilter mdcFilter,
+                                           Http401AuthenticationEntryPoint authenticationEntryPoint,
+                                           Http403ForbiddenAccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC
@@ -68,8 +80,8 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new Http401AuthenticationEntryPoint(objectMapper))
-                        .accessDeniedHandler(new Http403ForbiddenAccessDeniedHandler(objectMapper))
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(mdcFilter, SecurityContextHolderFilter.class)

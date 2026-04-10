@@ -11,9 +11,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final RedisRegistry redisRegistry;
     private final UserDetailsService userDetailsService;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
 
     @Override
     protected void doFilterInternal(
@@ -56,6 +60,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             OtbooUserDetails userDetails = (OtbooUserDetails) userDetailsService.loadUserByUsername(email);
 
+            if (!userDetails.isAccountNonLocked()) {
+                throw new LockedException("잠긴 계정입니다.");
+            }
+
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -67,9 +75,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             MDC.put("userId", String.valueOf(userDetails.getUserResponse().id()));
 
-        } catch (JwtException | BadCredentialsException e) {
+        } catch (JwtException e) {
             SecurityContextHolder.clearContext();
-            throw new BadCredentialsException("유효하지 않은 access token입니다.", e);
+            authenticationEntryPoint.commence(
+                    request,
+                    response,
+                    new BadCredentialsException("유효하지 않은 access token입니다.", e)
+            );
+            return;
+        } catch (AuthenticationException e) {
+            SecurityContextHolder.clearContext();
+            authenticationEntryPoint.commence(request, response, e);
+            return;
+        } finally {
+            MDC.remove("userId");
         }
 
         filterChain.doFilter(request, response);

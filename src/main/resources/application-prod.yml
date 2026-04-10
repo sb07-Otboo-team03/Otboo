@@ -19,7 +19,7 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
       ssl:
-        enabled: true
+        enabled: false
 
   elasticsearch:
     uris: ${SPRING_ELASTICSEARCH_URIS}
