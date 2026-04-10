@@ -29,17 +29,15 @@ public class KafkaProduceRequiredEventListener {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    @Async
-    @TransactionalEventListener
-    public void on(BinaryContentCreatedEvent event) {
-        sendToKafka(event);
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(BinaryContentDeletedEvent event) {
-        sendToKafka(event);
-    }
+//    @Async
+//    @TransactionalEventListener
+//    public void on(BinaryContentCreatedEvent event) { sendToKafka(event);}
+//
+//    @Async
+//    @TransactionalEventListener
+//    public void on(BinaryContentDeletedEvent event) {
+//        sendToKafka(event);
+//    }
 
     @Async
     @TransactionalEventListener
