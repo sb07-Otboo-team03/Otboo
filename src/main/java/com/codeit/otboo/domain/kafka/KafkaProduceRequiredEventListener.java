@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.kafka;
 
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;

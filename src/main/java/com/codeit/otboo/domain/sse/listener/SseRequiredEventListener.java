@@ -95,9 +95,6 @@ public class SseRequiredEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedLikedEvent event) {
 
-        String title = event.getTitle();
-        String content = event.getContent();
-
         Notification notification = getNotification(event.getReceiverId(), event);
         sendSseEvent(List.of(notification));
     }
@@ -129,6 +126,7 @@ public class SseRequiredEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(UserRoleUpdatedEvent event) {
+
         Notification notification = getNotification(event.getReceiverId(), event);
         sendSseEvent(List.of(notification));
     }

@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.kafka;
 
-import static org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event;
-
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
@@ -124,9 +122,6 @@ public class SseRequiredTopicListener {
         try {
             FeedLikedEvent event =
                 objectMapper.readValue(kafkaEvent, FeedLikedEvent.class);
-
-            String title = event.getTitle();
-            String content = event.getContent();
 
             Notification notification = getNotification(event.getReceiverId(), event);
             sendSseEvent(List.of(notification));
