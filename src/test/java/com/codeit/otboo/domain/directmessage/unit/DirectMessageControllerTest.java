@@ -103,6 +103,7 @@ class DirectMessageControllerTest {
                 slice,
                 null,
                 null,
+                0L,
                 "createdAt",
                 SortDirection.DESCENDING
             );
