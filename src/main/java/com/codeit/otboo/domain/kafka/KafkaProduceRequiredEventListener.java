@@ -56,7 +56,7 @@ public class KafkaProduceRequiredEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener
     public void on(CommentCreatedEvent event) {
         sendToKafka(event);
     }
