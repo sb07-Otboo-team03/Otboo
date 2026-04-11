@@ -17,10 +17,10 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
         SELECT new com.codeit.otboo.domain.directmessage.dto.DirectMessageDto(
             d.id,
             d.createdAt,
-            sp.id,
+            s.id,
             sp.name,
             spb.id,
-            rp.id,
+            r.id,
             rp.name,
             rpb.id,
             d.content)
