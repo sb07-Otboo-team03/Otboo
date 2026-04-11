@@ -74,6 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
             nextCursor,
             nextIdAfter,
             hasNext,
+            content.size(),
             "createdAt",
             SortDirection.DESCENDING
         );

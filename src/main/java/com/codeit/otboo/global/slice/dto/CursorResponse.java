@@ -13,27 +13,27 @@ public record CursorResponse<T>(
     String sortBy,
     SortDirection sortDirection
 ) {
-    public static <T> CursorResponse<T> fromSlice(Slice<T> slice, String nextCursor, UUID nextIdAfter, String sortBy,SortDirection sortDirection) {
+    public static <T> CursorResponse<T> fromSlice(Slice<T> slice, String nextCursor, UUID nextIdAfter, long totalCount, String sortBy,SortDirection sortDirection) {
 
         return new CursorResponse<>(
             slice.getContent(),
             nextCursor,
             nextIdAfter,
             slice.hasNext(),
-            null,
+            (Long)totalCount,
             sortBy,
             sortDirection
         );
     }
 
-    public static <T> CursorResponse<T> fromList(List<T> list, String nextCursor, UUID nextIdAfter, Boolean hasNext, String sortBy,SortDirection sortDirection) {
+    public static <T> CursorResponse<T> fromList(List<T> list, String nextCursor, UUID nextIdAfter, Boolean hasNext, long totalCount, String sortBy,SortDirection sortDirection) {
 
         return new CursorResponse<>(
             list,
             nextCursor,
             nextIdAfter,
             hasNext,
-            null,
+            (Long)totalCount,
             sortBy,
             sortDirection
         );

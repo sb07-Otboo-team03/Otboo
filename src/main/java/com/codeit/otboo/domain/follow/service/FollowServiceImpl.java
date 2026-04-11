@@ -65,7 +65,7 @@ public class FollowServiceImpl implements FollowService {
         Follow savedFollow = followRepository.save(follow);
 
         String title = follower.getProfile().getName() + "님이 나를 팔로우했어요.";
-        eventPublisher.publishEvent( new FollowSseEvent(title, "", followee.getId()));
+        eventPublisher.publishEvent(new FollowSseEvent(title, "", followee.getId()));
 
         return followMapper.toDto(savedFollow);
     }
@@ -77,16 +77,16 @@ public class FollowServiceImpl implements FollowService {
             .orElseThrow(() -> new UserNotFoundException(followeeId));
 
         UUID myId = userDetails.getUserResponse().id();
-        int followerCount = followRepository.countByFollowerId(followeeId);
-        int followingCount = followRepository.countByFolloweeId(followeeId);
+        int followingCount = followRepository.countByFollowerId(followeeId);
+        int followerCount = followRepository.countByFolloweeId(followeeId);
 
         Optional<Follow> follow = followRepository.findByFollowerIdAndFolloweeId(myId, followeeId);
         boolean isEmpty = follow.isEmpty();
 
         FollowSummaryResponse response = new FollowSummaryResponse(
             followeeId,
-            followingCount,
             followerCount,
+            followingCount,
             !isEmpty,
             isEmpty ? null : follow.get().getId(),
             !isEmpty
@@ -154,6 +154,7 @@ public class FollowServiceImpl implements FollowService {
             nextCursor,
             nextIdAfter,
             hasNext,
+            content.size(),
             "createdAt",
             SortDirection.DESCENDING
         );
