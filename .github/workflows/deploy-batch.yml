@@ -95,6 +95,10 @@ jobs:
           
           mv task-definition-clean.json task-definition.json
 
+      - name: Show container names
+        run: |
+          cat task-definition.json | jq '.containerDefinitions[].name'
+
       - name: Fill in new image in task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
