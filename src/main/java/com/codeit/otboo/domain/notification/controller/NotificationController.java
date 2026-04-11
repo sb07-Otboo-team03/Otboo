@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.notification.controller;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
+import com.codeit.otboo.domain.notification.doc.NotificationApi;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.global.security.OtbooUserDetails;

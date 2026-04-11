@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.controller;
+package com.codeit.otboo.domain.directmessage.doc;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;

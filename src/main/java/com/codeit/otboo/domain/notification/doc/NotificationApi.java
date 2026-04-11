@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.notification.controller;
+package com.codeit.otboo.domain.notification.doc;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;

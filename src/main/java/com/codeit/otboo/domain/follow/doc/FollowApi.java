@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.follow.controller;
+package com.codeit.otboo.domain.follow.doc;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
@@ -255,6 +255,7 @@ public interface FollowApi {
             responseCode = "204",
             description = "팔로우 취소 성공"
         ),
+
         @ApiResponse(
             responseCode = "400",
             description = "팔로우 취소 실패",

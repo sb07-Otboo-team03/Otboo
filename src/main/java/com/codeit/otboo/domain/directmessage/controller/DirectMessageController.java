@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.directmessage.controller;
 
+import com.codeit.otboo.domain.directmessage.doc.DirectMessageApi;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageService;
