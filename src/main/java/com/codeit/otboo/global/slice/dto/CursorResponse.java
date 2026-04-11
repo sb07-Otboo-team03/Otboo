@@ -26,14 +26,14 @@ public record CursorResponse<T>(
         );
     }
 
-    public static <T> CursorResponse<T> fromList(List<T> list, String nextCursor, UUID nextIdAfter, Boolean hasNext, long totalCount, String sortBy,SortDirection sortDirection) {
+    public static <T> CursorResponse<T> fromList(List<T> list, String nextCursor, UUID nextIdAfter, Boolean hasNext, Long totalCount, String sortBy,SortDirection sortDirection) {
 
         return new CursorResponse<>(
             list,
             nextCursor,
             nextIdAfter,
             hasNext,
-            (Long)totalCount,
+            totalCount,
             sortBy,
             sortDirection
         );
