@@ -1,16 +1,10 @@
 package com.codeit.otboo.batch.weather.alert.service;
 
+import com.codeit.otboo.batch.weather.alert.model.*;
 import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
-import com.codeit.otboo.batch.weather.alert.model.RegionAlertResult;
-import com.codeit.otboo.batch.weather.alert.model.RegionAlertTarget;
-import com.codeit.otboo.batch.weather.alert.model.HourlyPrecipitationStatus;
-import com.codeit.otboo.batch.weather.alert.model.HourlyTemperature;
-import com.codeit.otboo.batch.weather.alert.model.PrecipitationChangeSummary;
-import com.codeit.otboo.batch.weather.alert.model.TemperatureGapSummary;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
 import com.codeit.otboo.domain.weather.repository.WeatherRepository;
@@ -26,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService.END_TIME;
@@ -44,17 +39,15 @@ public class WeatherAlertBatchService {
 
     @Transactional(readOnly = true)
     public List<RegionAlertTarget> findAlertTargetsByRegion() {
-        List<Profile> profiles = profileRepository.findAllForWeatherAlert();
+        List<AlertTarget> targets = profileRepository.findAllForWeatherAlert();
 
-        Map<RegionKey, List<Profile>> profilesByRegion = profiles.stream()
-                .collect(Collectors.groupingBy(profile ->
-                        new RegionKey(
-                                profile.getLocation().getX(),
-                                profile.getLocation().getY()
-                        )
+        Map<RegionKey, List<UUID>> grouped = targets.stream()
+                .collect(Collectors.groupingBy(t ->
+                        new RegionKey(t.x(), t.y()),
+                        Collectors.mapping(AlertTarget::userId, Collectors.toList())
                 ));
 
-        return profilesByRegion.entrySet().stream()
+        return grouped.entrySet().stream()
                 .map(entry -> new RegionAlertTarget(
                         entry.getKey().x(),
                         entry.getKey().y(),
@@ -87,7 +80,7 @@ public class WeatherAlertBatchService {
         List<NotificationCreateCommand> commands = new ArrayList<>();
 
         commands.addAll(buildTemperatureGapNotifications(
-                target.profiles(),
+                target.userIds(),
                 target.x(),
                 target.y(),
                 yesterday,
@@ -95,7 +88,7 @@ public class WeatherAlertBatchService {
         ));
 
         commands.addAll(buildPrecipitationChangeNotifications(
-                target.profiles(),
+                target.userIds(),
                 todayWeathers
         ));
 
@@ -103,7 +96,7 @@ public class WeatherAlertBatchService {
     }
 
     private List<NotificationCreateCommand> buildTemperatureGapNotifications(
-            List<Profile> regionProfiles,
+            List<UUID> userIds,
             Integer x,
             Integer y,
             LocalDate yesterday,
@@ -127,9 +120,9 @@ public class WeatherAlertBatchService {
             return List.of();
         }
 
-        return regionProfiles.stream()
-                .map(profile -> new NotificationCreateCommand(
-                        profile.getUser().getId(),
+        return userIds.stream()
+                .map(userId -> new NotificationCreateCommand(
+                        userId,
                         "어제와 기온 차가 커요",
                         summary.content(),
                         NotificationLevel.INFO
@@ -138,7 +131,7 @@ public class WeatherAlertBatchService {
     }
 
     private List<NotificationCreateCommand> buildPrecipitationChangeNotifications(
-            List<Profile> regionProfiles,
+            List<UUID> userIds,
             List<Weather> todayWeathers
     ) {
         PrecipitationChangeSummary summary = weatherAlertPolicyService.summarizePrecipitationChanges(
@@ -149,9 +142,9 @@ public class WeatherAlertBatchService {
             return List.of();
         }
 
-        return regionProfiles.stream()
-                .map(profile -> new NotificationCreateCommand(
-                        profile.getUser().getId(),
+        return userIds.stream()
+                .map(userId -> new NotificationCreateCommand(
+                        userId,
                         "오늘 강수 예보가 바뀌어요",
                         summary.content(),
                         NotificationLevel.INFO
