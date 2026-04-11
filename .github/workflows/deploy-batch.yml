@@ -7,6 +7,7 @@ on:
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_BATCH_REPOSITORY }}
+  ECS_BATCH_TASK_DEFINITION: otboo-batch
   CONTAINER_NAME: ${{ vars.BATCH_CONTAINER_NAME }}
   IMAGE_TAG: latest
 
