@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "DirectMessage", description = "DirectMessage API")
-public interface DirectMessageDoc {
+public interface DirectMessageApi {
 
     @Operation(
         summary = "DM 목록 조회",

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/direct-messages")
 @RequiredArgsConstructor
-public class DirectMessageController implements DirectMessageDoc{
+public class DirectMessageController implements DirectMessageApi {
 
     private final DirectMessageService directMessageService;
 

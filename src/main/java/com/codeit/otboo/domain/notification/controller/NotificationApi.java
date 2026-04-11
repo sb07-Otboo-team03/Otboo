@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @Tag(name = "알림", description = "알림 관련 API")
-public interface NotificationDoc {
+public interface NotificationApi {
 
     @Operation(
         summary = "알림 목록 조회",

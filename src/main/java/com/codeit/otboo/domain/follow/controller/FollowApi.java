@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "팔로우 관리", description = "팔로우 관련 API")
-public interface FollowDoc {
+public interface FollowApi {
 
     @Operation(
         summary = "팔로우 생성",
