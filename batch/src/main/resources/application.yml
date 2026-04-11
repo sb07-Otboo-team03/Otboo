@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: otboo
+
+  profiles:
+    active: batch
+
+  sql:
+    init:
+      mode: never
+
+  jpa:
+    database: postgresql
+    open-in-view: false
+    properties:
+        default_batch_fetch_size: 100
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    properties:
+#      spring.json.trusted.packages: "*"
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+
+      sasl.jaas.config: >
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="${KAFKA_API_KEY}"
+        password="${KAFKA_API_SECRET}";
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      acks: all
+      retries: 3
+
+    consumer:
+      auto-offset-reset: earliest
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    listener:
+      ack-mode: record
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+info:
+  app:
+    name: OtBoo
+    version: 1.0.0
+  
+api:
+  kma-api-key: ${KMA_API_KEY}
+  kakao-rest-api-key: ${KAKAO_REST_API_KEY}
