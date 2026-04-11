@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-public class NotificationController {
+public class NotificationController implements NotificationDoc {
     private final NotificationService notificationService;
 
     // 알림 목록 조회

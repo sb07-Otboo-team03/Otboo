@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/follows")
-public class FollowController {
+public class FollowController implements FollowDoc {
     private final FollowService followService;
 
     //팔로우 생성
