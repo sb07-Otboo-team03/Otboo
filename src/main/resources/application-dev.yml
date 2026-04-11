@@ -46,3 +46,7 @@ otboo:
     access-token-expiration: 900000
     refresh-token-expiration: 1209600000
     issuer: codeit
+  account:
+    admin-email: admin@codeit.com
+    admin-name: admin
+    admin-password: admin
