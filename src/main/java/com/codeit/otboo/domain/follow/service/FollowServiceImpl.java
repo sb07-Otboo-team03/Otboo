@@ -154,7 +154,7 @@ public class FollowServiceImpl implements FollowService {
             nextCursor,
             nextIdAfter,
             hasNext,
-            content.size(),
+            null,
             "createdAt",
             SortDirection.DESCENDING
         );

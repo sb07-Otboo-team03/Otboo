@@ -69,7 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
             .map(notificationMapper::toDto)
             .toList();
 
-        int totalCount = notificationRepository.countNotificationByReceiverId(authPrincipalId);
+        Long totalCount = notificationRepository.countNotificationByReceiverId(authPrincipalId);
         return CursorResponse.fromList(
             content,
             nextCursor,

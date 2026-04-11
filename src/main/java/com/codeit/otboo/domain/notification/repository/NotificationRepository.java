@@ -14,7 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
-    int countNotificationByReceiverId(UUID receiverId);
+    Long countNotificationByReceiverId(UUID receiverId);
     Optional<Notification> findByIdAndReceiverId(UUID id, UUID receiverId);
 
     @Query("""

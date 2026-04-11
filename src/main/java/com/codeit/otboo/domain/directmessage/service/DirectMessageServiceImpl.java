@@ -104,7 +104,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             nextCursor,
             nextIdAfter,
             hasNext,
-            content.size(),
+            null,
             "createdAt",
             SortDirection.DESCENDING
         );
