@@ -69,6 +69,14 @@ public interface DirectMessageApi {
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
         )
     })
     ResponseEntity<CursorResponse<DirectMessageResponse>> getDirectMessages(

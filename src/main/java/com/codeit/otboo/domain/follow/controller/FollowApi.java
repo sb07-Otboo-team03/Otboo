@@ -48,6 +48,14 @@ public interface FollowApi {
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
         )
     })
     ResponseEntity<FollowResponse> createFollow(
@@ -78,6 +86,13 @@ public interface FollowApi {
         @ApiResponse(
             responseCode = "400",
             description = "팔로우 조회 실패",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
@@ -136,6 +151,14 @@ public interface FollowApi {
         @ApiResponse(
             responseCode = "400",
             description = "팔로잉 목록 조회 실패",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
@@ -198,6 +221,14 @@ public interface FollowApi {
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
         )
     })
     ResponseEntity<CursorResponse<FollowResponse>> getFollowers(
@@ -227,6 +258,14 @@ public interface FollowApi {
         @ApiResponse(
             responseCode = "400",
             description = "팔로우 취소 실패",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )

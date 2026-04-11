@@ -64,6 +64,14 @@ public interface NotificationApi {
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
         )
     })
     ResponseEntity<CursorResponse<NotificationResponse>> getNotifications(
@@ -94,6 +102,14 @@ public interface NotificationApi {
         @ApiResponse(
             responseCode = "400",
             description = "알림 읽음 처리 실패",
+            content = @Content(
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        ),
+
+        @ApiResponse(
+            responseCode = "500",
+            description = "Unhandled exception",
             content = @Content(
                 schema = @Schema(implementation = ErrorResponse.class)
             )
