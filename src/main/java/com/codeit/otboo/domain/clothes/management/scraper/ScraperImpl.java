@@ -1,10 +1,9 @@
 package com.codeit.otboo.domain.clothes.management.scraper;
+
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
-import com.codeit.otboo.domain.clothes.management.exception.ScrapFailUrlException;
 import com.codeit.otboo.domain.clothes.management.fetcher.DocumentFetcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
