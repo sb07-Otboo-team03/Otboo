@@ -7,10 +7,10 @@ import java.util.UUID;
 
 public record ClothesCursorPageRequest (
     String cursor,
-    String after,
+    String idAfter,
     @Min(1)
     Integer limit,
-    String type,
+    String typeEqual,
     @NotNull
     UUID ownerId
 ){

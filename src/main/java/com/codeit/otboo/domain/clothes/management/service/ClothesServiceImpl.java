@@ -173,7 +173,7 @@ public class ClothesServiceImpl implements ClothesService{
     @Override
     public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
         long totalCount = clothesRepositoryCustom.totalCount(
-            request.ownerId(), ClothesType.fromString(request.type()));
+            request.ownerId(), ClothesType.fromString(request.typeEqual()));
         String sortBy = ClothesSortBy.CREATED_AT.getValue();
         SortDirection direction = SortDirection.DESCENDING;
         if(totalCount == 0){
