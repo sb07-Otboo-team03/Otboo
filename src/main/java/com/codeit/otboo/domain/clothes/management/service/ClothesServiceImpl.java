@@ -171,7 +171,6 @@ public class ClothesServiceImpl implements ClothesService{
     }
 
     @Override
-    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
         long totalCount = clothesRepositoryCustom.totalCount(
             request.ownerId(), ClothesType.fromString(request.type()));
