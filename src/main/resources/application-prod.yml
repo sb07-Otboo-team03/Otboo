@@ -32,6 +32,10 @@ logging:
     org.hibernate.SQL: warn
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health
   endpoint:
     health:
       show-details: never
@@ -42,3 +46,7 @@ otboo:
     access-token-expiration: ${ACCESS_TOKEN_EXPIRATION}
     refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION}
     issuer: ${ISSUER}
+  account:
+    email: ${ADMIN_EMAIL}
+    name: ${ADMIN_NAME}
+    password: ${ADMIN_PASSWORD}
