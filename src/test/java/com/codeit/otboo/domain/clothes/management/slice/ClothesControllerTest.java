@@ -431,4 +431,33 @@ public class ClothesControllerTest {
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
         }
     }
+
+    @Nested
+    @DisplayName("링크로 옷 등록")
+    class ClothesLink {
+        @Test
+        @DisplayName("성공: 유효한 요청이 들어올 경우 200으로 응답한다")
+        void getExtractions_Success() throws Exception {
+            // given
+            String url = "https://example.com";
+
+            // when & then
+            mockMvc.perform(get("/api/clothes/extractions")
+                        .param("url", url)
+                )
+                .andExpect(status().isOk());
+            then(clothesService).should().getClothesInfoByUrl(eq(url));
+        }
+
+        @Test
+        @DisplayName("실패: url이 공백 문자로 들어올 경우 400으로 응답한다")
+        void getExtractions_Fail_urlBlank() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/clothes/extractions")
+                        .param("url", " ")
+                )
+                .andExpect(status().isBadRequest());
+            then(clothesService).should(never()).getClothesInfoByUrl(anyString());
+        }
+    }
 }
