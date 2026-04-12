@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
+import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 
 import java.util.UUID;
@@ -23,4 +24,6 @@ public interface ClothesService {
     void deleteClothes(UUID clothesId);
 
     CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request);
+
+    ClothesUrlResponse getClothesInfoByUrl(String url);
 }
