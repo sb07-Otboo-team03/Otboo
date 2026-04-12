@@ -24,7 +24,7 @@ public class ScraperImpl implements Scraper{
             name = document.title();
         }
 
-        log.info("스크랩 결과 => name: {}, imageUrl: {}", name, imageUrl);
+        log.debug("스크랩 결과 => name: {}, imageUrl: {}", name, imageUrl);
         return new ClothesUrlResponse(name, imageUrl);
     }
 
