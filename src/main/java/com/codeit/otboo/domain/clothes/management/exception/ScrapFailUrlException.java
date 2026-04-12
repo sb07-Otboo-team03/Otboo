@@ -7,11 +7,11 @@ import java.util.Map;
 
 public class ScrapFailUrlException extends ClothesException{
     public ScrapFailUrlException() {
-        super(ErrorCode.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        super(ErrorCode.SCRAP_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     public ScrapFailUrlException(String requestUrl) {
         super(
-                ErrorCode.INTERNAL_SERVER_ERROR,
+                ErrorCode.SCRAP_FAIL,
                 Map.of("requestUrl", requestUrl),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
