@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.notification.controller;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
-import com.codeit.otboo.domain.notification.doc.NotificationApi;
+import com.codeit.otboo.domain.notification.controller.doc.NotificationDoc;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
 import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.global.security.OtbooUserDetails;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-public class NotificationController implements NotificationApi {
+public class NotificationController implements NotificationDoc {
     private final NotificationService notificationService;
 
     // 알림 목록 조회

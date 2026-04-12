@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.follow.doc;
+package com.codeit.otboo.domain.follow.controller.doc;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "팔로우 관리", description = "팔로우 관련 API")
-public interface FollowApi {
+public interface FollowDoc {
 
     @Operation(
         summary = "팔로우 생성",

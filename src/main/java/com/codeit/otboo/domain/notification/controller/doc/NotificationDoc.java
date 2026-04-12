@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.notification.doc;
+package com.codeit.otboo.domain.notification.controller.doc;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.notification.dto.NotificationResponse;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @Tag(name = "알림", description = "알림 관련 API")
-public interface NotificationApi {
+public interface NotificationDoc {
 
     @Operation(
         summary = "알림 목록 조회",

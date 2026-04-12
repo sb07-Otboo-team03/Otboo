@@ -1,7 +1,7 @@
 package com.codeit.otboo.domain.follow.controller;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
-import com.codeit.otboo.domain.follow.doc.FollowApi;
+import com.codeit.otboo.domain.follow.controller.doc.FollowDoc;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/follows")
-public class FollowController implements FollowApi {
+public class FollowController implements FollowDoc {
     private final FollowService followService;
 
     //팔로우 생성
