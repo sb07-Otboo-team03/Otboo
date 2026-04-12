@@ -1,6 +1,8 @@
 package com.codeit.otboo.domain.clothes.management.scraper;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.domain.clothes.management.exception.ScrapFailUrlException;
+import com.codeit.otboo.domain.clothes.management.fetcher.DocumentFetcher;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,29 +11,22 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ScraperImpl implements Scraper{
+    private final DocumentFetcher documentFetcher;
+
     @Override
     public ClothesUrlResponse scrap(String url) {
-        try {
-            Document document = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36")
-                    .header("Accept-Language", "ko-KR,ko;q=0.9")
-                    .header("Referer", "https://www.google.com")
-                    .timeout(5000)
-                    .get();
+        Document document = documentFetcher.fetch(url);
+        String name = extractContent(document, "og:title");
+        String imageUrl = extractContent(document, "og:image");
 
-            String name = extractContent(document, "og:title");
-            String imageUrl = extractContent(document, "og:image");
-
-            if (name == null || name.isBlank()) {
-                name = document.title();
-            }
-
-            log.info("스크랩 결과 => name: {}, imageUrl: {}", name, imageUrl);
-            return new ClothesUrlResponse(name, imageUrl);
-        } catch (Exception e) {
-            throw new ScrapFailUrlException(url);
+        if (name == null || name.isBlank()) {
+            name = document.title();
         }
+
+        log.info("스크랩 결과 => name: {}, imageUrl: {}", name, imageUrl);
+        return new ClothesUrlResponse(name, imageUrl);
     }
 
     private String extractContent(Document document, String property) {
