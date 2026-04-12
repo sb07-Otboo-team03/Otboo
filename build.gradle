@@ -114,6 +114,7 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
 
     // kafka
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 

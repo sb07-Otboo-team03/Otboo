@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.directmessage.controller.doc;
+package com.codeit.otboo.domain.directmessage.controller.docs;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "DirectMessage", description = "DirectMessage API")
-public interface DirectMessageDoc {
+public interface DirectMessageControllerDocs {
 
     @Operation(
         summary = "DM 목록 조회",
