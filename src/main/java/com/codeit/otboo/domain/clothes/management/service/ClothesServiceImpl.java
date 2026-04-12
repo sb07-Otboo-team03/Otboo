@@ -13,6 +13,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
+import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
@@ -21,6 +22,7 @@ import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
+import com.codeit.otboo.domain.clothes.management.scraper.Scraper;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeSelection;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeValueKey;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
@@ -53,6 +55,7 @@ public class ClothesServiceImpl implements ClothesService{
     private final ClothesMapper clothesMapper;
     private final ClothesQueryMapper clothesQueryMapper;
     private final ClothesRepositoryCustomImpl clothesRepositoryCustom;
+    private final Scraper scraper;
 
     @Override
     @Transactional
@@ -253,5 +256,10 @@ public class ClothesServiceImpl implements ClothesService{
     // PreAuthorize 에서 권한 검사를 위해 로그인된 사용자와 같은지 확인
     public boolean isOwner(UUID clothesId, UUID ownerId){
         return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
+    }
+
+    @Override
+    public ClothesUrlResponse getClothesInfoByUrl(String url) {
+        return scraper.scrap(url);
     }
 }

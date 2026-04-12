@@ -5,7 +5,9 @@ import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
+import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUrlRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
+import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
@@ -61,5 +63,10 @@ public class ClothesController {
     @GetMapping
     public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@Valid ClothesCursorPageRequest request){
         return ResponseEntity.ok(clothesService.getClothesListByOwnerId(request));
+    }
+
+    @GetMapping("/extractions")
+    public ResponseEntity<ClothesUrlResponse> getExtractions(@Valid ClothesUrlRequest request){
+        return ResponseEntity.ok(clothesService.getClothesInfoByUrl(request.url()));
     }
 }
