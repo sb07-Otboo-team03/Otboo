@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.directmessage.controller;
 
+import com.codeit.otboo.domain.directmessage.controller.docs.DirectMessageControllerDocs;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.service.DirectMessageService;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/direct-messages")
 @RequiredArgsConstructor
-public class DirectMessageController {
+public class DirectMessageController implements DirectMessageControllerDocs {
 
     private final DirectMessageService directMessageService;
 
