@@ -24,28 +24,6 @@ public class BinaryContentEventListenerTest {
     private BinaryContentEventListener binaryContentEventListener;
 
     @Nested
-    @DisplayName("upload 이벤트 수신")
-    class BinaryContentEventListenerUploadEvent {
-        @Test
-        @DisplayName("성공: 업로드 이벤트가 수신되면 upload가 호출된다")
-        void success_upload_event(){
-            // given
-            BinaryContentCreatedEvent event = new BinaryContentCreatedEvent(
-                    UUID.randomUUID(),
-                    "test".getBytes(),
-                    "image/jpeg"
-            );
-
-            // when
-            binaryContentEventListener.handleCreated(event);
-
-            // then
-            then(binaryContentRetryService).should()
-                    .upload(event.binaryContentId(), event.bytes(), event.contentType());
-        }
-    }
-
-    @Nested
     @DisplayName("delete 이벤트 수신")
     class BinaryContentEventListenerDeleteEvent {
         @Test

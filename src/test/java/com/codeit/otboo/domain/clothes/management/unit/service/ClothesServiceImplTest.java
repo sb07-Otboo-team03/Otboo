@@ -27,6 +27,7 @@ import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
+import com.codeit.otboo.domain.clothes.management.scraper.Scraper;
 import com.codeit.otboo.domain.clothes.management.service.ClothesServiceImpl;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -83,6 +84,9 @@ public class ClothesServiceImplTest {
     @Mock
     ClothesRepositoryCustomImpl clothesRepositoryCustom;
 
+    @Mock
+    Scraper scraper;
+
     @InjectMocks
     ClothesServiceImpl clothesService;
 
@@ -95,7 +99,7 @@ public class ClothesServiceImplTest {
             // given
             User user = UserFixture.create();
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), "새 옷", ClothesType.ETC, List.of());
+                    user.getId(), "새 옷", ClothesType.ETC, List.of(), null);
             Clothes clothes = ClothesFixture.create(request, null);
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
@@ -110,7 +114,7 @@ public class ClothesServiceImplTest {
             given(clothesMapper.toDto(clothes, null, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.createClothes(null, request);
+            ClothesResponse result = clothesService.createClothes(request);
 
             // then
             assertThat(result).extracting(ClothesResponse::name, ClothesResponse::ownerId, ClothesResponse::imageUrl)
@@ -130,12 +134,10 @@ public class ClothesServiceImplTest {
         void createClothes_Success_with_image() {
             // given
             User user = UserFixture.create();
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
             BinaryContent binaryContent = BinaryContentFixture.create();
             String binaryContentUrl = "http://example.com/binary/test.png";
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), "새 옷", ClothesType.ETC, List.of());
+                    user.getId(), "새 옷", ClothesType.ETC, List.of(), binaryContent.getId());
             Clothes clothes = ClothesFixture.create(request, null);
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
@@ -147,20 +149,19 @@ public class ClothesServiceImplTest {
             );
 
             given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(binaryContentService.upload(any(BinaryContentCreateRequest.class)))
-                .willReturn(binaryContent);
+            given(binaryContentService.getById(binaryContent.getId())).willReturn(binaryContent);
             given(binaryContentUrlResolver.resolve(binaryContent.getId()))
                     .willReturn(binaryContentUrl);
             given(clothesRepository.save(any(Clothes.class))).willReturn(clothes);
             given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.createClothes(imageRequest, request);
+            ClothesResponse result = clothesService.createClothes(request);
 
             // then
             assertThat(result.imageUrl()).isEqualTo(binaryContentUrl);
             then(userRepository).should().findById(user.getId());
-            then(binaryContentService).should().upload(imageRequest);
+            then(binaryContentService).should().getById(binaryContent.getId());
             then(binaryContentUrlResolver).should().resolve(binaryContent.getId());
             then(clothesRepository).should().save(any(Clothes.class));
         }
@@ -182,7 +183,8 @@ public class ClothesServiceImplTest {
                                     definition1.getId(), selectableList1.get(0).getSelectableValue()),
                             new ClothesAttributeRequest(
                                     definition2.getId(), selectableList2.get(1).getSelectableValue())
-                    )
+                    ),
+                    null
             );
             Clothes clothes = ClothesFixture.create(request, null);
             Map<UUID, List<String>> expectedGrouping = Map.of(
@@ -216,7 +218,7 @@ public class ClothesServiceImplTest {
                     .willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.createClothes(null, request);
+            ClothesResponse result = clothesService.createClothes(request);
 
             // then
             assertThat(result.attributes()).hasSize(2);
@@ -239,12 +241,12 @@ public class ClothesServiceImplTest {
         void createClothes_Fail_NotFoundUser() {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    UUID.randomUUID(), "옷 이름", ClothesType.ETC, List.of());
+                    UUID.randomUUID(), "옷 이름", ClothesType.ETC, List.of(), null);
             given(userRepository.findById(any(UUID.class)))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> clothesService.createClothes(null, request))
+            assertThatThrownBy(() -> clothesService.createClothes(request))
                     .isInstanceOf(UserNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
@@ -262,13 +264,14 @@ public class ClothesServiceImplTest {
                     List.of(
                             new ClothesAttributeRequest(definition.getId(), "기존값"),
                             new ClothesAttributeRequest(definition.getId(), "중복값")
-                    )
+                    ),
+                    null
             );
             given(userRepository.findById(user.getId()))
                     .willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> clothesService.createClothes(null, request))
+            assertThatThrownBy(() -> clothesService.createClothes(request))
                     .isInstanceOf(DuplicateClothesAttributeDefinitionException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CLOTHES_DUPLICATED_VALUE);
@@ -283,13 +286,14 @@ public class ClothesServiceImplTest {
             ClothesAttributeDef definition = ClothesAttributeDefFixture.create();
             ClothesCreateRequest request = new ClothesCreateRequest(
                     user.getId(), "옷 이름", ClothesType.ETC,
-                    List.of(new ClothesAttributeRequest(definition.getId(), "속성값"))
+                    List.of(new ClothesAttributeRequest(definition.getId(), "속성값")),
+                    null
             );
             given(userRepository.findById(user.getId()))
                     .willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> clothesService.createClothes(null, request))
+            assertThatThrownBy(() -> clothesService.createClothes(request))
                     .isInstanceOf(ClothesAttributeValueNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.CLOTHES_ATTRIBUTE_VALUES_NOT_FOUND);
@@ -366,7 +370,7 @@ public class ClothesServiceImplTest {
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.ETC, UserFixture.create(), null, List.of());
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    clothes.getName(), clothes.getType(), List.of());
+                    clothes.getName(), clothes.getType(), List.of(), null);
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
                     clothes.getOwner().getId(),
@@ -379,7 +383,7 @@ public class ClothesServiceImplTest {
             given(clothesMapper.toDto(clothes, null, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), request);
 
             // then
             assertThat(result).isNotNull();
@@ -390,7 +394,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, null, Map.of());
-            then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
+            then(binaryContentService).should(never()).getById(any(UUID.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should(never()).resolve(any(UUID.class));
         }
@@ -399,13 +403,12 @@ public class ClothesServiceImplTest {
         @DisplayName("성공: 이미지가 없는 옷에 이미지를 업로드 할 경우 새로운 이미지로 업로드 된다.")
         void update_clothes_no_image_Success_with_image(){
             // given
+            BinaryContent binaryContent = BinaryContentFixture.create();
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.ETC, UserFixture.create(), null, List.of());
+            UUID clothesId = UUID.randomUUID();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    clothes.getName(), clothes.getType(), List.of());
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
+                    clothes.getName(), clothes.getType(), List.of(), binaryContent.getId());
             String binaryContentUrl = "http://example.com/binary/test.png";
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
@@ -416,12 +419,12 @@ public class ClothesServiceImplTest {
                     List.of()
             );
             given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
-            given(binaryContentService.upload(imageRequest)).willReturn(binaryContent);
+            given(binaryContentService.getById(binaryContent.getId())).willReturn(binaryContent);
             given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(binaryContentUrl);
             given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.updateClothes(clothes.getId(), imageRequest, request);
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), request);
 
             // then
             assertThat(result.imageUrl()).isNotNull();
@@ -429,7 +432,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
+            then(binaryContentService).should().getById(any(UUID.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
@@ -441,7 +444,7 @@ public class ClothesServiceImplTest {
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.ETC, UserFixture.create(), BinaryContentFixture.create(), List.of());
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    clothes.getName(), clothes.getType(), List.of());
+                    clothes.getName(), clothes.getType(), List.of(), null);
             String binaryContentUrl = "http://example.com/binary/test.png";
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
@@ -456,7 +459,7 @@ public class ClothesServiceImplTest {
             given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), request);
 
             // then
             assertThat(result.imageUrl()).isNotNull();
@@ -464,7 +467,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(binaryContentService).should(never()).upload(any(BinaryContentCreateRequest.class));
+            then(binaryContentService).should(never()).getById(any(UUID.class));
             then(binaryContentService).should(never()).delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
@@ -478,8 +481,9 @@ public class ClothesServiceImplTest {
             // given
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.ETC, UserFixture.create(), BinaryContentFixture.create(), List.of());
+            UUID binaryContentId = UUID.randomUUID();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    clothes.getName(), clothes.getType(), List.of());
+                    clothes.getName(), clothes.getType(), List.of(), binaryContentId);
             BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
                     "test".getBytes(), "test_file", "image/png", 30L);
             BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
@@ -493,12 +497,12 @@ public class ClothesServiceImplTest {
                     List.of()
             );
             given(clothesRepository.findById(clothes.getId())).willReturn(Optional.of(clothes));
-            given(binaryContentService.upload(imageRequest)).willReturn(binaryContent);
+            given(binaryContentService.getById(binaryContentId)).willReturn(binaryContent);
             given(binaryContentUrlResolver.resolve(binaryContent.getId())).willReturn(binaryContentUrl);
             given(clothesMapper.toDto(clothes, binaryContentUrl, Map.of())).willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.updateClothes(clothes.getId(), imageRequest, request);
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), request);
 
             // then
             assertThat(result.imageUrl()).isNotNull();
@@ -506,7 +510,7 @@ public class ClothesServiceImplTest {
 
             then(clothesRepository).should().findById(clothes.getId());
             then(clothesMapper).should().toDto(clothes, binaryContentUrl, Map.of());
-            then(binaryContentService).should().upload(any(BinaryContentCreateRequest.class));
+            then(binaryContentService).should().getById(any(UUID.class));
             then(binaryContentService).should().delete(any(UUID.class));
             then(binaryContentUrlResolver).should().resolve(any(UUID.class));
         }
@@ -538,7 +542,8 @@ public class ClothesServiceImplTest {
                                     definition1.getId(), selectableList1.get(0).getSelectableValue()),
                             new ClothesAttributeRequest(
                                     definition2.getId(), selectableList2.get(1).getSelectableValue())
-                    )
+                    ),
+                    null
             );
             Map<UUID, List<String>> expectedGrouping = Map.of(
                     definition1.getId(),
@@ -569,7 +574,7 @@ public class ClothesServiceImplTest {
                     .willReturn(response);
 
             // when
-            ClothesResponse result = clothesService.updateClothes(clothes.getId(), null, request);
+            ClothesResponse result = clothesService.updateClothes(clothes.getId(), request);
 
             // then
             assertThat(result.attributes()).hasSize(2);

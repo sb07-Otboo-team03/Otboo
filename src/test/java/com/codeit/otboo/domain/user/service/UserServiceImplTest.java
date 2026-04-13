@@ -243,7 +243,6 @@ class UserServiceImplTest {
             then(temporaryPasswordRepository).should().deleteByUserId(userId);
 
             assertThat(user.getPassword()).isEqualTo(encodedPassword);
-
         }
 
         @Test
@@ -373,27 +372,29 @@ class UserServiceImplTest {
             BinaryContent oldBinaryContent = BinaryContentFixture.create();
             profile.update("기존 이름", null, null, null, null, oldBinaryContent); // setter 혹은 전용 메서드 활용
 
+
+
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
             ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
                     name,
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    3
+                    3,
+                    newBinarycontent.getId()
             );
-
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
 
             ProfileResponse profileResponse = ProfileResponseFixture.create(user, imageURl, profileUpdateRequest);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
-            given(binaryContentService.upload(imageRequest)).willReturn(newBinarycontent);
+            given(binaryContentService.getById(newBinarycontent.getId())).willReturn(newBinarycontent);
             given(binaryContentUrlResolver.resolve(newBinarycontent.getId())).willReturn(imageURl);
             given(profileMapper.toDto(user, imageURl)).willReturn(profileResponse);
 
             // when
-            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, imageRequest);
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest);
 
             // then
             assertThat(result.profileImageUrl()).isEqualTo(imageURl);
@@ -403,7 +404,7 @@ class UserServiceImplTest {
 
             then(userRepository).should().findById(userId);
             then(binaryContentService).should().delete(oldBinaryContent.getId());
-            then(binaryContentService).should().upload(imageRequest);
+            then(binaryContentUrlResolver).should().resolve(newBinarycontent.getId());
             then(profileMapper).should().toDto(user, imageURl);
         }
 
@@ -420,27 +421,27 @@ class UserServiceImplTest {
 
             profile.update("기존 이름", null, null, null, null, null);
 
+            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
+                    "test".getBytes(), "test_file", "image/png", 30L);
+            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
             ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
                     name,
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    3
+                    3,
+                    newBinarycontent.getId()
             );
-
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
 
             ProfileResponse profileResponse = ProfileResponseFixture.create(user, imageURl, profileUpdateRequest);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
-            given(binaryContentService.upload(imageRequest)).willReturn(newBinarycontent);
+            given(binaryContentService.getById(newBinarycontent.getId())).willReturn(newBinarycontent);
             given(binaryContentUrlResolver.resolve(newBinarycontent.getId())).willReturn(imageURl);
             given(profileMapper.toDto(user, imageURl)).willReturn(profileResponse);
 
             // when
-            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, imageRequest);
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest);
 
             // then
             assertThat(result.profileImageUrl()).isEqualTo(imageURl);
@@ -451,7 +452,7 @@ class UserServiceImplTest {
 
             then(userRepository).should().findById(userId);
             then(binaryContentService).should(never()).delete(any());
-            then(binaryContentService).should().upload(imageRequest);
+            then(binaryContentService).should().getById(newBinarycontent.getId());
             then(profileMapper).should().toDto(user, imageURl);
         }
 
@@ -471,7 +472,8 @@ class UserServiceImplTest {
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    3
+                    3,
+                    null
             );
 
             ProfileResponse profileResponse = ProfileResponseFixture.create(user, null, profileUpdateRequest);
@@ -480,7 +482,7 @@ class UserServiceImplTest {
             given(profileMapper.toDto(user, null)).willReturn(profileResponse);
 
             // when
-            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, null);
+            ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest);
 
             // then
             assertThat(result.profileImageUrl()).isNull();
@@ -490,7 +492,7 @@ class UserServiceImplTest {
 
             then(userRepository).should().findById(userId);
             then(binaryContentService).should(never()).delete(any());
-            then(binaryContentService).should(never()).upload(any());
+            then(binaryContentService).should(never()).getById(any());
             then(profileMapper).should().toDto(user, null);
         }
 
@@ -500,14 +502,14 @@ class UserServiceImplTest {
             UUID userId = UUID.randomUUID();
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> userService.updateProfile(userId, null, null))
+            assertThatThrownBy(() -> userService.updateProfile(userId, null))
                     .isInstanceOf(UserNotFoundException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
             then(userRepository).should().findById(userId);
             then(binaryContentService).should(never()).delete(any());
-            then(binaryContentService).should(never()).upload(any());
+            then(binaryContentService).should(never()).getById(any());
             then(profileMapper).should(never()).toDto(any(), any());
 
         }

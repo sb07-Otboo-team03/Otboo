@@ -267,32 +267,24 @@ class UserControllerTest {
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    3
-            );
-
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(profileUpdateRequest)
+                    3,
+                    null
             );
 
             ProfileResponse profileResponse = ProfileResponseFixture.create(user, null, profileUpdateRequest);
 
-            given(userService.updateProfile(userId, profileUpdateRequest, null))
+            given(userService.updateProfile(userId, profileUpdateRequest))
                     .willReturn(profileResponse);
 
             // when
-            mockMvc.perform(multipart("/api/users/{userId}/profiles", userId)
-                            .file(requestPart)
-                            .with(servletRequest -> {
-                                servletRequest.setMethod("PATCH");
-                                return servletRequest;
-                            }))
+            mockMvc.perform(patch("/api/users/{userId}/profiles", userId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(profileUpdateRequest))
+                    )
                     .andExpect(status().isOk());
 
             // then
-            then(userService).should().updateProfile(userId, profileUpdateRequest, null);
+            then(userService).should().updateProfile(userId, profileUpdateRequest);
         }
 
         @ParameterizedTest
@@ -302,7 +294,7 @@ class UserControllerTest {
                 "이름, -1",
                 "이름, 6"
         })
-        @DisplayName("유저 프로필 업데이트 - 실패 (Bad Request) - 이름 길이를 충족하지 못하거나, ")
+        @DisplayName("유저 프로필 업데이트 - 실패 (Bad Request) - 이름 길이를 충족하지 못하거나, 이름 형식에 맞지 않을 때")
         void userUpdate_fail(String name, String temperatureSensitivity) throws Exception {
             // given
             UUID userId = UUID.randomUUID();
@@ -312,28 +304,19 @@ class UserControllerTest {
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    Integer.parseInt(temperatureSensitivity)
+                    Integer.parseInt(temperatureSensitivity),
+                    null
             );
-
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(profileUpdateRequest)
-            );
-
 
             // when
-            mockMvc.perform(multipart("/api/users/{userId}/profiles", userId)
-                            .file(requestPart)
-                            .with(servletRequest -> {
-                                servletRequest.setMethod("PATCH");
-                                return servletRequest;
-                            }))
+            mockMvc.perform(patch("/api/users/{userId}/profiles", userId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(profileUpdateRequest))
+                    )
                     .andExpect(status().isBadRequest());
 
             // then
-            then(userService).should(never()).updateProfile(userId, profileUpdateRequest, null);
+            then(userService).should(never()).updateProfile(userId, profileUpdateRequest);
         }
 
         @Test
@@ -347,31 +330,23 @@ class UserControllerTest {
                     Gender.MALE,
                     LocalDate.of(2000, 1, 1),
                     new LocationRequest(1.2, 1.3, 1, 2, List.of("서울시", "강남구", "역삼동", "")),
-                    3
-            );
-
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(profileUpdateRequest)
+                    3,
+                    null
             );
 
             // when
             willThrow(new UserNotFoundException(notFoundUserId))
                     .given(userService)
-                    .updateProfile(notFoundUserId, profileUpdateRequest, null);
+                    .updateProfile(notFoundUserId, profileUpdateRequest);
 
-            mockMvc.perform(multipart("/api/users/{userId}/profiles", notFoundUserId)
-                            .file(requestPart)
-                            .with(servletRequest -> {
-                                servletRequest.setMethod("PATCH");
-                                return servletRequest;
-                            }))
+            mockMvc.perform(patch("/api/users/{userId}/profiles", notFoundUserId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(profileUpdateRequest))
+                    )
                     .andExpect(status().isNotFound());
 
             // then
-            then(userService).should().updateProfile(notFoundUserId, profileUpdateRequest, null);
+            then(userService).should().updateProfile(notFoundUserId, profileUpdateRequest);
         }
     }
 
