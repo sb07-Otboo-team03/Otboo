@@ -43,6 +43,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
+
+@DisplayName("🎯Unit Test> FollowServiceImplTest")
 @ExtendWith(MockitoExtension.class)
 class FollowServiceImplTest {
 
