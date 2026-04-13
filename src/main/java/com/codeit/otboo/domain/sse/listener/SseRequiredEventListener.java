@@ -22,8 +22,8 @@ import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
-@Profile("dev")
-@Component
+//@Profile("dev")
+//@Component
 public class SseRequiredEventListener {
 
     private final SseService sseService;

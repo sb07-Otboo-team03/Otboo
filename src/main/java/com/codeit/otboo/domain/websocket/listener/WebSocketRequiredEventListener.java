@@ -13,8 +13,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
-@Profile("dev")
-@Component
+//@Profile("dev")
+//@Component
 public class WebSocketRequiredEventListener {
 
     private final SimpMessagingTemplate messagingTemplate;
