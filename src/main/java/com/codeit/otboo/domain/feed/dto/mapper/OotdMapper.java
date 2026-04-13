@@ -21,11 +21,13 @@ public class OotdMapper {
             Clothes clothes,
             Map<UUID, List<String>> groupingDefinitionSelectable) {
         if (clothes == null) return null;
+        String imageUrl = clothes.getBinaryContent() != null ?
+                resolver.resolve(clothes.getBinaryContent().getId()) : null;
 
         return new FeedOotdResponse(
                 clothes.getId(),
                 clothes.getName(),
-                resolver.resolve(clothes.getBinaryContent().getId()),
+                imageUrl,
                 clothes.getType(),
                 clothes.getValues().stream().map(clothesAttributeValue ->
                         new ClothesAttributeWithDefResponse(
