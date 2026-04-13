@@ -110,14 +110,17 @@ public class KafkaProduceRequiredEventListener {
     private <T> void sendToKafkaWithKey(DirectMessageCreatedEvent event) {
         try {
             DirectMessageResponse directMessageResponse = event.getData();
+
             String senderId = directMessageResponse.sender().userId().toString();
             String receiverId = directMessageResponse.receiver().userId().toString();
 
-            String key = senderId + "+" + receiverId;
+            String directMessageKey = (senderId.compareTo(receiverId) < 0) ?
+                senderId + "_" + receiverId :
+                receiverId + "_" + senderId;
 
-            String message = objectMapper.writeValueAsString(event);
             String topic = "otboo." + event.getClass().getSimpleName();
-            kafkaTemplate.send(topic, key, message);
+            String message = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(topic, directMessageKey, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
