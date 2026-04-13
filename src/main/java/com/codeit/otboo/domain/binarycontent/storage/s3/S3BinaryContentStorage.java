@@ -7,11 +7,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.InputStream;
 import java.util.UUID;
@@ -28,18 +26,6 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
     private String key(UUID binaryId) {
         return path + "/" + binaryId;
-    }
-
-    @Override
-    public UUID put(UUID binaryId, byte[] data, String contentType) {
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key(binaryId))
-                .contentType(contentType)
-                .build();
-
-        s3Client.putObject(request, RequestBody.fromBytes(data));
-        return binaryId;
     }
 
     @Override

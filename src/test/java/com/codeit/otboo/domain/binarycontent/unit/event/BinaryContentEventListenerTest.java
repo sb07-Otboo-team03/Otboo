@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.binarycontent.unit.event;
 
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentEventListener;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentRetryService;

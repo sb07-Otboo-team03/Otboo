@@ -1,13 +1,14 @@
 package com.codeit.otboo.domain.binarycontent.unit.service;
 
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
+import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentPresignedUrlRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
+import com.codeit.otboo.domain.binarycontent.service.BinaryContentPresignedUrlService;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentServiceImpl;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.properties.MultipartProperties;
@@ -39,6 +40,9 @@ public class BinaryContentServiceImplTest {
     @Mock
     private BinaryContentRepository binaryContentRepository;
 
+    @Mock
+    private BinaryContentPresignedUrlService binaryContentPresignedUrlService;
+
     @InjectMocks
     private BinaryContentServiceImpl binaryContentService;
 
@@ -49,52 +53,9 @@ public class BinaryContentServiceImplTest {
         binaryContentService = new BinaryContentServiceImpl(
                 eventPublisher,
                 binaryContentRepository,
+                binaryContentPresignedUrlService,
                 props
         );
-    }
-
-    @Nested
-    @DisplayName("바이너리 컨텐츠 업로드")
-    class UploadBinaryContent {
-        @Test
-        @DisplayName("성공: 유효한 파일 정보가 들어오면 메타데이터를 DB에 저장하고, 생성된 ID를 파일이름으로 하여 데이터를 저장한다")
-        void success_upload() {
-            // given
-            byte[] data = "test".getBytes();
-            BinaryContentCreateRequest request = new BinaryContentCreateRequest(
-                    data, "test_file", "image/png", 30L);
-            BinaryContent binaryContent = BinaryContentFixture.create(request);
-            given(binaryContentRepository.save(any(BinaryContent.class))).willReturn(binaryContent);
-
-            // when
-            BinaryContent result = binaryContentService.upload(request);
-
-            // then
-            assertThat(result).isEqualTo(binaryContent);
-            then(binaryContentRepository).should(times(1))
-                    .save(any(BinaryContent.class));
-            then(eventPublisher).should().publishEvent(any(BinaryContentCreatedEvent.class));
-        }
-
-        @Test
-        @DisplayName("실패: 최대 용량이 넘는 파일이 업로드되면 예외가 발생한다")
-        void fail_put_binary_content_exceed_max_size() {
-            // given
-            byte[] data = new byte[20 * 1024 * 1024]; // 20 MB
-            BinaryContentCreateRequest request =
-                    new BinaryContentCreateRequest(data, "test_file", "image/png", data.length);
-
-            // when & then
-            assertThatThrownBy(() -> binaryContentService.upload(request))
-                    .isInstanceOf(FileUploadMaximumSizeException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.FILE_UPLOAD_MAXIMUM_SIZE);
-
-            then(binaryContentRepository).should(never())
-                    .save(any(BinaryContent.class));
-            then(eventPublisher).should(never())
-                    .publishEvent(any(BinaryContentCreatedEvent.class));
-        }
     }
 
 

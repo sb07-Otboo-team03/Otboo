@@ -16,12 +16,6 @@ public class BinaryContentEventListener {
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleCreated(BinaryContentCreatedEvent event){
-        binaryContentRetryService.upload(event.binaryContentId(), event.bytes(), event.contentType());
-    }
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleDeleted(BinaryContentDeletedEvent event){
         binaryContentRetryService.delete(event.binaryContentId());
     }

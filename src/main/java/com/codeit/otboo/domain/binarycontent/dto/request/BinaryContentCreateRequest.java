@@ -4,7 +4,7 @@ public record BinaryContentCreateRequest(
         byte[] data,
         String name,
         String type,
-        long size
+        Long size
 ) {
 
 }

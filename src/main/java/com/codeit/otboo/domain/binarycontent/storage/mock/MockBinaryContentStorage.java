@@ -12,11 +12,6 @@ import java.util.UUID;
 @ConditionalOnProperty(value = "otboo.storage.type", havingValue = "mock")
 public class MockBinaryContentStorage implements BinaryContentStorage {
     @Override
-    public UUID put(UUID binaryId, byte[] data, String contentType) {
-        return null;
-    }
-
-    @Override
     public InputStream get(UUID binaryId) {
         return null;
     }
