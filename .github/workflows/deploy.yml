@@ -10,7 +10,7 @@ on:
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-  IMAGE_PREFIX: feat/release-test4
+  IMAGE_PREFIX: feat-release-test4
 
 jobs:
   deploy:
