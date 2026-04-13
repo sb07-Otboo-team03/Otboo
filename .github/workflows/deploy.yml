@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: [ "feat/release-test3" ] #NOTE: release-test3에 배포
+    branches: [ "feat/release-test4" ] #NOTE: release-test4에 배포
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
