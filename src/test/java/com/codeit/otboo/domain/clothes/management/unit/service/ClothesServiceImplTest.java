@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.unit.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
@@ -484,9 +483,7 @@ public class ClothesServiceImplTest {
             UUID binaryContentId = UUID.randomUUID();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
                     clothes.getName(), clothes.getType(), List.of(), binaryContentId);
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent binaryContent = BinaryContentFixture.create(imageRequest);
+            BinaryContent binaryContent = BinaryContentFixture.create();
             String binaryContentUrl = "http://example.com/binary/test.png";
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),

@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
@@ -372,11 +371,7 @@ class UserServiceImplTest {
             BinaryContent oldBinaryContent = BinaryContentFixture.create();
             profile.update("기존 이름", null, null, null, null, oldBinaryContent); // setter 혹은 전용 메서드 활용
 
-
-
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
+            BinaryContent newBinarycontent = BinaryContentFixture.create();
             ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
                     name,
                     Gender.MALE,
@@ -421,9 +416,7 @@ class UserServiceImplTest {
 
             profile.update("기존 이름", null, null, null, null, null);
 
-            BinaryContentCreateRequest imageRequest = new BinaryContentCreateRequest(
-                    "test".getBytes(), "test_file", "image/png", 30L);
-            BinaryContent newBinarycontent = BinaryContentFixture.create(imageRequest);
+            BinaryContent newBinarycontent = BinaryContentFixture.create();
             ProfileUpdateRequest profileUpdateRequest = new ProfileUpdateRequest(
                     name,
                     Gender.MALE,
