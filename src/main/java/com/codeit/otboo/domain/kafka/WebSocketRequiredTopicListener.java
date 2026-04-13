@@ -15,29 +15,34 @@ import org.springframework.stereotype.Component;
 @Component
 public class WebSocketRequiredTopicListener {
 
+    public static String makeWebSocketKey(DirectMessageResponse directMessageResponse) {
+
+        String senderId = directMessageResponse.sender().userId().toString();
+        String receiverId = directMessageResponse.receiver().userId().toString();
+
+        return (senderId.compareTo(receiverId) < 0) ?
+            senderId + "_" + receiverId :
+            receiverId + "_" + senderId;
+    }
+
     private final SimpMessagingTemplate messagingTemplate;
 
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "otboo.DirectMessageCreatedEvent", groupId = "websocket-${random.uuid}")
     public void onDirectMessageCreatedEvent(String kafkaEvent) {
+
+        DirectMessageCreatedEvent event = null;
         try {
-            DirectMessageCreatedEvent event = objectMapper.readValue(kafkaEvent,
-                DirectMessageCreatedEvent.class);
+            event = objectMapper.readValue(kafkaEvent, DirectMessageCreatedEvent.class);
 
             DirectMessageResponse directMessageResponse = event.getData();
+            String websocketKey = WebSocketRequiredTopicListener.makeWebSocketKey(directMessageResponse);
+            String destination = String.format("/sub/direct-messages_%s", websocketKey);
 
-            String senderId = directMessageResponse.sender().userId().toString();
-            String receiverId = directMessageResponse.receiver().userId().toString();
-
-            String directMessageKey = (senderId.compareTo(receiverId) < 0) ?
-                senderId + "_" + receiverId :
-                receiverId + "_" + senderId;
-
-            String destination = String.format("/sub/direct-messages_%s", directMessageKey);
             messagingTemplate.convertAndSend(destination, directMessageResponse);
-        }
-        catch (JsonProcessingException e) {
+
+        } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }

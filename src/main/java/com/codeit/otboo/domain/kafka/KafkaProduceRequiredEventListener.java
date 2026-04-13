@@ -14,8 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
-import org.springframework.context.event.EventListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -110,17 +108,12 @@ public class KafkaProduceRequiredEventListener {
     private <T> void sendToKafkaWithKey(DirectMessageCreatedEvent event) {
         try {
             DirectMessageResponse directMessageResponse = event.getData();
-
-            String senderId = directMessageResponse.sender().userId().toString();
-            String receiverId = directMessageResponse.receiver().userId().toString();
-
-            String directMessageKey = (senderId.compareTo(receiverId) < 0) ?
-                senderId + "_" + receiverId :
-                receiverId + "_" + senderId;
+            String webSocketKey = WebSocketRequiredTopicListener.makeWebSocketKey(directMessageResponse);
 
             String topic = "otboo." + event.getClass().getSimpleName();
             String message = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(topic, directMessageKey, message);
+
+            kafkaTemplate.send(topic, webSocketKey, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
