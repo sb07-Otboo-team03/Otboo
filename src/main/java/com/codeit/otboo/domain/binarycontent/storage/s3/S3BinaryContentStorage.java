@@ -8,10 +8,10 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -51,5 +51,29 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
                 .build();
 
         s3Client.deleteObject(request);
+    }
+
+    @Override
+    public void deleteAll(List<UUID> binaryIds) {
+        if (binaryIds == null || binaryIds.isEmpty()) {
+            return;
+        }
+
+        List<ObjectIdentifier> objects = binaryIds.stream()
+                .map(binaryId -> ObjectIdentifier.builder()
+                        .key(key(binaryId))
+                        .build())
+                .toList();
+
+        Delete delete = Delete.builder()
+                .objects(objects)
+                .build();
+
+        DeleteObjectsRequest request = DeleteObjectsRequest.builder()
+                .bucket(bucket)
+                .delete(delete)
+                .build();
+
+        s3Client.deleteObjects(request);
     }
 }

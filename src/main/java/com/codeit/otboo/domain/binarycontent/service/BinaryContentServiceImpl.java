@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentPresigned
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.entity.UploadStatus;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
+import com.codeit.otboo.domain.binarycontent.event.BinaryContentListDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
 import com.codeit.otboo.domain.binarycontent.exception.FileTypeNotSupportException;
 import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
@@ -16,6 +17,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -60,6 +63,15 @@ public class BinaryContentServiceImpl implements BinaryContentService {
     public BinaryContent getById(UUID id) {
         return binaryContentRepository.findById(id).orElseThrow(
                 () -> new BinaryContentNotFoundException(id));
+    }
+
+    @Override
+    public void deleteAllStaleProcessingBinaryContents(LocalDateTime cutoffTime) {
+        List<UUID> targetIdList = binaryContentRepository.findAllByUploadStatusAndCreatedAtBefore(
+                UploadStatus.PROCESSING, cutoffTime).stream().map(BinaryContent::getId).toList();
+        if(targetIdList.isEmpty()) return;
+        binaryContentRepository.deleteAllById(targetIdList);
+        eventPublisher.publishEvent(new BinaryContentListDeletedEvent(targetIdList));
     }
 
     private void validateImageRequest(BinaryContentPresignedUrlRequest request) {

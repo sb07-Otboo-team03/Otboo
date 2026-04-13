@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentPresignedU
 import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentPresignedUrlResponse;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface BinaryContentService {
@@ -12,4 +13,5 @@ public interface BinaryContentService {
     void completeUpload(UUID binaryContentId);
     void delete(UUID binaryContentId);
     BinaryContent getById(UUID id);
+    void deleteAllStaleProcessingBinaryContents(LocalDateTime cutoffTime);
 }

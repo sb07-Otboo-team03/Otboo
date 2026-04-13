@@ -6,6 +6,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -23,6 +24,11 @@ public class MockBinaryContentStorage implements BinaryContentStorage {
 
     @Override
     public void delete(UUID binaryId) {
+
+    }
+
+    @Override
+    public void deleteAll(List<UUID> binaryIds) {
 
     }
 }
