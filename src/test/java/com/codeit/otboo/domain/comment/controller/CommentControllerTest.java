@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.comment.controller;
 
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
+import com.codeit.otboo.domain.comment.dto.CommentSearchRequest;
 import com.codeit.otboo.domain.comment.service.CommentService;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.entity.Role;
@@ -124,7 +125,7 @@ class CommentControllerTest {
                     = new CursorResponse<>(List.of(dto), null, null, false,
                     1L, "createdAt", SortDirection.DESCENDING);
 
-            given(commentService.getAllComments(eq(feedId), isNull(), isNull(), anyInt())).willReturn(page);
+            given(commentService.getAllComments(any(CommentSearchRequest.class))).willReturn(page);
 
             // when & then
             mockMvc.perform(get("/api/feeds/{feedId}/comments", feedId)
