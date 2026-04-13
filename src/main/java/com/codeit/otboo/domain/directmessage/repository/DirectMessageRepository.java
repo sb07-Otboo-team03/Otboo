@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface DirectMessageRepository extends JpaRepository<DirectMessage, UUID> {
 
+    Long countDirectMessageBySenderIdOrReceiverId(UUID senderId, UUID receiverId);
+
     @Query("""
         SELECT new com.codeit.otboo.domain.directmessage.dto.DirectMessageDto(
             d.id,

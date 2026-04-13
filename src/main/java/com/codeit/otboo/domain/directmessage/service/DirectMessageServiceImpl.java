@@ -99,12 +99,14 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             .map(directMessageMapper::toDto)
             .toList();
 
+        Long totalCount = directMessageRepository.countDirectMessageBySenderIdOrReceiverId(userId, userId);
+
         return CursorResponse.fromList(
             content,
             nextCursor,
             nextIdAfter,
             hasNext,
-            null,
+            totalCount,
             "createdAt",
             SortDirection.DESCENDING
         );
