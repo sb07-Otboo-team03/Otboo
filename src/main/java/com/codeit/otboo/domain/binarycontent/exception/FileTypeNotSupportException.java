@@ -13,8 +13,8 @@ public class FileTypeNotSupportException extends BinaryContentException {
         super(
                 ErrorCode.INVALID_FILE_TYPE,
                 Map.of(
-                        "request upload type", requestType,
-                        "need file type", supportType
+                        "requestedType", requestType,
+                        "supportedTypes", supportType
                 ),
                 HttpStatus.BAD_REQUEST
         );
