@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -58,6 +59,8 @@ public interface FollowControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<FollowResponse> createFollow(
         @Valid FollowCreateRequest request
     );
@@ -98,6 +101,8 @@ public interface FollowControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<FollowSummaryResponse> getFollowSummary(
         @RequestParam UUID userId,
         @AuthenticationPrincipal OtbooUserDetails userDetails
@@ -164,6 +169,8 @@ public interface FollowControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<FollowResponse>> getFollowings(
         @RequestParam UUID followerId,
         @RequestParam(required = false) String nameLike,
@@ -231,6 +238,8 @@ public interface FollowControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<FollowResponse>> getFollowers(
         @RequestParam UUID followeeId,
         @RequestParam(required = false) String nameLike,
@@ -272,6 +281,8 @@ public interface FollowControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<Void> cancelFollow(
         @PathVariable UUID followId
     );
