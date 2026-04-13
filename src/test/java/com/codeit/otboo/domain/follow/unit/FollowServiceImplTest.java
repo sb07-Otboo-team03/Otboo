@@ -167,10 +167,10 @@ class FollowServiceImplTest {
             // given
             UUID myId = UUID.randomUUID();
 
-            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+//            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
             UserResponse userResponse = UserResponse.builder().id(myId).build();
 
-            given(userDetails.getUserResponse()).willReturn(userResponse);
+//            given(userDetails.getUserResponse()).willReturn(userResponse);
             given(userRepository.findById(followeeId)).willReturn(Optional.of(mock(User.class)));
 
             given(followRepository.countByFollowerId(followeeId)).willReturn(5);
@@ -182,7 +182,7 @@ class FollowServiceImplTest {
 
             // when
             FollowSummaryResponse result =
-                followService.getFollowSummary(followeeId, userDetails);
+                followService.getFollowSummary(followeeId, myId);
 
             // then
             assertThat(result.followeeId()).isEqualTo(followeeId);
@@ -201,13 +201,13 @@ class FollowServiceImplTest {
             UUID myId = UUID.randomUUID();
             UUID followeeId = UUID.randomUUID();
 
-            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
+//            OtbooUserDetails userDetails = mock(OtbooUserDetails.class);
             UserResponse userResponse = UserResponse.builder().id(myId).build();
 
             Follow follow = mock(Follow.class);
             UUID followId = UUID.randomUUID();
 
-            given(userDetails.getUserResponse()).willReturn(userResponse);
+//            given(userDetails.getUserResponse()).willReturn(userResponse);
             given(userRepository.findById(followeeId)).willReturn(Optional.of(mock(User.class)));
 
             given(followRepository.countByFollowerId(followeeId)).willReturn(10);
@@ -220,7 +220,7 @@ class FollowServiceImplTest {
 
             // when
             FollowSummaryResponse result =
-                followService.getFollowSummary(followeeId, userDetails);
+                followService.getFollowSummary(followeeId, myId);
 
             // then
             assertThat(result.followedByMe()).isTrue();

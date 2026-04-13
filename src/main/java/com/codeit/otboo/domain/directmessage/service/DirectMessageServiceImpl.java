@@ -67,6 +67,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
     @Override
     public CursorResponse<DirectMessageResponse> getDirectMessages(
+        UUID myId,
         UUID userId,
         CursorRequest cursorRequest
     ) {
@@ -74,6 +75,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
         List<DirectMessageDto> results = directMessageRepository.findDirectMessageDtos(
+            myId,
             userId,
             cursor,
             cursorRequest.idAfter(),

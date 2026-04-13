@@ -33,7 +33,7 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
             JOIN r.profile rp
             LEFT JOIN sp.binaryContent spb
             LEFT JOIN rp.binaryContent rpb
-        WHERE (d.sender.id = :userId
+        WHERE (d.sender.id = :myId
               OR d.receiver.id = :userId)
            AND ( CAST(:cursor AS timestamp) IS NULL
                OR (
@@ -47,6 +47,7 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
         ORDER BY d.createdAt DESC, d.id DESC
     """)
     List<DirectMessageDto> findDirectMessageDtos(
+        @Param("myId") UUID myId,
         @Param("userId") UUID userId,
         @Param("cursor") LocalDateTime cursor,
         @Param("idAfter") UUID idAfter,
