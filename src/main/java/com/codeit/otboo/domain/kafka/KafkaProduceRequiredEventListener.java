@@ -23,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
-//@Profile("prod")
+@Profile("prod")
 @Component
 public class KafkaProduceRequiredEventListener {
 
