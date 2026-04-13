@@ -27,7 +27,7 @@ public interface UserService {
 
     CursorResponse<UserResponse> getAllUsers(UserSearchRequest request);
 
-    ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest, BinaryContentCreateRequest imageRequest);
+    ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest);
 
     UserResponse updateUserLockStatus(UUID userId, UserLockUpdateRequest userLockUpdateRequest);
 
