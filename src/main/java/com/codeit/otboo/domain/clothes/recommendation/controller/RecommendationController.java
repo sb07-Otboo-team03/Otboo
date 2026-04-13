@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.recommendation.controller;
 
+import com.codeit.otboo.domain.clothes.recommendation.controller.docs.RecommendationControllerDocs;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
 import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationService;
 import com.codeit.otboo.global.security.OtbooUserDetails;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/recommendations")
 @RequiredArgsConstructor
-public class RecommendationController {
+public class RecommendationController implements RecommendationControllerDocs {
 
     private final RecommendationService recommendationService;
 
