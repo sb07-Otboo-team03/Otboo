@@ -7,6 +7,9 @@ import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.exception.DuplicateDirectMessageException;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -36,6 +39,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageMapper directMessageMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -69,6 +73,15 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         );
 
         String title = "[DM]" + response.sender().name();
+
+        Notification notification = Notification.builder()
+            .title(title)
+            .content(response.content())
+            .level(NotificationLevel.INFO)
+            .receiver(receiver)
+            .build();
+
+        notificationRepository.save(notification);
         eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId()));
 
         return response;

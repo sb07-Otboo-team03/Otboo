@@ -38,10 +38,22 @@ public class SseRequiredTopicListener {
 
     private final ObjectMapper objectMapper;
 
-    private void sendSseEvent(List<Notification> notification) {
+    private void sendSseEventWithSave(List<Notification> notification) {
 
         notification.stream()
             .map(notificationService::create)
+            .map(notificationMapper::toDto)
+            .forEach(notificationDto ->
+                sseService.send(
+                    Set.of(notificationDto.receiverId()),
+                    "notifications",
+                    notificationDto)
+            );
+    }
+
+    private void sendSseEvent(List<Notification> notification) {
+
+        notification.stream()
             .map(notificationMapper::toDto)
             .forEach(notificationDto ->
                 sseService.send(
@@ -96,7 +108,7 @@ public class SseRequiredTopicListener {
                 objectMapper.readValue(kafkaEvent, FollowSseEvent.class);
 
             Notification notification = getNotification(event.getUserId(), event);
-            sendSseEvent(List.of(notification));
+            sendSseEventWithSave(List.of(notification));
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -110,7 +122,7 @@ public class SseRequiredTopicListener {
                 objectMapper.readValue(kafkaEvent, CommentCreatedEvent.class);
 
             Notification notification = getNotification(event.getReceiverId(), event);
-            sendSseEvent(List.of(notification));
+            sendSseEventWithSave(List.of(notification));
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -124,7 +136,7 @@ public class SseRequiredTopicListener {
                 objectMapper.readValue(kafkaEvent, FeedLikedEvent.class);
 
             Notification notification = getNotification(event.getReceiverId(), event);
-            sendSseEvent(List.of(notification));
+            sendSseEventWithSave(List.of(notification));
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -142,7 +154,7 @@ public class SseRequiredTopicListener {
             List<User> users = userService.getAllUserByIds(event.getReceiverIds());
 
             List<Notification> notificationList = getNotifications(title, content, users);
-            sendSseEvent(notificationList);
+            sendSseEventWithSave(notificationList);
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -160,7 +172,7 @@ public class SseRequiredTopicListener {
             List<User> users = userService.getAllUsers();
 
             List<Notification> notificationList = getNotifications(title, content, users);
-            sendSseEvent(notificationList);
+            sendSseEventWithSave(notificationList);
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -175,7 +187,7 @@ public class SseRequiredTopicListener {
                 objectMapper.readValue(kafkaEvent, UserRoleUpdatedEvent.class);
 
             Notification notification = getNotification(event.getReceiverId(), event);
-            sendSseEvent(List.of(notification));
+            sendSseEventWithSave(List.of(notification));
         }
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
