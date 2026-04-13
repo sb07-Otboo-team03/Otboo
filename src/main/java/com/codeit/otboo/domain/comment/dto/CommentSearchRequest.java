@@ -20,6 +20,6 @@ public record CommentSearchRequest(
         Integer limit
 ) {
     public CommentSearchRequest {
-        limit = Objects.requireNonNullElse(limit, 10);
+        limit = Objects.requireNonNullElse(limit, 20);
     }
 }
