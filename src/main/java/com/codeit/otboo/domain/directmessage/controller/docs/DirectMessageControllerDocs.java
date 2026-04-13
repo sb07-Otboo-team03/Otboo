@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -79,6 +80,8 @@ public interface DirectMessageControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<DirectMessageResponse>> getDirectMessages(
         @RequestParam UUID userId,
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest

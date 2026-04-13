@@ -6,6 +6,7 @@ import com.codeit.otboo.global.exception.ErrorResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -74,6 +75,8 @@ public interface NotificationControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<NotificationResponse>> getNotifications(
         @Parameter(hidden = true)
         @AuthenticationPrincipal OtbooUserDetails authPrincipal,
@@ -115,6 +118,8 @@ public interface NotificationControllerDocs {
             )
         )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<Void> deleteNotification(
         @Parameter(hidden = true)
         @AuthenticationPrincipal OtbooUserDetails authPrincipal,
