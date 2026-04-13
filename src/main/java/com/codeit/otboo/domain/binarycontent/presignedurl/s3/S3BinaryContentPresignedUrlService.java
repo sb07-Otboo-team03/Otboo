@@ -1,5 +1,6 @@
-package com.codeit.otboo.domain.binarycontent.service;
+package com.codeit.otboo.domain.binarycontent.presignedurl.s3;
 
+import com.codeit.otboo.domain.binarycontent.presignedurl.BinaryContentPresignedUrlService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Service
 @ConditionalOnProperty(name = "otboo.storage.type", havingValue = "s3")
 @RequiredArgsConstructor
-public class BinaryContentPresignedUrlServiceImpl implements BinaryContentPresignedUrlService{
+public class S3BinaryContentPresignedUrlService implements BinaryContentPresignedUrlService {
     private final S3Presigner presigner;
     private final String bucket;
 

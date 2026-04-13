@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.binarycontent.service;
+package com.codeit.otboo.domain.binarycontent.presignedurl;
 
 import java.util.UUID;
 

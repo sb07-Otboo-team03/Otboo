@@ -1,14 +1,11 @@
 package com.codeit.otboo.domain.binarycontent.unit.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentPresignedUrlRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.exception.BinaryContentNotFoundException;
-import com.codeit.otboo.domain.binarycontent.exception.FileUploadMaximumSizeException;
 import com.codeit.otboo.domain.binarycontent.fixture.BinaryContentFixture;
 import com.codeit.otboo.domain.binarycontent.repository.BinaryContentRepository;
-import com.codeit.otboo.domain.binarycontent.service.BinaryContentPresignedUrlService;
+import com.codeit.otboo.domain.binarycontent.presignedurl.BinaryContentPresignedUrlService;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentServiceImpl;
 import com.codeit.otboo.global.exception.ErrorCode;
 import com.codeit.otboo.global.properties.MultipartProperties;
