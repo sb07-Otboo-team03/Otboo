@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -70,8 +69,6 @@ public interface FeedControllerDocs {
                     )
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<FeedResponse> createFeed(@Valid @RequestBody FeedCreateRequest request);
 
     @Operation(
@@ -147,8 +144,6 @@ public interface FeedControllerDocs {
                     )
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<FeedResponse>> getFeedList(@ParameterObject @ModelAttribute FeedSearchRequest request,
                                                              @AuthenticationPrincipal OtbooUserDetails details);
 
@@ -194,8 +189,6 @@ public interface FeedControllerDocs {
 
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<FeedResponse> updateFeed(@Valid @RequestBody FeedUpdateRequest request,
                                             @PathVariable UUID feedId,
                                             @AuthenticationPrincipal OtbooUserDetails details);
@@ -237,8 +230,6 @@ public interface FeedControllerDocs {
                     )
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<Void> deleteFeed(@PathVariable UUID feedId,
                                     @AuthenticationPrincipal OtbooUserDetails details);
 }

@@ -1,13 +1,14 @@
 package com.codeit.otboo.domain.like.controller.docs;
 
+import com.codeit.otboo.domain.feed.dto.response.FeedResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.ErrorResponse;
@@ -76,8 +77,6 @@ public interface LikeControllerDocs {
                     )
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<Void> like(@PathVariable("feedId") UUID feedId,
                               @AuthenticationPrincipal OtbooUserDetails details);
 
@@ -107,8 +106,6 @@ public interface LikeControllerDocs {
                     )
             }
     )
-    @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<Void> unlike(@PathVariable("feedId") UUID feedId,
                                 @AuthenticationPrincipal OtbooUserDetails details);
 }
