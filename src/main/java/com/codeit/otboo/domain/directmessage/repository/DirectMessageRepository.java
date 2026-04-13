@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface DirectMessageRepository extends JpaRepository<DirectMessage, UUID> {
 
+    Optional<DirectMessage> findBySenderIdOrReceiverId(UUID senderId, UUID receiverId);
     Long countDirectMessageBySenderIdOrReceiverId(UUID senderId, UUID receiverId);
 
     @Query("""

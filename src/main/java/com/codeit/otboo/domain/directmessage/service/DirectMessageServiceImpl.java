@@ -4,6 +4,7 @@ import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageDto;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
+import com.codeit.otboo.domain.directmessage.exception.DuplicateDirectMessageException;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
@@ -16,6 +17,7 @@ import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,12 +44,19 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     @Override
     @Transactional
     public DirectMessageResponse create(DirectMessageCreateRequest request) {
+        Optional<DirectMessage> bySenderIdOrReceiverId = directMessageRepository.findBySenderIdOrReceiverId(
+            request.senderId(), request.receiverId());
+
+        if(bySenderIdOrReceiverId.isPresent()) {
+            throw new DuplicateDirectMessageException(request.senderId(), request.receiverId());
+        }
+
+        User sender = userRepository.findById(request.senderId())
+            .orElseThrow(() -> new UserNotFoundException(request.senderId()));
 
         User receiver = userRepository.findById(request.receiverId())
             .orElseThrow(() -> new UserNotFoundException(request.receiverId()));
 
-        User sender = userRepository.findById(request.senderId())
-            .orElseThrow(() -> new UserNotFoundException(request.senderId()));
 
         DirectMessage directMessage = new DirectMessage(sender, receiver, request.content());
         DirectMessage saveDirectMessage = directMessageRepository.save(directMessage);

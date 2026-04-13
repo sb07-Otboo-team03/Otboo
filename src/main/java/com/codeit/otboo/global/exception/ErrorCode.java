@@ -28,6 +28,9 @@ public enum ErrorCode {
 
     // Comment
 
+    // DIRECTMESSAGE
+//    DIRECTMESSAGE_NOT_FOUND("다이렉트 메세지를 찾을 수 없습니다."),
+    DUPLICATE_DIRECTMESSAGE("이미 존재하는 다이렉트 메세지입니다."),
     // Feed
     FEED_NOT_FOUND("해당 피드를 찾을 수 없습니다."),
 
