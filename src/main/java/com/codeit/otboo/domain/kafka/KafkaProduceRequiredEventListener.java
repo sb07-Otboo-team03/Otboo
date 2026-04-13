@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.kafka;
 
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
@@ -22,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
-@Profile("prod")
+//@Profile("prod")
 @Component
 public class KafkaProduceRequiredEventListener {
 
@@ -42,7 +43,7 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageCreatedEvent event) {
-        sendToKafka(event);
+        sendToKafkaWithKey(event);
     }
 
     @Async
@@ -99,6 +100,24 @@ public class KafkaProduceRequiredEventListener {
             String message = objectMapper.writeValueAsString(event);
             String topic = "otboo." + event.getClass().getSimpleName();
             kafkaTemplate.send(topic, message);
+        }
+        catch (JsonProcessingException e) {
+            log.error("Failed to send event to Kafka", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void sendToKafkaWithKey(DirectMessageCreatedEvent event) {
+        try {
+            DirectMessageResponse directMessageResponse = event.getData();
+            String senderId = directMessageResponse.sender().userId().toString();
+            String receiverId = directMessageResponse.receiver().userId().toString();
+
+            String key = senderId + "+" + receiverId;
+
+            String message = objectMapper.writeValueAsString(event);
+            String topic = "otboo." + event.getClass().getSimpleName();
+            kafkaTemplate.send(topic, key, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
