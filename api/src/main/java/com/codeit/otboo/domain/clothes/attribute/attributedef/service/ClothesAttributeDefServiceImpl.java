@@ -15,14 +15,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.repository.Clothes
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.mapper.ClothesAttributeValueMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationLevel;
-import com.codeit.otboo.domain.notification.entity.Notification;
-import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
-import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
-import com.codeit.otboo.domain.sse.event.SseEvent;
-import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -40,11 +33,8 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
 
     private final ClothesAttributeDefRepository clothesAttributeDefRepository;
     private final ClothesAttributeValueRepository clothesAttributeValueRepository;
-    private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
     private final ClothesAttributeValueMapper clothesAttributeValueMapper;
     private final ClothesAttributeDefMapper clothesAttributeDefMapper;
-    private final NotificationMapper notificationMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override

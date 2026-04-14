@@ -16,13 +16,7 @@ import com.codeit.otboo.domain.clothes.attribute.attributedef.service.ClothesAtt
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.entity.ClothesAttributeValue;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.mapper.ClothesAttributeValueMapper;
 import com.codeit.otboo.domain.clothes.attribute.attributevalue.repository.ClothesAttributeValueRepository;
-import com.codeit.otboo.domain.notification.dto.NotificationDto;
-import com.codeit.otboo.domain.notification.entity.Notification;
-import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
-import com.codeit.otboo.domain.notification.repository.NotificationRepository;
-import com.codeit.otboo.domain.sse.event.SseEvent;
-import com.codeit.otboo.domain.user.entity.User;
-import com.codeit.otboo.domain.user.repository.UserRepository;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,12 +49,6 @@ class ClothesAttributeDefServiceTest {
     @Mock
     private ClothesAttributeValueMapper valueMapper;
     @Mock
-    private NotificationRepository notificationRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private NotificationMapper notificationMapper;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private ClothesAttributeDefServiceImpl service;
@@ -86,18 +74,10 @@ class ClothesAttributeDefServiceTest {
                 .attributeDef(attributeDef)
                 .build();
 
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
         given(valueMapper.toClothesAttributeValue(eq("화이트"), any(ClothesAttributeDef.class)))
                 .willReturn(color1);
         given(valueMapper.toClothesAttributeValue(eq("블랙"), any(ClothesAttributeDef.class)))
                 .willReturn(color2);
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(any()))
-                .willAnswer(invocation -> invocation.getArgument(0));
 
         ClothesAttributeDefResponse defResponse1 = ClothesAttributeDefResponse.builder()
                 .id(defId)
@@ -118,9 +98,8 @@ class ClothesAttributeDefServiceTest {
         verify(defRepository).existsByNameIgnoreCase("색상");
         verify(defRepository).save(any(ClothesAttributeDef.class));
         verify(valueRepository).saveAll(anyList());
-        verify(notificationRepository).saveAll(anyList());
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+                .publishEvent(any(ClothesAttributeDefSseEvent.class));
     }
 
     @Test
@@ -219,19 +198,11 @@ class ClothesAttributeDefServiceTest {
                 .isActive(true)
                 .build();
 
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
         given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(listValues);
         given(valueMapper.toClothesAttributeValue(anyString(), eq(attributeDef)))
                 .willReturn(attributeValue3);
         given(valueRepository.saveAll(anyList())).willReturn(listValues)
-                .willAnswer(invocation -> invocation.getArgument(0));
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         ClothesAttributeDefResponse expectedResponse = ClothesAttributeDefResponse.builder()
@@ -250,9 +221,8 @@ class ClothesAttributeDefServiceTest {
         verify(defRepository).existsByNameIgnoreCaseAndIdNot(anyString(), any());
         verify(valueRepository).saveAll(anyList());
         assertThat(defResponse2.name()).isEqualTo("사이즈");
-        verify(notificationRepository).saveAll(anyList());
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+                .publishEvent(any(ClothesAttributeDefSseEvent.class));
     }
 
     @Test
@@ -274,16 +244,8 @@ class ClothesAttributeDefServiceTest {
                 .isActive(true)
                 .build();
 
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
         given(defRepository.findById(defId)).willReturn(Optional.of(def));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(List.of(size1, size2));
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when & then
         ClothesAttributeDefUpdateRequest updateRequest
@@ -292,9 +254,8 @@ class ClothesAttributeDefServiceTest {
         service.updateAttributeDef(defId, updateRequest);
 
         assertThat(size2.isActive()).isFalse();
-        verify(notificationRepository).saveAll(anyList());
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+                .publishEvent(any(ClothesAttributeDefSseEvent.class));
     }
 
     @Test
@@ -313,24 +274,14 @@ class ClothesAttributeDefServiceTest {
         given(defRepository.findById(defId)).willReturn(Optional.of(def));
         given(valueRepository.findByAttributeDefId(defId)).willReturn(List.of(size1));
 
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
         // when & then
         ClothesAttributeDefUpdateRequest updateRequest
                 = new ClothesAttributeDefUpdateRequest("사이즈", List.of("L"));
 
         service.updateAttributeDef(defId, updateRequest);
         assertThat(size1.isActive()).isTrue();
-        verify(notificationRepository).saveAll(anyList());
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+                .publishEvent(any(ClothesAttributeDefSseEvent.class));
     }
 
     @Test
@@ -390,21 +341,11 @@ class ClothesAttributeDefServiceTest {
 
         given(defRepository.findById(defId)).willReturn(Optional.of(attributeDef));
 
-        User user = User.builder().email("test@test.com").build();
-        List<User> allUser = List.of(user);
-
-        given(userRepository.findAll()).willReturn(allUser);
-        given(notificationMapper.toDto(any(Notification.class)))
-                .willReturn(mock(NotificationDto.class));
-        given(notificationRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
         // when & then
         service.deleteAttributeDef(defId);
         verify(defRepository).delete(attributeDef);
-        verify(notificationRepository).saveAll(anyList());
         verify(eventPublisher, times(1))
-                .publishEvent(any(SseEvent.class));
+                .publishEvent(any(ClothesAttributeDefSseEvent.class));
     }
 
     @Test
