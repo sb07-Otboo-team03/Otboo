@@ -12,7 +12,7 @@ public interface FollowService {
 
     FollowResponse create(FollowCreateRequest request);
 
-    FollowSummaryResponse getFollowSummary(UUID userId, OtbooUserDetails userDetails);
+    FollowSummaryResponse getFollowSummary(UUID userId, UUID myId);
 
     CursorResponse<FollowResponse> getFollowings(UUID followerId, String nameLike, CursorRequest cursorRequest);
 

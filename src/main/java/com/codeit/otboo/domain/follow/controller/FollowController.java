@@ -46,7 +46,8 @@ public class FollowController implements FollowControllerDocs {
     @GetMapping("/summary")
     public ResponseEntity<FollowSummaryResponse> getFollowSummary(@RequestParam UUID userId, @AuthenticationPrincipal OtbooUserDetails userDetails) {
 
-        FollowSummaryResponse response = followService.getFollowSummary(userId, userDetails);
+        UUID myId = userDetails.getUserResponse().id();
+        FollowSummaryResponse response = followService.getFollowSummary(userId, myId);
 
         return ResponseEntity
             .status(HttpStatus.OK)

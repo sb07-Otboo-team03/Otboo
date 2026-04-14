@@ -71,12 +71,11 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override // 팔로우 요약 정보 조회
-    public FollowSummaryResponse getFollowSummary(UUID followeeId, OtbooUserDetails userDetails) {
+    public FollowSummaryResponse getFollowSummary(UUID followeeId, UUID myId) {
 
         userRepository.findById(followeeId)
             .orElseThrow(() -> new UserNotFoundException(followeeId));
 
-        UUID myId = userDetails.getUserResponse().id();
         int followingCount = followRepository.countByFollowerId(followeeId);
         int followerCount = followRepository.countByFolloweeId(followeeId);
 

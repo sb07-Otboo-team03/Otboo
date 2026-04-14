@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.directmessage.controller.docs;
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.global.exception.ErrorResponse;
+import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -83,6 +85,7 @@ public interface DirectMessageControllerDocs {
     @SecurityRequirement(name = "CsrfToken")
     @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<DirectMessageResponse>> getDirectMessages(
+        @AuthenticationPrincipal OtbooUserDetails userDetails,
         @RequestParam UUID userId,
         @ParameterObject @ModelAttribute @Valid CursorRequest cursorRequest
     );
