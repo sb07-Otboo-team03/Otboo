@@ -13,6 +13,7 @@ public enum ErrorCode {
     // Clothes
     CLOTHES_NOT_FOUND("옷을 찾을 수 없습니다."),
     CLOTHES_DUPLICATED_VALUE("하나의 속성에 여러 개의 값을 가질 수 없습니다."),
+    SCRAP_FAIL("스크랩에 실패하였습니다"),
 
     // ClothesAttribute
     CLOTHES_ATTRIBUTE_NAME_MISSING("속성 이름은 필수입력입니다."),
@@ -54,7 +55,7 @@ public enum ErrorCode {
     // BinaryContent
     BINARY_CONTENT_NOT_FOUND("해당 UUID를 가진 바이너리 컨텐츠가 존재하지 않습니다."),
     FILE_CONVERSION_FAILED("파일 변환 중 오류가 발생했습니다."),
-    INVALID_FILE_REQUEST("잘못된 파일 요청입니다."),
+    INVALID_FILE_TYPE("파일 타입이 맞지 않습니다."),
     FILE_UPLOAD_MAXIMUM_SIZE("파일이 너무 큽니다."),
 
     // Profile
