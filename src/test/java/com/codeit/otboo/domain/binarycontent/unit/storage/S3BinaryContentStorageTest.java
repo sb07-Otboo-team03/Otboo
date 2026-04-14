@@ -32,27 +32,6 @@ public class S3BinaryContentStorageTest {
     private S3BinaryContentStorage storage;
 
     @Nested
-    @DisplayName("바이너리 데이터 저장")
-    class PutBinaryContent {
-        @Test
-        @DisplayName("성공: id와 data 가 들어오면 해당 id값으로 파일이 만들어진다")
-        void success_put_binary_content() throws Exception {
-            // given
-            UUID binaryContentId = UUID.randomUUID();
-            byte[] data = "test".getBytes();
-            given(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                    .willReturn(PutObjectResponse.builder().build());
-
-            // when
-            UUID savedId = storage.put(binaryContentId, data, "image/jpeg");
-
-            // then
-            assertThat(savedId).isEqualTo(binaryContentId);
-            then(s3Client).should().putObject(any(PutObjectRequest.class), any(RequestBody.class));
-        }
-    }
-
-    @Nested
     @DisplayName("바이너리 데이터 조회")
     class GetBinaryContent {
         @Test

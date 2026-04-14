@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -156,10 +155,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     @PreAuthorize("#userId == authentication.principal.userResponse.id")
-    public ProfileResponse updateProfile(
-            UUID userId,
-            ProfileUpdateRequest profileUpdateRequest,
-            BinaryContentCreateRequest imageRequest) {
+    public ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -168,14 +164,15 @@ public class UserServiceImpl implements UserService {
         BinaryContent binaryContent = oldBinaryContent;
         BinaryContent newBinaryContent;
 
-        if (imageRequest != null) {
-            // TODO: 지혜님 코드 수정에 따라, 삭제할수도 있는 코드
+
+        if (profileUpdateRequest.binaryContentId() != null) {
             if (oldBinaryContent != null) {
                 binaryContentService.delete(oldBinaryContent.getId());
             }
-            newBinaryContent = binaryContentService.upload(imageRequest);
+            newBinaryContent = binaryContentService.getById(profileUpdateRequest.binaryContentId());
             binaryContent = newBinaryContent;
         }
+
 
         LocationRequest locationRequest = profileUpdateRequest.location();
         Location location = profile.getLocation();
@@ -200,7 +197,6 @@ public class UserServiceImpl implements UserService {
                 profileUpdateRequest.temperatureSensitivity(),
                 binaryContent
         );
-
 
         return profileMapper.toDto(user, resolveImageUrl(binaryContent));
     }
