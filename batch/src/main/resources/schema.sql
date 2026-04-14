@@ -526,3 +526,44 @@ CREATE TABLE batch.BATCH_JOB_EXECUTION_CONTEXT (
 CREATE SEQUENCE batch.BATCH_STEP_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 CREATE SEQUENCE batch.BATCH_JOB_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 CREATE SEQUENCE batch.BATCH_JOB_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
+
+-- 0413 추가
+ALTER TABLE direct_messages
+    ALTER COLUMN sender_id SET NOT NULL;
+
+ALTER TABLE direct_messages
+    ALTER COLUMN receiver_id SET NOT NULL;
+
+-- 1. 기존 FK 삭제
+ALTER TABLE direct_messages DROP CONSTRAINT fk_direct_messages_senders;
+ALTER TABLE direct_messages DROP CONSTRAINT fk_direct_messages_receivers;
+
+-- 2. CASCADE로 다시 생성
+ALTER TABLE direct_messages
+    ADD CONSTRAINT fk_direct_messages_senders
+        FOREIGN KEY (sender_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
+
+ALTER TABLE direct_messages
+    ADD CONSTRAINT fk_direct_messages_receivers
+        FOREIGN KEY (receiver_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
+
+-- ON DELETE SET NULL을 ON DELETE CASECADE 로 변경
+-- 옷
+ALTER TABLE clothes DROP CONSTRAINT IF EXISTS fk_clothes_owners;
+ALTER TABLE clothes ADD CONSTRAINT fk_clothes_owners FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- 댓글
+ALTER TABLE comments DROP CONSTRAINT IF EXISTS fk_comments_authors;
+ALTER TABLE comments ADD CONSTRAINT fk_comments_authors FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- 피드
+ALTER TABLE feeds DROP CONSTRAINT IF EXISTS fk_feeds_authors;
+ALTER TABLE feeds ADD CONSTRAINT fk_feeds_authors FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- 좋아요
+ALTER TABLE likes DROP CONSTRAINT IF EXISTS fk_likes_users;
+ALTER TABLE likes ADD CONSTRAINT fk_likes_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
