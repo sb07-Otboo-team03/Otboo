@@ -8,6 +8,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -15,27 +16,6 @@ import java.util.UUID;
 @Slf4j
 public class BinaryContentRetryService {
     private final BinaryContentStorage binaryContentStorage;
-    private final BinaryContentStatusService binaryContentStatusService;
-
-    @Retryable(
-            retryFor = Exception.class,
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 2000) // 2초 간격
-    )
-    public void upload(UUID binaryContentId, byte[] bytes, String contentType) {
-        binaryContentStorage.put(binaryContentId, bytes, contentType);
-        binaryContentStatusService.updateSuccess(binaryContentId);
-    }
-
-    @Recover
-    public void recoverUpload(Exception e, UUID binaryContentId, byte[] bytes) {
-        log.error(
-                "Upload Fail | BinaryContentId={} | Error={}",
-                binaryContentId,
-                e.getMessage()
-        );
-        binaryContentStatusService.updateFail(binaryContentId);
-    }
 
     @Retryable(
             retryFor = Exception.class,
@@ -51,6 +31,36 @@ public class BinaryContentRetryService {
         log.error(
                 "Delete Fail | BinaryContentId={} | Error={}",
                 binaryContentId,
+                e.getMessage()
+        );
+    }
+
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
+    public void deleteAll(List<UUID> binaryContentIds) {
+        log.info("Bulk Delete Count={}", binaryContentIds.size());
+
+        final int chunkSize = 1000;
+        if (binaryContentIds.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < binaryContentIds.size(); i += chunkSize) {
+            int end = Math.min(i + chunkSize, binaryContentIds.size());
+            List<UUID> chunk = binaryContentIds.subList(i, end);
+            binaryContentStorage.deleteAll(chunk);
+        }
+        binaryContentStorage.deleteAll(binaryContentIds);
+    }
+
+    @Recover
+    public void recoverDeleteAll(Exception e, List<UUID> binaryContentIds) {
+        log.error(
+                "Bulk Delete Fail | Count={} | Error={}",
+                binaryContentIds.size(),
                 e.getMessage()
         );
     }

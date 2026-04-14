@@ -1,11 +1,9 @@
 package com.codeit.otboo.domain.user.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 
@@ -27,7 +25,7 @@ public interface UserService {
 
     CursorResponse<UserResponse> getAllUsers(UserSearchRequest request);
 
-    ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest, BinaryContentCreateRequest imageRequest);
+    ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest);
 
     UserResponse updateUserLockStatus(UUID userId, UserLockUpdateRequest userLockUpdateRequest);
 

@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.feed.controller;
 
+import com.codeit.otboo.domain.feed.controller.docs.FeedControllerDocs;
 import com.codeit.otboo.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedSearchRequest;
 import com.codeit.otboo.domain.feed.dto.request.FeedUpdateRequest;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/feeds")
 @RequiredArgsConstructor
-public class FeedController {
+public class FeedController implements FeedControllerDocs {
 
     private final FeedService feedService;
 
@@ -32,7 +33,7 @@ public class FeedController {
 
     @GetMapping
     public ResponseEntity<CursorResponse<FeedResponse>> getFeedList(
-            @ParameterObject @ModelAttribute @Valid FeedSearchRequest request,
+            @ParameterObject @ModelAttribute FeedSearchRequest request,
             @AuthenticationPrincipal OtbooUserDetails details
             ) {
         UUID userId = details.getUserResponse().id();

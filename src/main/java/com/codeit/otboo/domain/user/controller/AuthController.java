@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.controller;
 
+import com.codeit.otboo.domain.user.controller.docs.AuthControllerDocs;
 import com.codeit.otboo.domain.user.dto.request.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.service.AuthService;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController implements AuthControllerDocs {
     private final AuthService authService;
     private final RefreshCookieFactory refreshCookieFactory;
     private final JwtProperties jwtProperties;

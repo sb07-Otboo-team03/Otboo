@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.weather.controller.openapi;
+package com.codeit.otboo.domain.weather.controller.docs;
 
 import com.codeit.otboo.domain.weather.dto.response.WeatherAPILocationResponse;
 import com.codeit.otboo.domain.weather.dto.response.WeatherResponse;
@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 
@@ -158,6 +159,8 @@ public interface WeatherControllerDocs {
                     )
             )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<List<WeatherResponse>> getWeather(double longitude, double latitude);
 
     @Operation(
@@ -233,5 +236,7 @@ public interface WeatherControllerDocs {
                     )
             )
     })
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<WeatherAPILocationResponse> getWeatherLocation(double longitude, double latitude);
 }

@@ -15,5 +15,6 @@ public record ClothesCreateRequest (
     String name,
     @NotNull
     ClothesType type,
-    List<ClothesAttributeRequest> attributes
+    List<ClothesAttributeRequest> attributes,
+    UUID binaryContentId
 ){}
