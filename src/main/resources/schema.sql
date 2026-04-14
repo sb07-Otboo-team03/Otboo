@@ -471,3 +471,28 @@ ALTER TABLE direct_messages
         FOREIGN KEY (receiver_id)
             REFERENCES users(id)
             ON DELETE CASCADE;
+
+
+-- 0413 추가
+ALTER TABLE direct_messages
+    ALTER COLUMN sender_id SET NOT NULL;
+
+ALTER TABLE direct_messages
+    ALTER COLUMN receiver_id SET NOT NULL;
+
+-- 1. 기존 FK 삭제
+ALTER TABLE direct_messages DROP CONSTRAINT fk_direct_messages_senders;
+ALTER TABLE direct_messages DROP CONSTRAINT fk_direct_messages_receivers;
+
+-- 2. CASCADE로 다시 생성
+ALTER TABLE direct_messages
+    ADD CONSTRAINT fk_direct_messages_senders
+        FOREIGN KEY (sender_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
+
+ALTER TABLE direct_messages
+    ADD CONSTRAINT fk_direct_messages_receivers
+        FOREIGN KEY (receiver_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE;
