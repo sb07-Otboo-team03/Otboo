@@ -3,6 +3,14 @@ name: Deploy Batch to ECR
 on:
   push:
     branches: [ "release-batch" ]   # 배치용 브랜치 따로 쓰는거 추천
+    paths:
+      - 'batch/**'
+      - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'Dockerfile.batch'
+      - '.github/workflows/deploy-batch.yml'
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}

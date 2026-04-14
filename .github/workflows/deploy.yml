@@ -6,6 +6,14 @@ permissions:
 on:
   push:
     branches: [ "feat/release-test4" ] #NOTE: release-test4에 배포
+    paths:
+      - 'api/**'
+      - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'Dockerfile'
+      - '.github/workflows/deploy.yml'
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
