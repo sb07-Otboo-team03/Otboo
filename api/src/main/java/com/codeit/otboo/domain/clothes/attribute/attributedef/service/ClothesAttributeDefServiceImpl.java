@@ -19,6 +19,7 @@ import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.notification.repository.NotificationRepository;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.SseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -216,23 +217,6 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     }
 
     private void notificationEvent(String title, String content) {
-        List<User> allUsers = userRepository.findAll();
-
-        // receiver에 각 유저 지정
-        List<Notification> notifications = allUsers.stream()
-                .map(user -> Notification.builder()
-                        .title(title)
-                        .content(content)
-                        .level(NotificationLevel.INFO)
-                        .receiver(user)
-                        .build())
-                .toList();
-
-        notificationRepository.saveAll(notifications);
-
-        // 알림 이벤트 발행
-        for(Notification notification : notifications) {
-            eventPublisher.publishEvent(new SseEvent(notificationMapper.toDto(notification)));
-        }
+        eventPublisher.publishEvent(new ClothesAttributeDefSseEvent(title, content));
     }
 }
