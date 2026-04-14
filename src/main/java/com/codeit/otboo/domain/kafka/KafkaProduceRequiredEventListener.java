@@ -66,36 +66,22 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(FeedCreatedEvent event) {
-        sendToKafka(event);
+        sendToKafkaWithSseKey(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(ClothesAttributeDefSseEvent event) {
-        sendToKafka(event);
+        sendToKafkaWithSseKey(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
-        sendToKafka(event);
+        sendToKafkaWithSseKey(event);
     }
 
-
-    private <T> void sendToKafka(T event) {
-        try {
-            String topic = "otboo." + event.getClass().getSimpleName();
-            String message = objectMapper.writeValueAsString(event);
-
-            kafkaTemplate.send(topic, message);
-        }
-        catch (JsonProcessingException e) {
-            log.error("Failed to send event to Kafka", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> void sendToKafkaWithSseKey(BaseSseEvent event) {
+    private <T> void sendToKafkaWithSseKey(T event) {
         try {
             String topic = "otboo." + event.getClass().getSimpleName();
             String message = objectMapper.writeValueAsString(event);
