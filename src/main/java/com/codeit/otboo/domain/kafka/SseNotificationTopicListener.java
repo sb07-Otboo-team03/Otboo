@@ -75,7 +75,7 @@ public class SseNotificationTopicListener {
             .build();
     }
 
-    @KafkaListener(topics = "otboo.DirectMessageSseEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.DirectMessageSseEvent", groupId = "sse-${random.uuid}")
     public void onDirectMessageSseEvent(String kafkaEvent) {
         try {
             DirectMessageSseEvent event =
@@ -89,7 +89,7 @@ public class SseNotificationTopicListener {
         }
     }
 
-    @KafkaListener(topics = "otboo.FollowSseEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.FollowSseEvent", groupId = "sse-${random.uuid}")
     public void onFollowSseEvent(String kafkaEvent) {
         try {
             FollowSseEvent event =
@@ -103,7 +103,7 @@ public class SseNotificationTopicListener {
         }
     }
 
-    @KafkaListener(topics = "otboo.CommentCreatedEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.CommentCreatedEvent", groupId = "sse-${random.uuid}")
     public void onCommentCreatedEvent(String kafkaEvent) {
         try {
             CommentCreatedEvent event =
@@ -117,7 +117,7 @@ public class SseNotificationTopicListener {
         }
     }
 
-    @KafkaListener(topics = "otboo.FeedLikedEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.FeedLikedEvent", groupId = "sse-${random.uuid}")
     public void onFeedLikedEvent(String kafkaEvent) {
         try {
             FeedLikedEvent event =
@@ -131,7 +131,7 @@ public class SseNotificationTopicListener {
         }
     }
 
-    @KafkaListener(topics = "otboo.UserRoleUpdatedEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.UserRoleUpdatedEvent", groupId = "sse-${random.uuid}")
     public void onUserRoleUpdatedEvent(String kafkaEvent) {
         try {
             UserRoleUpdatedEvent event =
@@ -145,7 +145,7 @@ public class SseNotificationTopicListener {
         }
     }
 
-    @KafkaListener(topics = "otboo.WeatherSseEvent", groupId = "sse")
+    @KafkaListener(topics = "otboo.WeatherSseEvent", groupId = "sse-${random.uuid}")
     public void onWeatherSseEvent(String kafkaEvent) {
         try {
             WeatherSseEvent event =
