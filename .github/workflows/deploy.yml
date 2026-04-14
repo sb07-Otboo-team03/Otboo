@@ -6,6 +6,15 @@ permissions:
 on:
   push:
     branches: [ "feat/release-test4" ] #NOTE: release-test4에 배포
+    paths:
+      - 'api/**'
+      - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'Dockerfile'
+      - 'elasticsearch/**'
+      - '.github/workflows/deploy.yml'
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -18,6 +27,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Wait for CI to succeed
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: CI Test Job
+          ref: ${{ github.sha }}
+
       - name: Checkout
         uses: actions/checkout@v4
 
