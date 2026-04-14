@@ -21,7 +21,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
-//@Profile("prod")
 @Component
 public class KafkaProduceRequiredEventListener {
 
@@ -31,68 +30,63 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageCreatedEvent event) {
-
-        DirectMessageResponse directMessageResponse = event.getData();
-        String webSocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
-
-        sendToKafka(event, webSocketKey);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(DirectMessageSseEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
-    public void on(FollowSseEvent event) { sendToKafka(event, null);}
+    public void on(FollowSseEvent event) {
+        sendToKafka(event);
+    }
 
     @Async
     @TransactionalEventListener
     public void on(CommentCreatedEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedLikedEvent event) {
-        sendToKafka(event, null);
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(UserRoleUpdatedEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedCreatedEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(ClothesAttributeDefSseEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
     }
 
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
-        sendToKafka(event, null);
+        sendToKafka(event);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(UserRoleUpdatedEvent event) {
+        sendToKafka(event);
     }
 
 
-    private <T> void sendToKafka(T event, String kafkaKey) {
+    private <T> void sendToKafka(T event) {
         try {
-            String topic = "otboo." + event.getClass().getSimpleName();
             String message = objectMapper.writeValueAsString(event);
-
-            String key = (kafkaKey != null) ? kafkaKey : topic;
-            
-            kafkaTemplate.send(topic, key, message);
+            String topic = "otboo." + event.getClass().getSimpleName();
+            kafkaTemplate.send(topic, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
