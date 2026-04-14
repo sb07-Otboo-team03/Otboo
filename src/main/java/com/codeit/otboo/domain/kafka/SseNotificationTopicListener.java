@@ -144,26 +144,4 @@ public class SseNotificationTopicListener {
             throw new RuntimeException(e);
         }
     }
-
-    @KafkaListener(topics = "otboo.WeatherSseEvent", groupId = "sse-${random.uuid}")
-    public void onWeatherSseEvent(String kafkaEvent) {
-        try {
-            WeatherSseEvent event =
-                objectMapper.readValue(kafkaEvent, WeatherSseEvent.class);
-
-            event.notificationCommands().stream()
-                .map(notificationService::create)
-                .map(notificationMapper::toDto)
-                .forEach(notificationDto ->
-                    sseService.send(
-                        Set.of(notificationDto.receiverId()),
-                        "notifications",
-                        notificationDto
-                    )
-                );
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
