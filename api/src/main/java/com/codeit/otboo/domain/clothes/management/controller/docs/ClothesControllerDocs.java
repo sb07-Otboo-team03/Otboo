@@ -185,6 +185,23 @@ public interface ClothesControllerDocs {
                                     }
                             )
                     ),
+                    @ApiResponse(responseCode = "401", description = "옷 주인이 아닌 다른 계정이 수정 시도",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class),
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = """
+                                                    {
+                                                         "exceptionName": "BadCredentialsException",
+                                                         "message": "자격 증명에 실패하였습니다.",
+                                                         "details": null
+                                                    }
+                                                """
+                                            )
+                                    }
+                            )
+                    ),
                     @ApiResponse(responseCode = "400", description = "Validation 오류",
                             content = @Content(
                                     mediaType = "application/json",
@@ -246,13 +263,13 @@ public interface ClothesControllerDocs {
             summary = "옷 조회",
             description = "옷 목록을 조회 합니다.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "옷 수정 성공",
+                    @ApiResponse(responseCode = "200", description = "옷 조회 성공",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = CursorResponse.class),
                                     examples = {
                                             @ExampleObject(
-                                                    name ="limit 가 5일 때",
+                                                    name ="limit 가 5일 때의 조회",
                                                     value = """
                                                         {
                                                              "data": [
