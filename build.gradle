@@ -44,6 +44,9 @@ jacocoTestReport {
                         '**/*Exception.class',
                         '**/KakaoLocalUtil.class',
                         '**/KmaGridConverter.class',
+                        '**/kafka/**',
+                        '**/sse/**',
+                        '**/websocket/**',
                         '**/generated/**'
                 ])
             })
