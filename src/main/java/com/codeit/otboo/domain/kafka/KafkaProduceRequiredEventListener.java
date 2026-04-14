@@ -102,7 +102,7 @@ public class KafkaProduceRequiredEventListener {
             String message = objectMapper.writeValueAsString(event);
 
             DirectMessageResponse directMessageResponse = event.getData();
-            String webSocketKey = WebSocketRequiredTopicListener.makeWebSocketKey(directMessageResponse);
+            String webSocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
 
             kafkaTemplate.send(topic, webSocketKey, message);
         }

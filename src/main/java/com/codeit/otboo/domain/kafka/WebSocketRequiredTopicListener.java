@@ -18,16 +18,6 @@ public class WebSocketRequiredTopicListener {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    public static String makeWebSocketKey(DirectMessageResponse directMessageResponse) {
-
-        String senderId = directMessageResponse.sender().userId().toString();
-        String receiverId = directMessageResponse.receiver().userId().toString();
-
-        return (senderId.compareTo(receiverId) < 0) ?
-            senderId + "_" + receiverId :
-            receiverId + "_" + senderId;
-    }
-
     @KafkaListener(topics = "otboo.DirectMessageCreatedEvent", groupId = "websocket-${random.uuid}")
     public void onDirectMessageCreatedEvent(String kafkaEvent) {
 
@@ -36,7 +26,7 @@ public class WebSocketRequiredTopicListener {
             event = objectMapper.readValue(kafkaEvent, DirectMessageCreatedEvent.class);
 
             DirectMessageResponse directMessageResponse = event.getData();
-            String websocketKey = WebSocketRequiredTopicListener.makeWebSocketKey(directMessageResponse);
+            String websocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
 
             String destination = String.format("/sub/direct-messages_%s", websocketKey);
             messagingTemplate.convertAndSend(destination, directMessageResponse);
