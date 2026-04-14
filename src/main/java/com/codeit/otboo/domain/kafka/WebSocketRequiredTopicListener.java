@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class WebSocketRequiredTopicListener {
 
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ObjectMapper objectMapper;
+
     public static String makeWebSocketKey(DirectMessageResponse directMessageResponse) {
 
         String senderId = directMessageResponse.sender().userId().toString();
@@ -24,10 +27,6 @@ public class WebSocketRequiredTopicListener {
             senderId + "_" + receiverId :
             receiverId + "_" + senderId;
     }
-
-    private final SimpMessagingTemplate messagingTemplate;
-
-    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "otboo.DirectMessageCreatedEvent", groupId = "websocket-${random.uuid}")
     public void onDirectMessageCreatedEvent(String kafkaEvent) {
