@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.like.controller;
 
+import com.codeit.otboo.domain.like.controller.docs.LikeControllerDocs;
 import com.codeit.otboo.domain.like.service.LikeService;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/feeds/{feedId}/like")
 @RequiredArgsConstructor
-public class LikeController {
+public class LikeController implements LikeControllerDocs {
 
     private final LikeService likeService;
 

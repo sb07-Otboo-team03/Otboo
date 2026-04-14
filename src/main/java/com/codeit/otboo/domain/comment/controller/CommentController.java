@@ -1,12 +1,15 @@
 package com.codeit.otboo.domain.comment.controller;
 
+import com.codeit.otboo.domain.comment.controller.docs.CommentControllerDocs;
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
+import com.codeit.otboo.domain.comment.dto.CommentSearchRequest;
 import com.codeit.otboo.domain.comment.service.CommentService;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/feeds/{feedId}/comments")
 @RequiredArgsConstructor
-public class CommentController {
+public class CommentController implements CommentControllerDocs {
 
     private final CommentService commentService;
 
@@ -31,10 +34,8 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorResponse<CommentResponse>> getAllComments(@PathVariable("feedId") UUID feedId,
-                                                                          @RequestParam(required = false) String cursor,
-                                                                          @RequestParam(required = false) UUID idAfter,
-                                                                          @RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(commentService.getAllComments(feedId, cursor, idAfter, limit));
+    public ResponseEntity<CursorResponse<CommentResponse>> getAllComments(@ParameterObject @ModelAttribute
+                                                                              CommentSearchRequest request) {
+        return ResponseEntity.ok(commentService.getAllComments(request));
     }
 }

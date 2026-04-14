@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.comment.service;
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
 import com.codeit.otboo.domain.comment.dto.CommentMapper;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
+import com.codeit.otboo.domain.comment.dto.CommentSearchRequest;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.entity.Feed;
@@ -58,7 +59,12 @@ public class CommentServiceImpl implements CommentService{
     }
 
     @Override
-    public CursorResponse<CommentResponse> getAllComments(UUID feedId, String cursor, UUID idAfter, int limit) {
+    public CursorResponse<CommentResponse> getAllComments(CommentSearchRequest request) {
+
+        UUID feedId = request.feedId();
+        String cursor = request.cursor();
+        UUID idAfter = request.idAfter();
+        int limit = request.limit();
 
         if (!feedRepository.existsById(feedId)) throw new FeedNotFoundException(feedId);
 
