@@ -92,6 +92,27 @@ public interface BinaryContentControllerDocs {
                                     }
                             )
                     ),
+                    @ApiResponse(responseCode = "400", description = "파일 용량 큼",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class),
+                                    examples = {
+                                            @ExampleObject(
+                                                    name = "요청 파일의 용량이 제한 용량보다 큼",
+                                                    value = """
+                                                    {
+                                                         "exceptionName": "FILE_UPLOAD_MAXIMUM_SIZE",
+                                                         "message": "파일이 너무 큽니다.",
+                                                         "details": {
+                                                             "maximum size": "10485760",
+                                                             "upload size": "1000000000000000"
+                                                         }
+                                                    }
+                                                """
+                                            )
+                                    }
+                            )
+                    ),
                     @ApiResponse(responseCode = "500", description = "서버 에러",
                         content = @Content(
                                 mediaType = "application/json",
