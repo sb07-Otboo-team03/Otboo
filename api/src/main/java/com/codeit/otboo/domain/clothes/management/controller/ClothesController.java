@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.management.controller;
 
+import com.codeit.otboo.domain.clothes.management.controller.docs.ClothesControllerDocs;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
@@ -19,11 +20,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/clothes")
 @RequiredArgsConstructor
-public class ClothesController {
+public class ClothesController implements ClothesControllerDocs {
     private final ClothesService clothesService;
 
     @PostMapping
-    public ResponseEntity<ClothesResponse> upload(
+    public ResponseEntity<ClothesResponse> saveClothes(
             @Valid @RequestBody ClothesCreateRequest request
     ){
         ClothesResponse response = clothesService.createClothes(request);
