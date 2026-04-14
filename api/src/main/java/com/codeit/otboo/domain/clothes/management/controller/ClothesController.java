@@ -11,6 +11,7 @@ import com.codeit.otboo.domain.clothes.management.service.ClothesService;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,12 +49,12 @@ public class ClothesController implements ClothesControllerDocs {
     }
 
     @GetMapping
-    public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@Valid ClothesCursorPageRequest request){
+    public ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@ParameterObject @Valid ClothesCursorPageRequest request){
         return ResponseEntity.ok(clothesService.getClothesListByOwnerId(request));
     }
 
     @GetMapping("/extractions")
-    public ResponseEntity<ClothesUrlResponse> getExtractions(@Valid ClothesUrlRequest request){
+    public ResponseEntity<ClothesUrlResponse> getExtractions(@ParameterObject @Valid ClothesUrlRequest request){
         return ResponseEntity.ok(clothesService.getClothesInfoByUrl(request.url()));
     }
 }

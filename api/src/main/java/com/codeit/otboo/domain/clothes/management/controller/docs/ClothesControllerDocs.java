@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -397,7 +398,7 @@ public interface ClothesControllerDocs {
     )
     @SecurityRequirement(name = "CsrfToken")
     @SecurityRequirement(name = "BearerAuth")
-    ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@Valid ClothesCursorPageRequest request);
+    ResponseEntity<CursorResponse<ClothesResponse>> getAllClothes(@ParameterObject @Valid ClothesCursorPageRequest request);
 
     @Operation(
             summary = "옷 링크로 정보 불러오기",
@@ -460,5 +461,5 @@ public interface ClothesControllerDocs {
     )
     @SecurityRequirement(name = "CsrfToken")
     @SecurityRequirement(name = "BearerAuth")
-    ResponseEntity<ClothesUrlResponse> getExtractions(@Valid ClothesUrlRequest request);
+    ResponseEntity<ClothesUrlResponse> getExtractions(@ParameterObject @Valid ClothesUrlRequest request);
 }
