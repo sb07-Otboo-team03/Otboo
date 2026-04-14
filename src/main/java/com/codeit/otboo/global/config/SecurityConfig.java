@@ -70,7 +70,11 @@ public class SecurityConfig {
 
                         // ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
-                        .requestMatchers("/api/clothes/attribute-defs/**", "/api/clothes/attribute-defs").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/lock").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/role").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/clothes/attribute-defs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/clothes/attribute-defs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/clothes/attribute-defs/**").hasRole("ADMIN")
 
                         // AUTHENTICATED
                         .anyRequest().authenticated()

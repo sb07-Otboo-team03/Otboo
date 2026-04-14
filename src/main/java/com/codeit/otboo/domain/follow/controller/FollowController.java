@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.follow.controller;
 
 import com.codeit.otboo.domain.directmessage.dto.CursorRequest;
+import com.codeit.otboo.domain.follow.controller.docs.FollowControllerDocs;
 import com.codeit.otboo.domain.follow.dto.FollowCreateRequest;
 import com.codeit.otboo.domain.follow.dto.FollowResponse;
 import com.codeit.otboo.domain.follow.dto.FollowSummaryResponse;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/follows")
-public class FollowController {
+public class FollowController implements FollowControllerDocs {
     private final FollowService followService;
 
     //팔로우 생성
@@ -45,7 +46,8 @@ public class FollowController {
     @GetMapping("/summary")
     public ResponseEntity<FollowSummaryResponse> getFollowSummary(@RequestParam UUID userId, @AuthenticationPrincipal OtbooUserDetails userDetails) {
 
-        FollowSummaryResponse response = followService.getFollowSummary(userId, userDetails);
+        UUID myId = userDetails.getUserResponse().id();
+        FollowSummaryResponse response = followService.getFollowSummary(userId, myId);
 
         return ResponseEntity
             .status(HttpStatus.OK)

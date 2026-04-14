@@ -1,11 +1,11 @@
 package com.codeit.otboo.domain.directmessage.dto;
 
-import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 public record DirectMessageResponse(
         UUID id,
         LocalDateTime createdAt,

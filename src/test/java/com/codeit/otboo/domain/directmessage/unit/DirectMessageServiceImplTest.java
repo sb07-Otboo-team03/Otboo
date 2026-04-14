@@ -70,10 +70,12 @@ class DirectMessageServiceImplTest {
     @DisplayName("⭕️ 정상 조회 - hasNext = false")
     void getDirectMessages_OK_noNext() {
         // given
+        UUID myId = UUID.randomUUID();
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 2);
 
         given(directMessageRepository.findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             isNull(),
             isNull(),
@@ -85,7 +87,7 @@ class DirectMessageServiceImplTest {
 
         // when
         CursorResponse<DirectMessageResponse> result =
-            directMessageService.getDirectMessages(userId, request);
+            directMessageService.getDirectMessages(myId, userId, request);
 
         // then
         assertThat(result.data()).hasSize(2);
@@ -104,10 +106,12 @@ class DirectMessageServiceImplTest {
     @DisplayName("⭕️ 다음 페이지 존재(잘렸는지 확인) - hasNext = true")
     void getDirectMessages_hasNext() {
         // given
+        UUID myId = UUID.randomUUID();
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 2);
 
         given(directMessageRepository.findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             isNull(),
             isNull(),
@@ -119,7 +123,7 @@ class DirectMessageServiceImplTest {
 
         // when
         CursorResponse<DirectMessageResponse> result =
-            directMessageService.getDirectMessages(userId, request);
+            directMessageService.getDirectMessages(myId, userId, request);
 
         // then
         assertThat(result.data()).hasSize(2);
@@ -136,10 +140,12 @@ class DirectMessageServiceImplTest {
     @Test
     @DisplayName("⭕️ 빈 리스트 조회")
     void getDirectMessages_empty() {
+        UUID myId = UUID.randomUUID();
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 2);
 
         given(directMessageRepository.findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             isNull(),
             isNull(),
@@ -147,7 +153,7 @@ class DirectMessageServiceImplTest {
         )).willReturn(Collections.emptyList());
 
         CursorResponse<DirectMessageResponse> result =
-            directMessageService.getDirectMessages(userId, request);
+            directMessageService.getDirectMessages(myId, userId, request);
 
         assertThat(result.data()).isEmpty();
         assertThat(result.hasNext()).isFalse();
@@ -158,6 +164,7 @@ class DirectMessageServiceImplTest {
     @Test
     @DisplayName("⭕️ cursor 기반 조회 - repository 파라미터 검증")
     void getDirectMessages_withCursor() {
+        UUID myId = UUID.randomUUID();
         UUID userId = fixture.getRandomID();
 
         LocalDateTime cursorTime = LocalDateTime.now().minusMinutes(1);
@@ -167,6 +174,7 @@ class DirectMessageServiceImplTest {
             new CursorRequest(cursorTime.toString(), idAfter, 2);
 
         given(directMessageRepository.findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             eq(cursorTime),
             eq(idAfter),
@@ -177,11 +185,12 @@ class DirectMessageServiceImplTest {
         given(directMessageMapper.toDto(dto2)).willReturn(res2);
 
         CursorResponse<DirectMessageResponse> result =
-            directMessageService.getDirectMessages(userId, request);
+            directMessageService.getDirectMessages(myId, userId, request);
 
         assertThat(result.data()).hasSize(2);
 
         verify(directMessageRepository).findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             eq(cursorTime),
             eq(idAfter),
@@ -192,19 +201,21 @@ class DirectMessageServiceImplTest {
     @Test
     @DisplayName("⭕️ Pageable limit + 1 검증 ")
     void getDirectMessages_pageableValidation() {
+        UUID myId = UUID.randomUUID();
         UUID userId = fixture.getRandomID();
         CursorRequest request = new CursorRequest(null, null, 5);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
 
         given(directMessageRepository.findDirectMessageDtos(
+            eq(myId),
             eq(userId),
             isNull(),
             isNull(),
             captor.capture()
         )).willReturn(List.of());
 
-        directMessageService.getDirectMessages(userId, request);
+        directMessageService.getDirectMessages(myId, userId, request);
 
         Pageable pageable = captor.getValue();
 

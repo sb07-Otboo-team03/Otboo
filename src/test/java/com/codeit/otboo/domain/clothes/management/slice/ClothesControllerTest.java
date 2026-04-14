@@ -13,17 +13,13 @@ import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundExcep
 import com.codeit.otboo.domain.clothes.management.fixture.ClothesFixture;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.service.ClothesService;
-import com.codeit.otboo.domain.user.dto.response.UserResponse;
-import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.fixture.UserFixture;
-import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import com.codeit.otboo.global.slice.dto.SortDirection;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,7 +30,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -44,10 +39,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ClothesController.class,
@@ -76,16 +68,6 @@ public class ClothesControllerTest {
     @MockitoBean
     private BinaryContentService binaryContentService;
 
-    private User user;
-    private OtbooUserDetails userDetails;
-
-    @BeforeEach
-    void setUp() {
-        user = UserFixture.create();
-        UserResponse userDto = UserResponse.builder().id(user.getId()).role(Role.USER).build();
-        userDetails = new OtbooUserDetails(userDto, "otboo123");
-    }
-
     @Nested
     @DisplayName("옷 생성")
     class ClothesCreate {
@@ -94,7 +76,7 @@ public class ClothesControllerTest {
         void createClothes_Success() throws Exception {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), "새 옷", ClothesType.ETC, List.of());
+                    UUID.randomUUID(), "새 옷", ClothesType.ETC, List.of(), null);
             Clothes clothes = ClothesFixture.create(request, null);
             ClothesResponse response = new ClothesResponse(
                     clothes.getId(),
@@ -104,23 +86,14 @@ public class ClothesControllerTest {
                     ClothesType.ETC,
                     List.of()
             );
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
-            given(clothesService.createClothes(null, request))
+            given(clothesService.createClothes(request))
                     .willReturn(response);
 
             // when & then
-            mockMvc.perform(
-                    multipart("/api/clothes")
-                            .file(requestPart)
-                            .with(csrf())
-                            .with(user(userDetails))
-            )
-                    .andDo(print())
+            mockMvc.perform(post("/api/clothes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
+                    )
                     .andExpect(status().isCreated())
                     .andExpect(header().string(HttpHeaders.LOCATION,
                             URI.create("/api/clothes/" + response.id()).toString()))
@@ -132,20 +105,12 @@ public class ClothesControllerTest {
         void createClothes_Fail_NullOwnerId() throws Exception {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    null, "새 옷", ClothesType.ETC, List.of());
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
+                    null, "새 옷", ClothesType.ETC, List.of(), null);
 
             // when & then
-            mockMvc.perform(
-                        multipart("/api/clothes")
-                                .file(requestPart)
-                                .with(csrf())
-                                .with(user(userDetails))
+            mockMvc.perform(post("/api/clothes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
@@ -156,20 +121,12 @@ public class ClothesControllerTest {
         void createClothes_Fail_BlankName() throws Exception {
             // given
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), " ", ClothesType.ETC, List.of());
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
+                    UUID.randomUUID(), " ", ClothesType.ETC, List.of(), null);
 
             // when & then
-            mockMvc.perform(
-                        multipart("/api/clothes")
-                                .file(requestPart)
-                                .with(csrf())
-                                .with(user(userDetails))
+            mockMvc.perform(post("/api/clothes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
@@ -179,20 +136,11 @@ public class ClothesControllerTest {
         @DisplayName("실패: type이 null로 들어올 경우 400 에러가 발생한다")
         void createClothes_Fail_NullType() throws Exception {
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    user.getId(), "새 옷", null, List.of()
-            );
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
+                    UUID.randomUUID(), "새 옷", null, List.of(), null);
 
-            mockMvc.perform(
-                            multipart("/api/clothes")
-                                    .file(requestPart)
-                                    .with(csrf())
-                                    .with(user(userDetails))
+            mockMvc.perform(post("/api/clothes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
@@ -204,25 +152,18 @@ public class ClothesControllerTest {
             // given
             UUID ownerId = UUID.randomUUID();
             ClothesCreateRequest request = new ClothesCreateRequest(
-                    ownerId, "새 옷", ClothesType.ETC, List.of());
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
+                    ownerId, "새 옷", ClothesType.ETC, List.of(), null);
             willThrow(new UserNotFoundException(ownerId))
                     .given(clothesService)
-                    .createClothes(null, request);
+                    .createClothes(request);
 
             // when & then
-            mockMvc.perform(
-                            multipart("/api/clothes")
-                                    .file(requestPart)
-                                    .with(csrf())
-                                    .with(user(userDetails))
+            mockMvc.perform(post("/api/clothes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.exceptionName").value("USER_NOT_FOUND"));
         }
     }
 
@@ -236,9 +177,7 @@ public class ClothesControllerTest {
             UUID clothesId = UUID.randomUUID();
 
             // when & then
-            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId)
-                            .with(csrf())
-                            .with(user(userDetails)))
+            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId))
                     .andExpect(status().isNoContent());
             then(clothesService).should().deleteClothes(eq(clothesId));
         }
@@ -253,9 +192,7 @@ public class ClothesControllerTest {
                     .deleteClothes(clothesId);
 
             // when & then
-            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId)
-                            .with(csrf())
-                            .with(user(userDetails)))
+            mockMvc.perform(delete("/api/clothes/{clothesId}", clothesId))
                     .andExpect(status().isNotFound());
         }
     }
@@ -267,8 +204,9 @@ public class ClothesControllerTest {
         @DisplayName("성공: 유효한 요청이 들어올 경우 200으로 응답한다")
         void updateClothes_Success() throws Exception {
             // given
+            User user = UserFixture.create();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    "새 이름", ClothesType.ETC, List.of());
+                    "새 이름", ClothesType.ETC, List.of(), null);
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.BAG, user, null, List.of());
             ClothesResponse response = new ClothesResponse(
@@ -279,27 +217,14 @@ public class ClothesControllerTest {
                     request.type(),
                     List.of()
             );
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
-            given(clothesService.updateClothes(clothes.getId(), null, request))
+            given(clothesService.updateClothes(clothes.getId(), request))
                     .willReturn(response);
 
             // when & then
-            mockMvc.perform(
-                            multipart("/api/clothes/{clothesId}", clothes.getId())
-                                    .file(requestPart)
-                                    .with(servletRequest -> {
-                                        servletRequest.setMethod("PATCH");
-                                        return servletRequest;
-                                    })
-                                    .with(csrf())
-                                    .with(user(userDetails))
+            mockMvc.perform(patch("/api/clothes/{clothesId}", clothes.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
-                    .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(response.id().toString()));
         }
@@ -308,27 +233,16 @@ public class ClothesControllerTest {
         @DisplayName("실패: name이 blank로 들어올 경우 400 에러가 발생한다")
         void updateClothes_Fail_BlankName() throws Exception {
             // given
+            User user = UserFixture.create();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    "   ", ClothesType.ETC, List.of());
+                    "   ", ClothesType.ETC, List.of(), null);
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.BAG, user, null, List.of());
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
 
             // when & then
-            mockMvc.perform(
-                            multipart("/api/clothes/{clothesId}", clothes.getId())
-                                    .file(requestPart)
-                                    .with(servletRequest -> {
-                                        servletRequest.setMethod("PATCH");
-                                        return servletRequest;
-                                    })
-                                    .with(csrf())
-                                    .with(user(userDetails))
+            mockMvc.perform(patch("/api/clothes/{clothesId}", clothes.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
@@ -337,26 +251,16 @@ public class ClothesControllerTest {
         @Test
         @DisplayName("실패: type이 null로 들어올 경우 400 에러가 발생한다")
         void updateClothes_Fail_NullType() throws Exception {
+            User user = UserFixture.create();
             ClothesUpdateRequest request = new ClothesUpdateRequest(
-                    "   ", ClothesType.ETC, List.of());
+                    "   ", ClothesType.ETC, List.of(), null);
             Clothes clothes = ClothesFixture.create(
                     "옷", ClothesType.BAG, user, null, List.of());
-            MockMultipartFile requestPart = new MockMultipartFile(
-                    "request",
-                    "",
-                    MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(request)
-            );
 
-            mockMvc.perform(
-                            multipart("/api/clothes/{clothesId}", clothes.getId())
-                                    .file(requestPart)
-                                    .with(servletRequest -> {
-                                        servletRequest.setMethod("PATCH");
-                                        return servletRequest;
-                                    })
-                                    .with(csrf())
-                                    .with(user(userDetails))
+            // when & then
+            mockMvc.perform(patch("/api/clothes/{clothesId}", clothes.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
                     )
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
@@ -397,9 +301,7 @@ public class ClothesControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/clothes")
-                            .with(user(userDetails))
-                            .param("ownerId", ownerId.toString())
-                    )
+                            .param("ownerId", ownerId.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data[0].id").value(clothes.getId().toString()));
         }
@@ -412,7 +314,6 @@ public class ClothesControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/clothes")
-                            .with(user(userDetails))
                             .param("ownerId", ownerId.toString())
                             .param("limit", "-1")
                     )
@@ -424,11 +325,36 @@ public class ClothesControllerTest {
         @DisplayName("실패: ownerId가 null 이면 에러가 발생한다.")
         void getClothes_Fail_Owner_Null() throws Exception {
             // when & then
-            mockMvc.perform(get("/api/clothes")
-                            .with(user(userDetails))
-                    )
+            mockMvc.perform(get("/api/clothes"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.exceptionName").value("VALIDATION_ERROR"));
+        }
+    }
+
+    @Nested
+    @DisplayName("링크로 옷 등록")
+    class ClothesLink {
+        @Test
+        @DisplayName("성공: 유효한 요청이 들어올 경우 200으로 응답한다")
+        void getExtractions_Success() throws Exception {
+            // given
+            String url = "https://example.com";
+
+            // when & then
+            mockMvc.perform(get("/api/clothes/extractions")
+                        .param("url", url))
+                .andExpect(status().isOk());
+            then(clothesService).should().getClothesInfoByUrl(eq(url));
+        }
+
+        @Test
+        @DisplayName("실패: url이 공백 문자로 들어올 경우 400으로 응답한다")
+        void getExtractions_Fail_urlBlank() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/clothes/extractions")
+                        .param("url", " "))
+                .andExpect(status().isBadRequest());
+            then(clothesService).should(never()).getClothesInfoByUrl(anyString());
         }
     }
 }

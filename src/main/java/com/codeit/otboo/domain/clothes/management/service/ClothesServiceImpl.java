@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -13,6 +12,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
+import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
@@ -21,10 +21,11 @@ import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesQueryMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCustomImpl;
+import com.codeit.otboo.domain.clothes.management.scraper.Scraper;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeSelection;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeValueKey;
-import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesNextCursor;
+import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -53,19 +54,19 @@ public class ClothesServiceImpl implements ClothesService{
     private final ClothesMapper clothesMapper;
     private final ClothesQueryMapper clothesQueryMapper;
     private final ClothesRepositoryCustomImpl clothesRepositoryCustom;
+    private final Scraper scraper;
 
     @Override
     @Transactional
     @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public ClothesResponse createClothes(
-            BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest request
     ){
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(UserNotFoundException::new);
         BinaryContent binaryContent = null;
-        if(imageRequest != null){
-            binaryContent = binaryContentService.upload(imageRequest);
+        if(request.binaryContentId() != null){
+            binaryContent = binaryContentService.getById(request.binaryContentId());
         }
         ClothesAttributeSelection selection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
@@ -81,18 +82,17 @@ public class ClothesServiceImpl implements ClothesService{
     @Override
     @Transactional
     @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
-    public ClothesResponse updateClothes(
-            UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
+    public ClothesResponse updateClothes(UUID clothesId, ClothesUpdateRequest request) {
         Clothes clothes = getById(clothesId);
         BinaryContent oldBinaryContent = clothes.getBinaryContent();
         BinaryContent newBinaryContent;
         BinaryContent binaryContent = oldBinaryContent;
 
-        if(imageRequest != null){
+        if(request.binaryContentId() != null){
             if(oldBinaryContent != null){
                 binaryContentService.delete(oldBinaryContent.getId());
             }
-            newBinaryContent = binaryContentService.upload(imageRequest);
+            newBinaryContent = binaryContentService.getById(request.binaryContentId());
             binaryContent = newBinaryContent;
         }
 
@@ -171,10 +171,9 @@ public class ClothesServiceImpl implements ClothesService{
     }
 
     @Override
-    @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
         long totalCount = clothesRepositoryCustom.totalCount(
-            request.ownerId(), ClothesType.fromString(request.type()));
+            request.ownerId(), ClothesType.fromString(request.typeEqual()));
         String sortBy = ClothesSortBy.CREATED_AT.getValue();
         SortDirection direction = SortDirection.DESCENDING;
         if(totalCount == 0){
@@ -254,5 +253,10 @@ public class ClothesServiceImpl implements ClothesService{
     // PreAuthorize 에서 권한 검사를 위해 로그인된 사용자와 같은지 확인
     public boolean isOwner(UUID clothesId, UUID ownerId){
         return clothesRepository.existsByIdAndOwnerId(clothesId, ownerId);
+    }
+
+    @Override
+    public ClothesUrlResponse getClothesInfoByUrl(String url) {
+        return scraper.scrap(url);
     }
 }

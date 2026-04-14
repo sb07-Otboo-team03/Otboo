@@ -80,6 +80,9 @@ jacocoTestReport {
                         '**/*Exception.class',
                         '**/KakaoLocalUtil.class',
                         '**/KmaGridConverter.class',
+                        '**/kafka/**',
+                        '**/sse/**',
+                        '**/websocket/**',
                         '**/generated/**'
                 ])
             })
@@ -150,9 +153,12 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
 
     // kafka
+//    testImplementation 'org.springframework.kafka:spring-kafka-test'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+    // jsoup
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 tasks.named('test') {

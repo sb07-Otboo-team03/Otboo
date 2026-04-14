@@ -5,12 +5,12 @@ permissions:
 
 on:
   push:
-    branches: [ "release-test2" ] #NOTE: release-test2에 배포
+    branches: [ "feat/release-test4" ] #NOTE: release-test4에 배포
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-  IMAGE_PREFIX: release-test2
+  IMAGE_PREFIX: feat-release-test4
 
 jobs:
   deploy:

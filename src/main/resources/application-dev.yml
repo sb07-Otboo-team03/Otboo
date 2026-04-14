@@ -31,6 +31,9 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.basic: trace
     com.codeit.otboo: debug
+    org.apache.kafka: warn
+    org.apache.kafka.clients: warn
+    org.springframework.kafka.listener: warn
 
 management:
   endpoint:
@@ -43,3 +46,7 @@ otboo:
     access-token-expiration: 900000
     refresh-token-expiration: 1209600000
     issuer: codeit
+  account:
+    email: admin@codeit.com
+    name: admin
+    password: admin

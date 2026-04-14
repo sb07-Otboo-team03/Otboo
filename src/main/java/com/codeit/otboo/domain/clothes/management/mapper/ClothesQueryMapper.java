@@ -13,8 +13,8 @@ import java.util.UUID;
 public class ClothesQueryMapper {
     public ClothesSearchCondition toQuery(@NonNull ClothesCursorPageRequest request){
         LocalDateTime cursor = request.cursor() == null ? null : LocalDateTime.parse(request.cursor());
-        UUID idAfter = request.after() == null ? null : UUID.fromString(request.after());
-        ClothesType type = request.type() == null ? null : ClothesType.fromString(request.type());
+        UUID idAfter = request.idAfter() == null ? null : UUID.fromString(request.idAfter());
+        ClothesType type = request.typeEqual() == null ? null : ClothesType.fromString(request.typeEqual());
 
         return new ClothesSearchCondition(
                 cursor,

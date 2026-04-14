@@ -6,6 +6,9 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.directmessage.entity.DirectMessage;
 import com.codeit.otboo.domain.directmessage.mapper.DirectMessageMapper;
 import com.codeit.otboo.domain.directmessage.repository.DirectMessageRepository;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.repository.NotificationRepository;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
@@ -34,6 +37,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageMapper directMessageMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     private LocalDateTime toLocalDateTime(String cursor) {
         return (cursor == null) ? null :LocalDateTime.parse(cursor);
@@ -43,11 +47,12 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     @Transactional
     public DirectMessageResponse create(DirectMessageCreateRequest request) {
 
+        User sender = userRepository.findById(request.senderId())
+            .orElseThrow(() -> new UserNotFoundException(request.senderId()));
+
         User receiver = userRepository.findById(request.receiverId())
             .orElseThrow(() -> new UserNotFoundException(request.receiverId()));
 
-        User sender = userRepository.findById(request.senderId())
-            .orElseThrow(() -> new UserNotFoundException(request.senderId()));
 
         DirectMessage directMessage = new DirectMessage(sender, receiver, request.content());
         DirectMessage saveDirectMessage = directMessageRepository.save(directMessage);
@@ -60,6 +65,15 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         );
 
         String title = "[DM]" + response.sender().name();
+
+        Notification notification = Notification.builder()
+            .title(title)
+            .content(response.content())
+            .level(NotificationLevel.INFO)
+            .receiver(receiver)
+            .build();
+
+        notificationRepository.save(notification);
         eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId()));
 
         return response;
@@ -67,6 +81,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
     @Override
     public CursorResponse<DirectMessageResponse> getDirectMessages(
+        UUID myId,
         UUID userId,
         CursorRequest cursorRequest
     ) {
@@ -74,6 +89,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         Pageable pageable = PageRequest.of(0, cursorRequest.limit() + 1);
 
         List<DirectMessageDto> results = directMessageRepository.findDirectMessageDtos(
+            myId,
             userId,
             cursor,
             cursorRequest.idAfter(),
@@ -99,12 +115,14 @@ public class DirectMessageServiceImpl implements DirectMessageService {
             .map(directMessageMapper::toDto)
             .toList();
 
+        Long totalCount = directMessageRepository.countDirectMessageBySenderIdOrReceiverId(userId, userId);
+
         return CursorResponse.fromList(
             content,
             nextCursor,
             nextIdAfter,
             hasNext,
-            content.size(),
+            totalCount,
             "createdAt",
             SortDirection.DESCENDING
         );
