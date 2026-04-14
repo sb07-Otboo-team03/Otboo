@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @RequiredArgsConstructor
-@Component
+//@Component
 public class SseNotificationTopicListener {
 
     private final SseService sseService;
