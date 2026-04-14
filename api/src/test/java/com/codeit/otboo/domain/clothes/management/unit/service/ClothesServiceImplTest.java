@@ -594,11 +594,12 @@ public class ClothesServiceImplTest {
         @DisplayName("성공: totalCount가 0이면 바로 빈 리스트를 가진 Slice 로 응답한다.")
         void success_getClothesList_empty(){
             // given
-            UUID ownerId = UUID.randomUUID();
+            User owner = UserFixture.create();
             ClothesCursorPageRequest request = new ClothesCursorPageRequest(
-                    null, null, null, null, ownerId);
+                    null, null, null, null, owner.getId());
 
-            given(clothesRepositoryCustom.totalCount(ownerId, null)).willReturn(0L);
+            given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(0L);
+            given(userRepository.findById(owner.getId())).willReturn(Optional.of(owner));
 
             // when
             CursorResponse<ClothesResponse> result = clothesService.getClothesListByOwnerId(request);
@@ -608,7 +609,7 @@ public class ClothesServiceImplTest {
             assertThat(result.data()).isEmpty();
             assertThat(result.hasNext()).isFalse();
 
-            then(clothesRepositoryCustom).should(times(1)).totalCount(ownerId, null);
+            then(clothesRepositoryCustom).should(times(1)).totalCount(owner.getId(), null);
             then(clothesRepositoryCustom).should(never()).findMyClothesList(any(ClothesSearchCondition.class));
         }
 
@@ -626,6 +627,7 @@ public class ClothesServiceImplTest {
             Slice<Clothes> slice = new SliceImpl<>(
                     List.of(clothes), PageRequest.of(0, 20), false);
 
+            given(userRepository.findById(owner.getId())).willReturn(Optional.of(owner));
             given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
             given(clothesQueryMapper.toQuery(request)).willReturn(query);
             given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
@@ -667,6 +669,7 @@ public class ClothesServiceImplTest {
                     List.of(attributeValue.getSelectableValue())
             );
 
+            given(userRepository.findById(owner.getId())).willReturn(Optional.of(owner));
             given(clothesRepositoryCustom.totalCount(owner.getId(), null)).willReturn(1L);
             given(clothesQueryMapper.toQuery(request)).willReturn(query);
             given(clothesRepositoryCustom.findMyClothesList(query)).willReturn(slice);
