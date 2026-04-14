@@ -37,8 +37,8 @@ public class WebSocketRequiredTopicListener {
 
             DirectMessageResponse directMessageResponse = event.getData();
             String websocketKey = WebSocketRequiredTopicListener.makeWebSocketKey(directMessageResponse);
-            String destination = String.format("/sub/direct-messages_%s", websocketKey);
 
+            String destination = String.format("/sub/direct-messages_%s", websocketKey);
             messagingTemplate.convertAndSend(destination, directMessageResponse);
 
         } catch (JsonProcessingException e) {
