@@ -85,8 +85,9 @@ public class KafkaProduceRequiredEventListener {
 
     private <T> void sendToKafka(T event) {
         try {
-            String message = objectMapper.writeValueAsString(event);
             String topic = "otboo." + event.getClass().getSimpleName();
+            String message = objectMapper.writeValueAsString(event);
+
             kafkaTemplate.send(topic, message);
         }
         catch (JsonProcessingException e) {
