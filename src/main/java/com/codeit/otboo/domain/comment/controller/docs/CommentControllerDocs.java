@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -67,6 +68,8 @@ public interface CommentControllerDocs {
                     )
             }
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CommentResponse> createComment(@PathVariable("feedId") UUID feedId,
                                                   @AuthenticationPrincipal OtbooUserDetails details,
                                                   @Valid @RequestBody CommentCreateRequest request);
@@ -108,6 +111,8 @@ public interface CommentControllerDocs {
                     )
             }
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<CursorResponse<CommentResponse>> getAllComments(@ParameterObject @ModelAttribute
                                                                    CommentSearchRequest request);
 }
