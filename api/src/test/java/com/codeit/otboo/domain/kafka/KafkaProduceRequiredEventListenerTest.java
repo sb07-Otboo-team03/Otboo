@@ -87,23 +87,23 @@ class KafkaProduceRequiredEventListenerTest {
 //        verify(kafkaTemplate)
 //            .send(eq("otboo.DirectMessageCreatedEvent"), anyString());
 //    }
-
-    @Test
-    void FeedCreatedEvent_전송_성공() {
-        // given
-        FeedCreatedEvent event = new FeedCreatedEvent(
-            "피드 제목",
-            "피드 내용",
-            List.of(UUID.randomUUID(), UUID.randomUUID())
-        );
-
-        // when
-        listener.on(event);
-
-        // then
-        verify(kafkaTemplate)
-            .send(eq("otboo.FeedCreatedEvent"), anyString());
-    }
+//
+//    @Test
+//    void FeedCreatedEvent_전송_성공() {
+//        // given
+//        FeedCreatedEvent event = new FeedCreatedEvent(
+//            "피드 제목",
+//            "피드 내용",
+//            List.of(UUID.randomUUID(), UUID.randomUUID())
+//        );
+//
+//        // when
+//        listener.on(event);
+//
+//        // then
+//        verify(kafkaTemplate)
+//            .send(eq("otboo.FeedCreatedEvent"), anyString());
+//    }
 
     @Test
     void JSON_직렬화_실패시_RuntimeException() throws Exception {

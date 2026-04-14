@@ -1,7 +1,6 @@
 package com.codeit.otboo.domain.kafka;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
-import com.codeit.otboo.domain.sse.event.BaseSseEvent;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
@@ -32,91 +31,68 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageCreatedEvent event) {
-        sendToKafkaWithWebSocketKey(event);
+
+        DirectMessageResponse directMessageResponse = event.getData();
+        String webSocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
+
+        sendToKafka(event, webSocketKey);
     }
 
     @Async
     @TransactionalEventListener
     public void on(DirectMessageSseEvent event) {
-        sendToKafkaWithSseKey(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
-    public void on(FollowSseEvent event) { sendToKafkaWithSseKey(event);}
+    public void on(FollowSseEvent event) { sendToKafka(event, null);}
 
     @Async
     @TransactionalEventListener
     public void on(CommentCreatedEvent event) {
-        sendToKafkaWithSseKey(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedLikedEvent event) {
-        sendToKafkaWithSseKey(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
     public void on(UserRoleUpdatedEvent event) {
-        sendToKafkaWithSseKey(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedCreatedEvent event) {
-        sendToKafka(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
     public void on(ClothesAttributeDefSseEvent event) {
-        sendToKafka(event);
+        sendToKafka(event, null);
     }
 
     @Async
     @TransactionalEventListener
     public void on(WeatherSseEvent event) {
-        sendToKafka(event);
+        sendToKafka(event, null);
     }
 
 
-    private <T> void sendToKafka(T event) {
+    private <T> void sendToKafka(T event, String kafkaKey) {
         try {
             String topic = "otboo." + event.getClass().getSimpleName();
             String message = objectMapper.writeValueAsString(event);
 
-            kafkaTemplate.send(topic, message);
-        }
-        catch (JsonProcessingException e) {
-            log.error("Failed to send event to Kafka", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> void sendToKafkaWithSseKey(BaseSseEvent event) {
-        try {
-            String topic = "otboo." + event.getClass().getSimpleName();
-            String message = objectMapper.writeValueAsString(event);
-
-            kafkaTemplate.send(topic, topic, message);
-        }
-        catch (JsonProcessingException e) {
-            log.error("Failed to send event to Kafka", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> void sendToKafkaWithWebSocketKey(DirectMessageCreatedEvent event) {
-        try {
-            String topic = "otboo." + event.getClass().getSimpleName();
-            String message = objectMapper.writeValueAsString(event);
-
-            DirectMessageResponse directMessageResponse = event.getData();
-            String webSocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
-
-            kafkaTemplate.send(topic, webSocketKey, message);
+            String key = (kafkaKey != null) ? kafkaKey : topic;
+            
+            kafkaTemplate.send(topic, key, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
