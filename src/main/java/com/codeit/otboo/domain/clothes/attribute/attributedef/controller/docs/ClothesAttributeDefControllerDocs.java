@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -73,6 +74,8 @@ public interface ClothesAttributeDefControllerDocs {
                     schema = @Schema(implementation = ErrorResponse.class)
             )
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<List<ClothesAttributeDefResponse>> getAllClothesAttributeDefs(
             @Parameter(hidden = true)
             @ModelAttribute ClothesAttributeSearchRequest searchRequest
@@ -109,6 +112,8 @@ public interface ClothesAttributeDefControllerDocs {
                     )
             )
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ClothesAttributeDefResponse> postAttributeDef(
             @Valid @RequestBody ClothesAttributeDefCreateRequest clothesAttributeDefCreateRequest
     );
@@ -165,6 +170,8 @@ public interface ClothesAttributeDefControllerDocs {
                     }
             )
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ClothesAttributeDefResponse> patchAttributeDef(
             @PathVariable UUID definitionId,
             @Valid @RequestBody ClothesAttributeDefUpdateRequest clothesAttributeDefUpdateRequest
@@ -207,6 +214,8 @@ public interface ClothesAttributeDefControllerDocs {
                     )
             )
     )
+    @SecurityRequirement(name = "CsrfToken")
+    @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<Void> deleteAttributeDef(@PathVariable UUID definitionId);
 
 }
