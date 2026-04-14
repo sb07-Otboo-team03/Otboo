@@ -6,12 +6,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 public record ClothesUpdateRequest(
         @NotBlank
         String name,
         @NotNull
         ClothesType type,
-        List<ClothesAttributeRequest> attributes
+        List<ClothesAttributeRequest> attributes,
+        UUID binaryContentId
 ) {
 }

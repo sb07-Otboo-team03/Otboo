@@ -5,6 +5,7 @@ import com.codeit.otboo.domain.profile.entity.Location;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record ProfileUpdateRequest(
         @Pattern(regexp = "^(?!\\s*$).+", message = "공백은 허용되지 않습니다.")
@@ -15,6 +16,7 @@ public record ProfileUpdateRequest(
         LocationRequest location,
         @Min(1)
         @Max(5)
-        Integer temperatureSensitivity
+        Integer temperatureSensitivity,
+        UUID binaryContentId
 ) {
 }

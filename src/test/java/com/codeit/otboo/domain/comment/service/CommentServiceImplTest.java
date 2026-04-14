@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.comment.service;
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
 import com.codeit.otboo.domain.comment.dto.CommentMapper;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
+import com.codeit.otboo.domain.comment.dto.CommentSearchRequest;
 import com.codeit.otboo.domain.comment.entity.Comment;
 import com.codeit.otboo.domain.comment.repository.CommentRepository;
 import com.codeit.otboo.domain.feed.entity.Feed;
@@ -150,6 +151,7 @@ class CommentServiceImplTest {
             // given
             UUID feedId = UUID.randomUUID();
             List<Comment> comments = new ArrayList<>();
+            CommentSearchRequest request = new CommentSearchRequest(feedId, null, null, 5);
 
             for (int i = 0; i < 5; i++) {
                 comments.add(mockComment(i));
@@ -163,7 +165,7 @@ class CommentServiceImplTest {
             given(commentMapper.toDto(any(Comment.class))).willReturn(null);
 
             // when
-            CursorResponse<CommentResponse> result = commentService.getAllComments(feedId, null, null, 5);
+            CursorResponse<CommentResponse> result = commentService.getAllComments(request);
 
             // then
             assertThat(result.data()).hasSize(5);
@@ -195,6 +197,7 @@ class CommentServiceImplTest {
     void getComment_IsEmpty() {
         UUID feedId = UUID.randomUUID();
         List<Comment> comments = List.of();
+        CommentSearchRequest request = new CommentSearchRequest(feedId, null, null, 5);
 
         Slice<Comment> emptySlice = new SliceImpl<>(comments, PageRequest.of(0, 5), false);
 
@@ -202,7 +205,7 @@ class CommentServiceImplTest {
         given(commentRepository.findAllByCursor(any(), any(), any(), anyInt())).willReturn(emptySlice);
 
         // when
-        CursorResponse<CommentResponse> result = commentService.getAllComments(feedId, null, null, 5);
+        CursorResponse<CommentResponse> result = commentService.getAllComments(request);
 
         // then
         verify(commentMapper, never()).toDto(any(Comment.class));
@@ -216,11 +219,12 @@ class CommentServiceImplTest {
     void getComment_Fail_NotFoundFeed() {
         // given
         UUID feedId = UUID.randomUUID();
+        CommentSearchRequest request = new CommentSearchRequest(feedId, null, null, 5);
 
         given(feedRepository.existsById(feedId)).willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> commentService.getAllComments(feedId, null, null, 5))
+        assertThatThrownBy(() -> commentService.getAllComments(request))
                 .isInstanceOf(FeedNotFoundException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FEED_NOT_FOUND);

@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.kafka;
 
-import com.codeit.otboo.domain.binarycontent.event.BinaryContentCreatedEvent;
 import com.codeit.otboo.domain.binarycontent.event.BinaryContentDeletedEvent;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentRetryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,20 +15,6 @@ public class BinaryContentRequiredTopicListener {
 
     private final BinaryContentRetryService binaryContentRetryService;
     private final ObjectMapper objectMapper;
-
-    @KafkaListener(topics = "otboo.BinaryContentCreatedEvent", groupId = "BinaryContent")
-    public void onBinaryContentCreatedEvent(String kafkaEvent) {
-        try {
-            BinaryContentCreatedEvent event =
-                objectMapper.readValue(kafkaEvent, BinaryContentCreatedEvent.class);
-
-            binaryContentRetryService.upload(event.binaryContentId(), event.bytes(),
-                event.contentType());
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @KafkaListener(topics = "otboo.BinaryContentDeletedEvent", groupId = "BinaryContent")
     public void onBinaryContentDeletedEvent(String kafkaEvent) {

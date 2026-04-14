@@ -1,7 +1,5 @@
 package com.codeit.otboo.domain.user.controller;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
-import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.user.dto.request.*;
@@ -13,10 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -27,7 +23,6 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final BinaryContentMapper binaryContentMapper;
 
     @PostMapping
     public ResponseEntity<UserResponse> signUp(@Valid @RequestBody UserCreateRequest userCreateRequest) {
@@ -54,13 +49,11 @@ public class UserController {
         return ResponseEntity.ok(getUsers);
     }
 
-    @PatchMapping(value = "/{userId}/profiles", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/{userId}/profiles")
     public ResponseEntity<ProfileResponse> updateProfile(
             @PathVariable UUID userId,
-            @Valid @RequestPart ProfileUpdateRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        BinaryContentCreateRequest binaryContentCreateRequest = binaryContentMapper.toRequestDto(image);
-        ProfileResponse profileResponse = userService.updateProfile(userId, request, binaryContentCreateRequest);
+            @Valid @RequestBody ProfileUpdateRequest request) {
+        ProfileResponse profileResponse = userService.updateProfile(userId, request);
         return ResponseEntity.ok(profileResponse);
     }
 
@@ -75,6 +68,4 @@ public class UserController {
         UserResponse userResponse = userService.updateUserRole(userId, userRoleUpdateRequest);
         return ResponseEntity.ok(userResponse);
     }
-
-
 }

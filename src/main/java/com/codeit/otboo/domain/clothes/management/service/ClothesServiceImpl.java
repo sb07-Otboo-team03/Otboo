@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.service;
 
-import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentCreateRequest;
 import com.codeit.otboo.domain.binarycontent.entity.BinaryContent;
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -25,8 +24,8 @@ import com.codeit.otboo.domain.clothes.management.repository.ClothesRepositoryCu
 import com.codeit.otboo.domain.clothes.management.scraper.Scraper;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeSelection;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesAttributeValueKey;
-import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
 import com.codeit.otboo.domain.clothes.management.vo.ClothesNextCursor;
+import com.codeit.otboo.domain.clothes.management.vo.ClothesSortBy;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.exception.UserNotFoundException;
 import com.codeit.otboo.domain.user.repository.UserRepository;
@@ -61,14 +60,13 @@ public class ClothesServiceImpl implements ClothesService{
     @Transactional
     @PreAuthorize("#request.ownerId() == authentication.principal.userResponse.id()")
     public ClothesResponse createClothes(
-            BinaryContentCreateRequest imageRequest,
             ClothesCreateRequest request
     ){
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(UserNotFoundException::new);
         BinaryContent binaryContent = null;
-        if(imageRequest != null){
-            binaryContent = binaryContentService.upload(imageRequest);
+        if(request.binaryContentId() != null){
+            binaryContent = binaryContentService.getById(request.binaryContentId());
         }
         ClothesAttributeSelection selection = getClothesAttributeValues(request.attributes());
         Clothes savedClothes = clothesRepository.save(
@@ -84,18 +82,17 @@ public class ClothesServiceImpl implements ClothesService{
     @Override
     @Transactional
     @PreAuthorize("@clothesServiceImpl.isOwner(#clothesId, authentication.principal.userResponse.id())")
-    public ClothesResponse updateClothes(
-            UUID clothesId, BinaryContentCreateRequest imageRequest, ClothesUpdateRequest request) {
+    public ClothesResponse updateClothes(UUID clothesId, ClothesUpdateRequest request) {
         Clothes clothes = getById(clothesId);
         BinaryContent oldBinaryContent = clothes.getBinaryContent();
         BinaryContent newBinaryContent;
         BinaryContent binaryContent = oldBinaryContent;
 
-        if(imageRequest != null){
+        if(request.binaryContentId() != null){
             if(oldBinaryContent != null){
                 binaryContentService.delete(oldBinaryContent.getId());
             }
-            newBinaryContent = binaryContentService.upload(imageRequest);
+            newBinaryContent = binaryContentService.getById(request.binaryContentId());
             binaryContent = newBinaryContent;
         }
 

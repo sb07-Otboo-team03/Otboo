@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.attribute.attributedef.controller;
 
+import com.codeit.otboo.domain.clothes.attribute.attributedef.controller.docs.ClothesAttributeDefControllerDocs;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.otboo.domain.clothes.attribute.attributedef.dto.request.ClothesAttributeSearchRequest;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes/attribute-defs")
-public class ClothesAttributeDefController {
+public class ClothesAttributeDefController implements ClothesAttributeDefControllerDocs {
 
     private final ClothesAttributeDefService clothesAttributeDefService;
 
