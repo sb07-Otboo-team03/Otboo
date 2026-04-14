@@ -1,31 +1,12 @@
-import org.springframework.boot.gradle.tasks.bundling.BootJar
-
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.11'
-	id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+	id 'org.springframework.boot' version '3.5.11' apply false // 플러그인 버전만 관리
+	id 'io.spring.dependency-management' version '1.1.7' apply false // 플러그인 버전만 관리
 }
 
 group = 'com.codeit'
 version = '0.0.1-SNAPSHOT'
 description = 'otboo'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
-bootJar {
-    mainClass = 'com.codeit.otboo.OtbooApplication'
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
 
 allprojects {
     repositories {
@@ -36,6 +17,7 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
 
     group = 'com.codeit'
     version = '0.0.1-SNAPSHOT'
@@ -46,121 +28,80 @@ subprojects {
         }
     }
 
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.11"
         }
     }
 
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
+        finalizedBy tasks.named('jacocoTestReport')
     }
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
-}
 
-test {
-    finalizedBy jacocoTestReport
-}
+    tasks.named('jacocoTestReport', JacocoReport) {
+        dependsOn tasks.named('test')
 
-jacocoTestReport {
-    dependsOn test
-    classDirectories.setFrom(
-            files(classDirectories.files.collect {
-                fileTree(dir: it, excludes: [
-                        '**/Q*.class',
-                        '**/*Application.class',
-                        '**/*Config.class',
-                        '**/*Dto.class',
-                        '**/*Mapper.class',
-                        '**/*Request.class',
-                        '**/*Response.class',
-                        '**/*Exception.class',
-                        '**/KakaoLocalUtil.class',
-                        '**/KmaGridConverter.class',
-                        '**/kafka/**',
-                        '**/sse/**',
-                        '**/websocket/**',
-                        '**/generated/**'
-                ])
-            })
-    )
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = true
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
     }
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-batch'
-    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'org.testcontainers:elasticsearch'
-    testImplementation 'org.springframework.batch:spring-batch-test'
-    compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.h2database:h2'
-	annotationProcessor 'org.projectlombok:lombok'
-    runtimeOnly 'org.postgresql:postgresql'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+def coverageModules = [project(':api'), project(':batch')]
 
-    // swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+tasks.register('jacocoRootReport', JacocoReport) {
+    def modules = coverageModules
 
-    // actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    dependsOn modules.collect { it.tasks.named('test') }
 
-    // websocket
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    implementation 'org.springframework.security:spring-security-messaging'
+    additionalSourceDirs.setFrom(files(modules.collect { it.sourceSets.main.allSource.srcDirs }))
+    sourceDirectories.setFrom(files(modules.collect { it.sourceSets.main.allSource.srcDirs }))
 
-    // QueryDSL JPA 의존성
-    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    classDirectories.setFrom(files(modules.collect { module ->
+        module.sourceSets.main.output.classesDirs.files.collect { dir ->
+            fileTree(dir: dir, excludes: [
+                    '**/Q*.class',
+                    '**/*Application.class',
+                    '**/*Config.class',
+                    '**/*Dto.class',
+                    '**/*Mapper.class',
+                    '**/*Request.class',
+                    '**/*Response.class',
+                    '**/*Exception.class',
+                    '**/KakaoLocalUtil.class',
+                    '**/KmaGridConverter.class',
+                    '**/kafka/**',
+                    '**/sse/**',
+                    '**/websocket/**',
+                    '**/generated/**'
+            ])
+        }
+    }))
 
-    // Annotation Processor
-    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
-    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    executionData.setFrom(files(modules.collect {
+        it.layout.buildDirectory.file("jacoco/test.exec").get().asFile
+    }.findAll { it.exists() }))
 
-    implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
-
-    // smtp
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-
-    // Gson JSON 파싱 라이브러리
-    implementation 'com.google.code.gson:gson:2.13.2'
-
-    // S3
-    implementation 'software.amazon.awssdk:s3:2.31.7'
-
-    // redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-    // aop
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
-
-    // retry
-    implementation 'org.springframework.retry:spring-retry'
-
-    // kafka
-//    testImplementation 'org.springframework.kafka:spring-kafka-test'
-    implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
-
-    // jsoup
-    implementation 'org.jsoup:jsoup:1.17.2'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
 }
