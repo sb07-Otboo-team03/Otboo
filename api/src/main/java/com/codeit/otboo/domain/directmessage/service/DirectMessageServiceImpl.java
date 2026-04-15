@@ -66,14 +66,6 @@ public class DirectMessageServiceImpl implements DirectMessageService {
 
         String title = "[DM]" + response.sender().name();
 
-        Notification notification = Notification.builder()
-            .title(title)
-            .content(response.content())
-            .level(NotificationLevel.INFO)
-            .receiver(receiver)
-            .build();
-
-        notificationRepository.save(notification);
         eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId()));
 
         return response;
