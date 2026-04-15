@@ -30,10 +30,4 @@ public class OtbooBatchApplication {
         app.setWebApplicationType(WebApplicationType.NONE);
         app.run(args);
     }
-
-    @PostConstruct
-    public void started() {
-        // 애플리케이션의 기본 타임존을 KST로 설정
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
-    }
 }
