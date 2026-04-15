@@ -44,20 +44,6 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        log.info("scheme={}, serverName={}, serverPort={}, secure={}, xfp={}, xfh={}, xfpPort={}",
-                request.getScheme(),
-                request.getServerName(),
-                request.getServerPort(),
-                request.isSecure(),
-                request.getHeader("X-Forwarded-Proto"),
-                request.getHeader("X-Forwarded-Host"),
-                request.getHeader("X-Forwarded-Port"));
-        log.info("scheme={}, serverName={}, serverPort={}, secure={}",
-                request.getScheme(),
-                request.getServerName(),
-                request.getServerPort(),
-                request.isSecure());
-
         if (authorizationRequest == null) {
             removeAuthorizationRequestCookies(response);
             return;
