@@ -91,8 +91,8 @@ public class KafkaProduceRequiredEventListener {
             String message = objectMapper.writeValueAsString(event);
 
             String key = (kafkaKey != null) ? kafkaKey : topic;
-            
-            kafkaTemplate.send(topic, key, message);
+
+            kafkaTemplate.send(topic, null, System.currentTimeMillis(), key, message);
         }
         catch (JsonProcessingException e) {
             log.error("Failed to send event to Kafka", e);
