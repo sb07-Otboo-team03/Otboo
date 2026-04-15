@@ -20,6 +20,8 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        jdbc:
+          time_zone: Asia/Seoul
 
 logging:
   level:
