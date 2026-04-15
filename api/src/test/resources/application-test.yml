@@ -36,6 +36,10 @@ spring:
       security.protocol: PLAINTEXT
       sasl.mechanism: PLAIN
 
+secure:
+  cookie: false
+  sameSite: Lax
+
 
 otboo:
   storage:
