@@ -172,8 +172,10 @@ public class ClothesServiceImpl implements ClothesService{
 
     @Override
     public CursorResponse<ClothesResponse> getClothesListByOwnerId(ClothesCursorPageRequest request) {
+        User user = userRepository.findById(request.ownerId())
+                .orElseThrow(UserNotFoundException::new);
         long totalCount = clothesRepositoryCustom.totalCount(
-            request.ownerId(), ClothesType.fromString(request.typeEqual()));
+                user.getId(), ClothesType.fromString(request.typeEqual()));
         String sortBy = ClothesSortBy.CREATED_AT.getValue();
         SortDirection direction = SortDirection.DESCENDING;
         if(totalCount == 0){

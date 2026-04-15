@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.binarycontent.controller;
 
+import com.codeit.otboo.domain.binarycontent.controller.docs.BinaryContentControllerDocs;
 import com.codeit.otboo.domain.binarycontent.dto.request.BinaryContentPresignedUrlRequest;
 import com.codeit.otboo.domain.binarycontent.dto.response.BinaryContentPresignedUrlResponse;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
@@ -13,7 +14,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/binary-contents")
 @RequiredArgsConstructor
-public class BinaryContentController {
+public class BinaryContentController implements BinaryContentControllerDocs {
     private final BinaryContentService binaryContentService;
 
     @PostMapping("/images/presigned-url")

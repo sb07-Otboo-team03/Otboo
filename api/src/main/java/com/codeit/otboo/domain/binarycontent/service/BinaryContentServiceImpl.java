@@ -80,6 +80,16 @@ public class BinaryContentServiceImpl implements BinaryContentService {
             throw new FileUploadMaximumSizeException(request.size(), maxByteSize);
         }
 
+        if ("application/octet-stream".equals(request.contentType())) {
+            if (request.fileName().endsWith(".png")
+                    || request.fileName().endsWith(".jpg")
+                    || request.fileName().endsWith(".jpeg")
+                    || request.fileName().endsWith(".webp")
+                    || request.fileName().endsWith(".gif")) {
+                return;
+            }
+        }
+
         if (!request.contentType().startsWith("image/")) {
             throw new FileTypeNotSupportException(request.contentType(), "이미지파일");
         }
