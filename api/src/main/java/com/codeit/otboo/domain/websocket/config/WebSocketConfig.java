@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
             .setAllowedOriginPatterns(
                 "http://localhost:*",
-                "https://*.sprint.learn.codeit.kr"
+                "https://otbooteam03.cloud/"
             )
             .withSockJS();
     }
