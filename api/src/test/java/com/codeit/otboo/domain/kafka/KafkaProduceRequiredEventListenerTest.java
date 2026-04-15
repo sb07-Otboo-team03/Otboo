@@ -9,8 +9,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
 import com.codeit.otboo.domain.user.dto.response.UserSummaryResponse;
+import com.codeit.otboo.domain.user.service.UserService;
 import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +39,12 @@ class KafkaProduceRequiredEventListenerTest {
 
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
+    @Mock
+    private NotificationService notificationService;
+    @Mock
+    private NotificationMapper notificationMapper;
+    @Mock
+    private UserService userService;
 
     @Spy
     private ObjectMapper objectMapper;
@@ -54,8 +63,11 @@ class KafkaProduceRequiredEventListenerTest {
             .build();
 
         listener = new KafkaProduceRequiredEventListener(
-            kafkaTemplate,
-            objectMapper
+                kafkaTemplate,
+                objectMapper,
+                notificationService,
+                notificationMapper,
+                userService
         );
 
         response = DirectMessageResponse.builder()
@@ -110,7 +122,13 @@ class KafkaProduceRequiredEventListenerTest {
         // given
         ObjectMapper mockMapper = mock(ObjectMapper.class);
         KafkaProduceRequiredEventListener listener =
-            new KafkaProduceRequiredEventListener(kafkaTemplate, mockMapper);
+            new KafkaProduceRequiredEventListener(
+                    kafkaTemplate,
+                    mockMapper,
+                    notificationService,
+                    notificationMapper,
+                    userService
+            );
 
         when(mockMapper.writeValueAsString(any()))
             .thenThrow(new JsonProcessingException("error") {});

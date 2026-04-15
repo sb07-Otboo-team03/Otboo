@@ -1,6 +1,12 @@
 package com.codeit.otboo.domain.kafka;
 
-import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
+import com.codeit.otboo.domain.kafka.event.NotificationBatchSseKafkaEvent;
+import com.codeit.otboo.domain.kafka.event.NotificationSseKafkaEvent;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.service.NotificationService;
 import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
 import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
 import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
@@ -9,6 +15,8 @@ import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
 import com.codeit.otboo.domain.sse.event.FollowSseEvent;
 import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.service.UserService;
 import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +27,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.List;
+import java.util.UUID;
+
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -26,6 +37,9 @@ public class KafkaProduceRequiredEventListener {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
+    private final NotificationMapper notificationMapper;
+    private final UserService userService;
 
     @Async
     @TransactionalEventListener
@@ -36,51 +50,132 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageSseEvent event) {
-        sendToKafka(event);
+        NotificationDto dto = createNotificationDto(
+                event.getUserId(),
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(FollowSseEvent event) {
-        sendToKafka(event);
+        NotificationDto dto = createNotificationDto(
+                event.getUserId(),
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(CommentCreatedEvent event) {
-        sendToKafka(event);
+        NotificationDto dto = createNotificationDto(
+                event.getReceiverId(),
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedLikedEvent event) {
-        sendToKafka(event);
-    }
+        NotificationDto dto = createNotificationDto(
+                event.getReceiverId(),
+                event.getTitle(),
+                event.getContent()
+        );
 
-    @Async
-    @TransactionalEventListener
-    public void on(FeedCreatedEvent event) {
-        sendToKafka(event);
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(ClothesAttributeDefSseEvent event) {
-        sendToKafka(event);
-    }
-
-    @Async
-    @TransactionalEventListener
-    public void on(WeatherSseEvent event) {
-        sendToKafka(event);
+        sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(UserRoleUpdatedEvent event) {
-        sendToKafka(event);
+        NotificationDto dto = createNotificationDto(
+                event.getReceiverId(),
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
+    @Async
+    @TransactionalEventListener
+    public void on(FeedCreatedEvent event) {
+        List<User> users = userService.getAllUserByIds(event.getReceiverIds());
+
+        List<NotificationDto> dtos = createNotificationDtos(
+                users,
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(ClothesAttributeDefSseEvent event) {
+        List<User> users = userService.getAllUsers();
+
+        List<NotificationDto> dtos = createNotificationDtos(
+                users,
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(WeatherSseEvent event) {
+        List<NotificationDto> dtos = event.notificationCommands().stream()
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .toList();
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
+    }
+
+    private NotificationDto createNotificationDto(UUID userId, String title, String content) {
+        Notification saved = createNotification(userId, title, content);
+        return notificationMapper.toDto(saved);
+    }
+
+    private List<NotificationDto> createNotificationDtos(List<User> users, String title, String content) {
+        return users.stream()
+                .map(user -> Notification.builder()
+                        .title(title)
+                        .content(content)
+                        .level(NotificationLevel.INFO)
+                        .receiver(user)
+                        .build())
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .toList();
+    }
+
+    private Notification createNotification(UUID userId, String title, String content) {
+        User user = userService.getUser(userId);
+
+        Notification notification = Notification.builder()
+                .title(title)
+                .content(content)
+                .level(NotificationLevel.INFO)
+                .receiver(user)
+                .build();
+
+        return notificationService.create(notification);
+    }
 
     private <T> void sendToKafka(T event) {
         try {
