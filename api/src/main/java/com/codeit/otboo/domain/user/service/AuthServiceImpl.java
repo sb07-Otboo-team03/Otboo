@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.user.service;
 
+import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.dto.request.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
@@ -183,5 +184,70 @@ public class AuthServiceImpl implements AuthService {
 
     private String generateTemporaryPassword() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+    @Override
+    @Transactional
+    public JwtInformation signInByOAuth(String email, String name) {
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    // 소셜 로그인의 해당하는 레코드의 패스워드는 Random UUID
+                    String randomPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+                    String encodedPassword = passwordEncoder.encode(randomPassword);
+
+                    User newUser = User.builder()
+                            .email(email)
+                            .password(encodedPassword)
+                            .build();
+
+                    Profile profile = Profile.builder()
+                            .user(newUser)
+                            .name(resolveProfileName(email, name))
+                            .build();
+
+                    newUser.setProfile(profile);
+
+                    return userRepository.save(newUser);
+                });
+
+        if (user.isLocked()) {
+            throw new LockedException("잠김 계정입니다.");
+        }
+
+        UserResponse userResponse = userMapper.toDto(user);
+
+        UUID userId = userResponse.id();
+        String authenticatedEmail = userResponse.email();
+        String sessionId = UUID.randomUUID().toString();
+
+        String refreshToken = jwtProvider.generateRefreshToken(userId, authenticatedEmail, sessionId);
+
+        try {
+            redisRegistry.save(userId, sessionId, refreshToken, jwtProperties.refreshTokenExpiration());
+        } catch (Exception e) {
+            redisRegistry.delete(userId);
+            throw new AuthStatePersistentException();
+        }
+
+        String accessToken = jwtProvider.generateAccessToken(userId, authenticatedEmail, sessionId);
+
+        return JwtInformation.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .userResponse(userResponse)
+                .build();
+    }
+
+    // 소셜 로그인에서 name이 없는 경우
+    private String resolveProfileName(String email, String name) {
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+
+        if (email != null && email.contains("@")) {
+            return email.substring(0, email.indexOf("@"));
+        }
+
+        return "사용자";
     }
 }

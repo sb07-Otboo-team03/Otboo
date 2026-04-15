@@ -14,4 +14,6 @@ public interface AuthService {
     void signOut(UUID userId);
 
     void issueTemporaryPassword(PasswordResetRequest passwordResetRequest);
+
+    JwtInformation signInByOAuth(String email, String name);
 }
