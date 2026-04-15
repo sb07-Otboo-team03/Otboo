@@ -50,65 +50,60 @@ public class KafkaProduceRequiredEventListener {
     @Async
     @TransactionalEventListener
     public void on(DirectMessageSseEvent event) {
-        Notification saved = createNotification(
+        NotificationDto dto = createNotificationDto(
                 event.getUserId(),
                 event.getTitle(),
                 event.getContent()
         );
 
-        NotificationDto dto = notificationMapper.toDto(saved);
         sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(FollowSseEvent event) {
-        Notification saved = createNotification(
+        NotificationDto dto = createNotificationDto(
                 event.getUserId(),
                 event.getTitle(),
                 event.getContent()
         );
 
-        NotificationDto dto = notificationMapper.toDto(saved);
         sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(CommentCreatedEvent event) {
-        Notification saved = createNotification(
+        NotificationDto dto = createNotificationDto(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
         );
 
-        NotificationDto dto = notificationMapper.toDto(saved);
         sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(FeedLikedEvent event) {
-        Notification saved = createNotification(
+        NotificationDto dto = createNotificationDto(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
         );
 
-        NotificationDto dto = notificationMapper.toDto(saved);
         sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
     @Async
     @TransactionalEventListener
     public void on(UserRoleUpdatedEvent event) {
-        Notification saved = createNotification(
+        NotificationDto dto = createNotificationDto(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
         );
 
-        NotificationDto dto = notificationMapper.toDto(saved);
         sendToKafka(new NotificationSseKafkaEvent(dto));
     }
 
@@ -117,16 +112,11 @@ public class KafkaProduceRequiredEventListener {
     public void on(FeedCreatedEvent event) {
         List<User> users = userService.getAllUserByIds(event.getReceiverIds());
 
-        List<NotificationDto> dtos = users.stream()
-                .map(user -> Notification.builder()
-                        .title(event.getTitle())
-                        .content(event.getContent())
-                        .level(NotificationLevel.INFO)
-                        .receiver(user)
-                        .build())
-                .map(notificationService::create)
-                .map(notificationMapper::toDto)
-                .toList();
+        List<NotificationDto> dtos = createNotificationDtos(
+                users,
+                event.getTitle(),
+                event.getContent()
+        );
 
         sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
     }
@@ -136,16 +126,11 @@ public class KafkaProduceRequiredEventListener {
     public void on(ClothesAttributeDefSseEvent event) {
         List<User> users = userService.getAllUsers();
 
-        List<NotificationDto> dtos = users.stream()
-                .map(user -> Notification.builder()
-                        .title(event.getTitle())
-                        .content(event.getContent())
-                        .level(NotificationLevel.INFO)
-                        .receiver(user)
-                        .build())
-                .map(notificationService::create)
-                .map(notificationMapper::toDto)
-                .toList();
+        List<NotificationDto> dtos = createNotificationDtos(
+                users,
+                event.getTitle(),
+                event.getContent()
+        );
 
         sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
     }
@@ -159,6 +144,24 @@ public class KafkaProduceRequiredEventListener {
                 .toList();
 
         sendToKafka(new NotificationBatchSseKafkaEvent(dtos));
+    }
+
+    private NotificationDto createNotificationDto(UUID userId, String title, String content) {
+        Notification saved = createNotification(userId, title, content);
+        return notificationMapper.toDto(saved);
+    }
+
+    private List<NotificationDto> createNotificationDtos(List<User> users, String title, String content) {
+        return users.stream()
+                .map(user -> Notification.builder()
+                        .title(title)
+                        .content(content)
+                        .level(NotificationLevel.INFO)
+                        .receiver(user)
+                        .build())
+                .map(notificationService::create)
+                .map(notificationMapper::toDto)
+                .toList();
     }
 
     private Notification createNotification(UUID userId, String title, String content) {
