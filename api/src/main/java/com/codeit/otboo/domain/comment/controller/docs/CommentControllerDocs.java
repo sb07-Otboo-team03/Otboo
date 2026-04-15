@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.comment.controller.docs;
 import com.codeit.otboo.domain.comment.dto.CommentCreateRequest;
 import com.codeit.otboo.domain.comment.dto.CommentResponse;
 import com.codeit.otboo.domain.comment.dto.CommentSearchRequest;
+import com.codeit.otboo.global.exception.ErrorResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.slice.dto.CursorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,14 +17,13 @@ import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.UUID;
 
-@Tag(name = "댓글 관리", description = "좋아요 관련 API")
+@Tag(name = "댓글 관리", description = "댓글 관련 API")
 public interface CommentControllerDocs {
 
     @Operation(

@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
-@Tag(name = "날씨 관리(WeatherController)", description = "날씨 조회를 관리하는 API 입니다.")
+@Tag(name = "날씨 관리", description = "날씨 관련 API")
 public interface WeatherControllerDocs {
 
     @Operation(
