@@ -55,10 +55,6 @@ public class SecurityConfig {
         return new Http403ForbiddenAccessDeniedHandler(objectMapper);
     }
 
-    @Bean
-    public ForwardedHeaderFilter forwardedHeaderFilter() {
-        return new ForwardedHeaderFilter();
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
