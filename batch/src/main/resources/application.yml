@@ -59,3 +59,7 @@ info:
 api:
   kma-api-key: ${KMA_API_KEY}
   kakao-rest-api-key: ${KAKAO_REST_API_KEY}
+
+secure:
+  cookie: ${SECURE}
+  sameSite: ${SAMESITE}
