@@ -2,7 +2,7 @@ name: Deploy Batch to ECR
 
 on:
   push:
-    branches: [ "release-batch" ]   # 배치용 브랜치 따로 쓰는거 추천
+    branches: [ "feat/release-test5" ]   # 배치용 브랜치 따로 쓰는거 추천
     paths:
       - 'batch/**'
       - 'common/**'
