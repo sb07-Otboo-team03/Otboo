@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import static com.codeit.otboo.domain.comment.entity.QComment.comment;
@@ -55,16 +54,5 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
         LocalDateTime date = LocalDateTime.parse(cursor);
         return comment.createdAt.lt(date)
                 .or(comment.createdAt.eq(date).and(comment.id.lt(idAfter)));
-    }
-
-    @Override
-    public long countTotalElements(UUID feedId) {
-        Long total = queryFactory
-                .select(comment.count())
-                .from(comment)
-                .where(comment.feed.id.eq(feedId))
-                .fetchOne();
-
-        return Objects.requireNonNullElse(total, 0L);
     }
 }
