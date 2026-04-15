@@ -53,7 +53,6 @@ public class BinaryContentRetryService {
             List<UUID> chunk = binaryContentIds.subList(i, end);
             binaryContentStorage.deleteAll(chunk);
         }
-        binaryContentStorage.deleteAll(binaryContentIds);
     }
 
     @Recover
