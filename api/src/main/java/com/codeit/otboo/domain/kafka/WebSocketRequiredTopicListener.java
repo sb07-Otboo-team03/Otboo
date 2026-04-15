@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 public class WebSocketRequiredTopicListener {
 
     private final SimpMessagingTemplate messagingTemplate;
-
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "otboo.DirectMessageCreatedEvent", groupId = "websocket-${random.uuid}")

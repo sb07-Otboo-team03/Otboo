@@ -28,12 +28,22 @@ public class KafkaProduceRequiredEventListener {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
+    public String makeWebSocketKey(DirectMessageResponse directMessageResponse) {
+
+        String senderId = directMessageResponse.sender().userId().toString();
+        String receiverId = directMessageResponse.receiver().userId().toString();
+
+        return (senderId.compareTo(receiverId) < 0) ?
+            senderId + "_" + receiverId :
+            receiverId + "_" + senderId;
+    }
+
     @Async
     @TransactionalEventListener
     public void on(DirectMessageCreatedEvent event) {
 
         DirectMessageResponse directMessageResponse = event.getData();
-        String webSocketKey = KafkaUtil.makeWebSocketKey(directMessageResponse);
+        String webSocketKey = makeWebSocketKey(directMessageResponse);
 
         sendToKafka(event, webSocketKey);
     }
