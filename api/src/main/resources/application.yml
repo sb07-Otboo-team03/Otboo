@@ -121,3 +121,7 @@ api:
 servlet:
   multipart:
     maxFileSize: 10MB
+
+secure:
+  cookie: ${SECURE}
+  sameSite: ${SAMESITE}
