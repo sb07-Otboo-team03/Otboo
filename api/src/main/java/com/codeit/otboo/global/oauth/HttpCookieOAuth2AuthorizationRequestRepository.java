@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class HttpCookieOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
@@ -42,6 +44,12 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        log.info("scheme={}, serverName={}, serverPort={}, secure={}",
+                request.getScheme(),
+                request.getServerName(),
+                request.getServerPort(),
+                request.isSecure());
+
         if (authorizationRequest == null) {
             removeAuthorizationRequestCookies(response);
             return;
