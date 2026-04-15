@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.user.controller;
 
 import com.codeit.otboo.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
+import com.codeit.otboo.domain.user.controller.docs.UserControllerDocs;
 import com.codeit.otboo.domain.user.dto.request.*;
 import com.codeit.otboo.domain.user.dto.response.UserResponse;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/users")
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 

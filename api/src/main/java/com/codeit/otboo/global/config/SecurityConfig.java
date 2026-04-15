@@ -1,6 +1,9 @@
 package com.codeit.otboo.global.config;
 
 import com.codeit.otboo.global.filter.RequestMdcFilter;
+import com.codeit.otboo.global.oauth.OidcUserServiceImpl;
+import com.codeit.otboo.global.oauth.handler.OAuth2AuthenticationFailureHandler;
+import com.codeit.otboo.global.oauth.handler.OAuth2AuthenticationSuccessHandler;
 import com.codeit.otboo.global.security.Http401AuthenticationEntryPoint;
 import com.codeit.otboo.global.security.Http403ForbiddenAccessDeniedHandler;
 import com.codeit.otboo.global.security.SpaCsrfTokenRequestHandler;
@@ -15,6 +18,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,7 +59,11 @@ public class SecurityConfig {
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
                                            RequestMdcFilter mdcFilter,
                                            Http401AuthenticationEntryPoint authenticationEntryPoint,
-                                           Http403ForbiddenAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                           Http403ForbiddenAccessDeniedHandler accessDeniedHandler,
+                                           OidcUserServiceImpl oidcUserServiceImpl,
+                                           OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+                                           OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler
+                                           ) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC
@@ -79,9 +87,29 @@ public class SecurityConfig {
                         // AUTHENTICATED
                         .anyRequest().authenticated()
                 )
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .oauth2Login(oauth -> oauth
+                        .authorizationEndpoint(auth -> auth
+                                .baseUri("/oauth2/authorization") // 사용자가 로그인을 시작하는 진입점
+                        )
+                        .redirectionEndpoint(redirection -> redirection // 인증을 마친 후 리다이렉트될 API
+                                .baseUri("/login/oauth2/code/*")
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .oidcUserService(oidcUserServiceImpl)
+                        )
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers(
+                                "/oauth2/authorization/**",
+                                "/login/oauth2/code/**"
+                        )
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)

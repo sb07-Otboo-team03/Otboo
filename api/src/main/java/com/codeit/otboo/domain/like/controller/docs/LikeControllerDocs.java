@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.like.controller.docs;
 
+import com.codeit.otboo.global.exception.ErrorResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;

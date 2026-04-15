@@ -2,6 +2,8 @@ package com.codeit.otboo.domain.user.controller.docs;
 
 import com.codeit.otboo.domain.user.dto.request.PasswordResetRequest;
 import com.codeit.otboo.domain.user.dto.request.SignInRequest;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.global.exception.ErrorResponse;
 import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.dto.JwtResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,12 +19,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "User", description = "인증 관리")
+@Tag(name = "인증 관리", description = "인증 관련 API")
 public interface AuthControllerDocs {
     @Operation(
             summary = "로그인",
@@ -167,7 +168,6 @@ public interface AuthControllerDocs {
     )
 
     @SecurityRequirement(name = "CsrfToken")
-    @SecurityRequirement(name = "BearerAuth")
     ResponseEntity<JwtResponse> refresh(
             @Parameter(hidden = true)
             @CookieValue("REFRESH_TOKEN") String refreshToken,
@@ -219,6 +219,8 @@ public interface AuthControllerDocs {
             responseCode = "204",
             description = "CSRF 토큰 발급 성공"
     )
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<Void> getCsrfToken(
             @Parameter(hidden = true)
             CsrfToken csrfToken);
@@ -239,7 +241,7 @@ public interface AuthControllerDocs {
             description = "사용자를 찾을 수 없음.",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = ErrorResponse.class),
+                    schema = @Schema(implementation = UserNotFoundException.class),
                     examples = {
                             @ExampleObject(
                                     name = "존재하지 않는 사용자",
@@ -257,6 +259,8 @@ public interface AuthControllerDocs {
             )
 
     )
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     @SecurityRequirement(name = "CsrfToken")
     ResponseEntity<Void> passwordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest);
 }
