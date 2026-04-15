@@ -62,7 +62,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<Clothes> selected = pickOnePerCategory(grouped);
 
         // 카테고리에서 원피스가 나오면 BOTTOM 제외
-//        selected = applyOnePieceRules(selected, grouped);
 
         Map<UUID, List<String>> groupingMap = clothes.stream()
                 .flatMap(c -> c.getValues().stream())
@@ -73,9 +72,6 @@ public class RecommendationServiceImpl implements RecommendationService {
                                 Collectors.toList()
                         )
                 ));
-
-        log.info("effectiveTemp: {}, sensitivity: {}, rawTemp: {}",
-                weather.getTemperatureCurrent() + (sensitivity - 3), sensitivity, weather.getTemperatureCurrent());
 
         return RecommendationResponse.builder()
                 .weatherId(weatherId)
