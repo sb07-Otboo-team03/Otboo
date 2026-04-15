@@ -159,9 +159,8 @@ class CommentServiceImplTest {
 
             Slice<Comment> slice = new SliceImpl<>(comments, PageRequest.of(0, 5), hasNext);
 
-            given(feedRepository.existsById(feedId)).willReturn(true);
+            given(feedRepository.findCommentCountByFeedId(feedId)).willReturn(Optional.of((int)total));
             given(commentRepository.findAllByCursor(any(), any(), any(), anyInt())).willReturn(slice);
-            given(commentRepository.countTotalElements(feedId)).willReturn(total);
             given(commentMapper.toDto(any(Comment.class))).willReturn(null);
 
             // when
@@ -201,15 +200,14 @@ class CommentServiceImplTest {
 
         Slice<Comment> emptySlice = new SliceImpl<>(comments, PageRequest.of(0, 5), false);
 
-        given(feedRepository.existsById(feedId)).willReturn(true);
-        given(commentRepository.findAllByCursor(any(), any(), any(), anyInt())).willReturn(emptySlice);
+        given(feedRepository.findCommentCountByFeedId(feedId)).willReturn(Optional.of(0));
 
         // when
         CursorResponse<CommentResponse> result = commentService.getAllComments(request);
 
         // then
         verify(commentMapper, never()).toDto(any(Comment.class));
-        verify(commentRepository, never()).countTotalElements(any());
+        verify(commentRepository, never()).findAllByCursor(any(), any(), any(), anyInt());
 
         assertThat(result.data()).isEmpty();
     }
@@ -221,7 +219,7 @@ class CommentServiceImplTest {
         UUID feedId = UUID.randomUUID();
         CommentSearchRequest request = new CommentSearchRequest(feedId, null, null, 5);
 
-        given(feedRepository.existsById(feedId)).willReturn(false);
+        given(feedRepository.findCommentCountByFeedId(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.getAllComments(request))

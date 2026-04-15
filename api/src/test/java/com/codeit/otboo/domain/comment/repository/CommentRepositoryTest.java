@@ -127,26 +127,6 @@ class CommentRepositoryTest {
     }
 
     @Test
-    @DisplayName("댓글의 전체 수를 알 수 있다.")
-    void countTotalComments() {
-        // given
-        Feed feed = feedList.get(0);
-        Feed feed2 = feedList.get(1);
-
-        createComment(feed, user, 7);
-        createComment(feed2, user, 3);
-
-        // when
-        long count1 = commentRepository.countTotalElements(feed.getId());
-        long count2 = commentRepository.countTotalElements(feed2.getId());
-
-
-        // then
-        assertThat(count1).isEqualTo(7);
-        assertThat(count2).isEqualTo(3);
-    }
-
-    @Test
     @DisplayName("피드 ID로 모든 댓글을 삭제할 수 있다.")
     void deleteAllByFeedId() {
         // given
