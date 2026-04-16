@@ -1,0 +1,71 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation project(':common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:elasticsearch'
+    runtimeOnly 'com.h2database:h2'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // QueryDSL JPA 의존성
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+
+    // Annotation Processor
+    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // retry
+    implementation 'org.springframework.retry:spring-retry'
+
+    // S3
+    implementation 'software.amazon.awssdk:s3:2.31.7'
+
+    // swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+
+    // websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.security:spring-security-messaging'
+
+    // jwt
+    implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
+
+    // smtp
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // aop
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
+    // jsoup
+    implementation 'org.jsoup:jsoup:1.17.2'
+
+    // actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // oauth
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+}

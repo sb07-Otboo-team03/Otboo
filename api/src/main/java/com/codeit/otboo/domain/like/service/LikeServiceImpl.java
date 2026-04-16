@@ -1,0 +1,64 @@
+package com.codeit.otboo.domain.like.service;
+
+import com.codeit.otboo.domain.feed.elasticsearch.event.LikeUpdatedEvent;
+import com.codeit.otboo.domain.feed.entity.Feed;
+import com.codeit.otboo.domain.feed.exception.FeedNotFoundException;
+import com.codeit.otboo.domain.feed.repository.FeedRepository;
+import com.codeit.otboo.domain.like.entity.Like;
+import com.codeit.otboo.domain.like.exception.LikeAlreadyExistsException;
+import com.codeit.otboo.domain.like.exception.LikeNotFoundException;
+import com.codeit.otboo.domain.like.repository.LikeRepository;
+import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.exception.UserNotFoundException;
+import com.codeit.otboo.domain.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class LikeServiceImpl implements LikeService {
+
+    private final FeedRepository feedRepository;
+    private final UserRepository userRepository;
+    private final LikeRepository likeRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Override
+    @Transactional
+    public void feedLike(UUID feedId, UUID userId) {
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new FeedNotFoundException(feedId));
+
+        User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (likeRepository.existsByFeedIdAndUserId(feedId, userId))
+            throw new LikeAlreadyExistsException(feedId, userId);
+
+        Like like = new Like(user, feed);
+        likeRepository.save(like);
+        feed.increaseLike();
+        eventPublisher.publishEvent(new LikeUpdatedEvent(feed.getId(), feed.getLikeCount()));
+
+        String title = user.getProfile().getName() + "님이 내 피드를 좋아합니다.";
+        String content = feed.getContent();
+        UUID receiverId = feed.getAuthor().getId();
+        eventPublisher.publishEvent(new FeedLikedEvent(title, content, receiverId));
+    }
+
+    @Override
+    @Transactional
+    public void feedUnlike(UUID feedId, UUID userId) {
+        Like like = likeRepository.findByFeedIdAndUserId(feedId, userId)
+                .orElseThrow(() -> new LikeNotFoundException(feedId, userId));
+
+        Feed feed = like.getFeed();
+        likeRepository.delete(like);
+        feed.decreaseLike();
+    }
+}

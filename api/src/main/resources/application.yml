@@ -1,0 +1,127 @@
+spring:
+  application:
+    name: otboo
+
+  profiles:
+    active: dev
+
+  sql:
+    init:
+      mode: never
+
+  jpa:
+    database: postgresql
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+
+  mail:
+    host: smtp.naver.com
+    port: 587
+    username: ${NAVER_MAIL_ID}
+    password: ${NAVER_MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      region:
+        static: ${AWS_REGION}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false # 앱 시작 시 배치 자동 실행 방지
+
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    properties:
+#      spring.json.trusted.packages: "*"
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+
+      sasl.jaas.config: >
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="${KAFKA_API_KEY}"
+        password="${KAFKA_API_SECRET}";
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      acks: all
+      retries: 3
+
+    consumer:
+      auto-offset-reset: earliest
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    listener:
+      ack-mode: record
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+server:
+  forward-headers-strategy: framework
+
+
+
+
+otboo:
+  storage:
+    type: s3
+    s3:
+      path: binary
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+info:
+  app:
+    name: OtBoo
+    version: 1.0.0
+
+sse:
+  event-queue-capacity: 100
+  timeout: 300_000
+  
+api:
+  kma-api-key: ${KMA_API_KEY}
+  kakao-rest-api-key: ${KAKAO_REST_API_KEY}
+
+servlet:
+  multipart:
+    maxFileSize: 10MB
+
+secure:
+  cookie: ${SECURE}
+  sameSite: ${SAMESITE}

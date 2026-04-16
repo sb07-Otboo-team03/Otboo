@@ -1,0 +1,19 @@
+package com.codeit.otboo.domain.clothes.management.dto.request;
+
+import com.codeit.otboo.domain.clothes.attribute.attributevalue.dto.request.ClothesAttributeRequest;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
+import java.util.UUID;
+
+public record ClothesUpdateRequest(
+        @NotBlank
+        String name,
+        @NotNull
+        ClothesType type,
+        List<ClothesAttributeRequest> attributes,
+        UUID binaryContentId
+) {
+}

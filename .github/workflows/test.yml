@@ -12,6 +12,7 @@ on:
 
 jobs:
   test-and-badge:
+    name: CI Test Job
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,20 +32,4 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build and Test with Gradle
-        run: ./gradlew test jacocoTestReport
-
-      - name: Generate JaCoCo Badge
-        id: jacoco
-        uses: cicirello/jacoco-badge-generator@v2
-        with:
-          jacoco-csv-file: build/reports/jacoco/test/jacocoTestReport.csv
-          badges-directory: .github/badges
-          generate-branches-badge: true
-
-      - name: Commit and push the badge
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feat/')
-        uses: EndBug/add-and-commit@v9
-        with:
-          default_author: github_actions
-          message: 'docs: update coverage badge [skip ci]'
-          add: '.github/badges/*.svg'
+        run: ./gradlew clean test jacocoRootReport

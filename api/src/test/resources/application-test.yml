@@ -1,0 +1,65 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host: smtp.naver.com
+    port: 587
+    username: test@naver.com
+    password: test-password
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+  sql:
+    init:
+      mode: never
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+    properties:
+      schema.registry.url: http://localhost:8081
+      security.protocol: PLAINTEXT
+      sasl.mechanism: PLAIN
+
+secure:
+  cookie: false
+  sameSite: Lax
+
+
+otboo:
+  storage:
+    type: mock
+    s3:
+      path: binary
+  jwt:
+    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    access-token-expiration: 900000
+    refresh-token-expiration: 1209600000
+    issuer: codeit
+  account:
+    email: dummy
+    name: dummy
+    password: dummy
+
+api:
+  kma-api-key: dummyKey
+  kakao-rest-api-key: dummyKey
+  
+servlet:
+  multipart:
+    maxFileSize: 10MB

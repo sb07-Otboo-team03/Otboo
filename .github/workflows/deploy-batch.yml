@@ -1,0 +1,133 @@
+name: Deploy Batch to ECR
+
+on:
+  push:
+    branches: [ "feat/release-test5" ]   # 배치용 브랜치 따로 쓰는거 추천
+    paths:
+      - 'batch/**'
+      - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'Dockerfile.batch'
+      - '.github/workflows/deploy-batch.yml'
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_BATCH_REPOSITORY }}
+  ECS_TASK_DEFINITION: otboo-batch
+  CONTAINER_NAME: ${{ vars.BATCH_CONTAINER_NAME }}
+  IMAGE_TAG: latest
+
+jobs:
+  deploy-batch-image:
+    name: Build and Push Batch Image
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Wait for CI to succeed
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: CI Test Job
+          ref: ${{ github.sha }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build batch jar
+        run: ./gradlew clean :batch:bootJar
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_SM }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_SM }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push batch image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -f Dockerfile.batch \
+            --build-arg JAR_FILE=batch/build/libs/*.jar \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          # 다음 스텝에서 사용할 수 있도록 출력
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # 현재 Task Definition 다운로드
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $ECS_TASK_DEFINITION \
+            --query taskDefinition > task-definition.json
+          
+          # AWS ECS에서 Task Definition을 다운로드할 때 읽기 전용 필드들이 포함되는데
+          # 이걸 마지막 스텝에서 그대로 등록하려 하면 에러가 발생.
+          # 읽기 전용 필드들을 제거해주는 작업을 진행.
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy,
+            .enableFaultInjection
+          )' task-definition.json > task-definition-clean.json
+          
+          mv task-definition-clean.json task-definition.json
+
+      - name: Show container names
+        run: |
+          cat task-definition.json | jq '.containerDefinitions[].name'
+
+      - name: Fill in new image in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Register new task definition revision
+        id: register-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.task-def.outputs.task-definition }} \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          echo "task_definition_arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+
+      - name: Deployment result
+        run: |
+          echo "Batch image pushed successfully."
+          echo "Image: ${{ steps.build-image.outputs.image }}"
+          echo "Registered task definition: ${{ steps.register-task-def.outputs.task_definition_arn }}"
+          echo "Scheduler will use the new revision once its target/task definition is updated or set to follow latest family revision."
