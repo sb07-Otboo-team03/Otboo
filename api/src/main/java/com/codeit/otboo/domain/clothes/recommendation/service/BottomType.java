@@ -5,11 +5,11 @@ import java.util.List;
 
 public enum BottomType {
 
-    SHORTS(List.of("반바지")),
+    SHORTS(List.of("반바지", "하프", "버뮤다", "쇼츠")),
     JEANS(List.of("청바지")),
     SLACKS(List.of("슬랙스")),
-    SKIRT(List.of("치마")),
-    TRAINING(List.of("트레이닝"));
+    SKIRT(List.of("치마", "스커트", "skirt", "SKIRT")),
+    TRAINING(List.of("트레이닝", "스웨트", "팬츠"));
 
     private final List<String> keywords;
 

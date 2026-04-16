@@ -158,12 +158,14 @@ public class RecommendationServiceImpl implements RecommendationService {
         switch (weather.getPrecipitationType()) {
             case RAIN, SHOWER, RAIN_SNOW -> {
                 allowed.add(ShoesType.RAIN_BOOTS);
+                allowed.add(ShoesType.ANY);
                 allowed.remove(ShoesType.SANDALS);
                 allowed.remove(ShoesType.SLIPPERS);
                 allowed.remove(ShoesType.FORMAL);
             }
             case SNOW -> {
                 allowed.add(ShoesType.WINTER_BOOTS);
+                allowed.add(ShoesType.ANY);
                 allowed.remove(ShoesType.SANDALS);
                 allowed.remove(ShoesType.SLIPPERS);
                 allowed.remove(ShoesType.FORMAL);
@@ -174,6 +176,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 allowed.add(ShoesType.BOOTS);
                 allowed.add(ShoesType.SNEAKERS);
                 allowed.add(ShoesType.SLIPPERS);
+                allowed.add(ShoesType.ANY);
             }
         }
 
@@ -187,13 +190,16 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (temp >= HOT) { // 기온 >= 25
             result.add(ShoesType.SANDALS);
             result.add(ShoesType.SLIPPERS);
+            result.add(ShoesType.ANY);
         } else if (temp >= WARM) { // 기온 >= 18
             result.add(ShoesType.FORMAL);
             result.add(ShoesType.BOOTS);
             result.add(ShoesType.SLIPPERS);
+            result.add(ShoesType.ANY);
         } else if (temp >= COOL) { // 기온 >= 10
             result.add(ShoesType.BOOTS);
             result.add(ShoesType.FORMAL);
+            result.add(ShoesType.ANY);
         } else {
             result.add(ShoesType.BOOTS);
             result.add(ShoesType.WINTER_BOOTS);

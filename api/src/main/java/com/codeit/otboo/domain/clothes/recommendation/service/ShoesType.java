@@ -11,7 +11,8 @@ public enum ShoesType {
     BOOTS(List.of("워커")),
     RAIN_BOOTS(List.of("장화", "레인부츠")),
     WINTER_BOOTS(List.of("양털부츠")),
-    FORMAL(List.of("구두"));
+    FORMAL(List.of("구두")),
+    ANY(List.of(""));
 
     private final List<String> keywords;
 
