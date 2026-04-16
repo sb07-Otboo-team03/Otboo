@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocket.config;
+package com.codeit.otboo.global.websocket.config;
 
 import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationChannelInterceptor;

@@ -1,8 +1,8 @@
-package com.codeit.otboo.domain.kafka;
+package com.codeit.otboo.global.kafka;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
-import com.codeit.otboo.domain.kafka.event.NotificationBatchSseKafkaEvent;
-import com.codeit.otboo.domain.kafka.event.NotificationSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
 import com.codeit.otboo.domain.notification.entity.Notification;
@@ -18,7 +18,7 @@ import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
 import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.service.UserService;
-import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
+import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
