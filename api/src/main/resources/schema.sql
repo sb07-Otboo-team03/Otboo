@@ -488,3 +488,8 @@ ALTER TABLE feeds ADD CONSTRAINT fk_feeds_authors FOREIGN KEY (author_id) REFERE
 -- 좋아요
 ALTER TABLE likes DROP CONSTRAINT IF EXISTS fk_likes_users;
 ALTER TABLE likes ADD CONSTRAINT fk_likes_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- Binary Table, 옷 속성 정의 테이블 컬럼 추가
+ALTER TABLE clothes_attribute_defs ADD COLUMN updated_at timestamp NULL;
+ALTER TABLE binary_contents ADD COLUMN updated_at timestamp NULL;
+

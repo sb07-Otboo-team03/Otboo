@@ -43,7 +43,7 @@ import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.web.servlet.function.RequestPredicates.param;
+
 
 @WebMvcTest(controllers = AuthController.class,
         excludeFilters = {
@@ -168,7 +168,6 @@ class AuthControllerTest {
                     .andExpect(status().isBadRequest());
         }
 
-        // TODO: Lock이 된 계정의 테스트는, 계정 비활성화 기능 구현 이후 진행하겠습니다.
     }
 
     @Nested

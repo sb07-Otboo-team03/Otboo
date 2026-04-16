@@ -1,3 +1,5 @@
+![Coverage](.github/badges/jacoco.svg)
+![Branches](.github/badges/branches.svg)
 # 👕 Otboo
 
 <p align="center">
