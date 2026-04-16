@@ -34,24 +34,13 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final BinaryContentUrlResolver binaryContentUrlResolver;
     private final ClothesMapper clothesMapper;
 
+    private final Random random;
+
     // 온도 기준 상수
     private static final int HOT = 25;
     private static final int WARM = 18;
     private static final int COOL = 10;
     private static final int COLD = 4;
-
-    // 필터용 키워드 상수
-    private static final List<String> SHORT_SLEEVE = List.of("반팔");
-    private static final List<String> LONG_SLEEVE = List.of("긴팔");
-    private static final List<String> WARM_TOP = List.of("니트", "기모");
-    private static final List<String> VERY_COLD_TOP = List.of("폴라", "목티");
-
-    private static final List<String> RAIN_HOT_SHOES = List.of("장화", "레인부츠");
-    private static final List<String> RAIN_COLD_SHOES = List.of("양털부츠");
-
-    private static final List<String> ONE_PIECE_KEYWORDS = List.of("원피스");
-    private static final List<String> LAYERED_KEYWORDS = List.of("뷔스티에", "나시");
-    private static final List<String> ALLOWED_TOP_KEYWORDS = List.of("셔츠", "반팔", "긴팔", "티셔츠");
 
     @Override
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
@@ -62,7 +51,6 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         // 프로필의 온도 민감도 반영
         int sensitivity = profile.getTemperatureSensitivity();
-
         List<Clothes> clothes = clothesRepository.findByOwnerId(userId);
 
         // 날씨 + 민감도 필터
@@ -73,12 +61,11 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         List<Clothes> selected = pickOnePerCategory(grouped);
 
-        // TOP에서 원피스가 나오면 BOTTOM 제외
-        selected = applyOnePieceRules(selected);
+        // 카테고리에서 원피스가 나오면 BOTTOM 제외
 
         Map<UUID, List<String>> groupingMap = clothes.stream()
                 .flatMap(c -> c.getValues().stream())
-                .collect(Collectors.groupingBy(
+                .collect(Collectors.groupingBy( // 타입별로 묶기
                         v -> v.getAttributeDef().getId(),
                         Collectors.mapping(
                                 ClothesAttributeValue::getSelectableValue,
@@ -99,151 +86,195 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .build();
     }
 
-    // 날씨 필터
+    // 날씨 필터 (카테고리 생존여부 결정)
     private List<Clothes> applyWeatherFilter(List<Clothes> clothes, Weather weather, int sensitivity) {
         double temp = getEffectiveTemp(weather, sensitivity);
 
         return clothes.stream()
                 .filter(c -> {
                     String name = normalize(c.getName());
-
-                    //상의
-                    if (c.getType() == ClothesType.TOP) {
-                        if (!isValidTopByTemp(name, temp)) return false;
-                    }
-
-                    //신발
-                    if (c.getType() == ClothesType.SHOES) {
-                        if (!isValidShoes(name, weather, temp)) return false;
-                    }
-                    return true;
+                    return switch (c.getType()) {
+                        case TOP -> isValidTop(name, temp);
+                        case DRESS -> isValidDress(name, temp);
+                        case OUTER -> isValidOuter(name, temp);
+                        case SHOES -> isValidShoes(name, weather, temp);
+                        default -> true; // BOTTOM, HAT, ACCESSORY, BAG은 필터 없이 통과
+                    };
                 })
                 .toList();
     }
 
-    // 체감온도 = {현재온도 + (온도 민감도 - 디폴트값) }
-    private double getEffectiveTemp(Weather weather, int sensitivity) {
-        return weather.getTemperatureCurrent() + (sensitivity - 3);
+    // TOP 필터
+    private boolean isValidTop(String name, double temp) {
+        TopType type = TopType.from(name);
+        if (type == null) return false;
+
+        return switch (type) {
+            case SHORT_SLEEVE -> temp >= WARM; // 기온 >= 18
+            case SLEEVELESS -> temp >= HOT; // 기온 >= 25
+            case LONG_SLEEVE -> temp < HOT; // 기온 < 25
+            case KNIT -> temp < WARM; // 기온 < 18
+            case SWEATSHIRT -> temp < HOT; // 기온 < 25
+            case HOODIE -> temp < HOT; // 기온 < 25
+            case TURTLENECK ->  temp < COLD; // 기온 < 4
+        };
     }
 
-    // 온도별 상의 필터
-    private boolean isValidTopByTemp(String name, double temp) {
-        if (temp >= HOT) {
-            return containsKeyword(name, SHORT_SLEEVE);
-        }
-        if (temp >= WARM) {
-            return containsKeyword(name, merge(SHORT_SLEEVE, LONG_SLEEVE));
-        }
-        if (temp >= COOL) {
-            return containsKeyword(name, LONG_SLEEVE);
-        }
-        if (temp >= COLD) {
-            return containsKeyword(name, merge(LONG_SLEEVE, WARM_TOP));
-        }
-        return containsKeyword(name, VERY_COLD_TOP);
+    // DRESS 필터
+    private boolean isValidDress(String name, double temp) {
+        DressType type = DressType.from(name);
+        if (type == null) return false;
+
+        return switch (type) {
+            case SHORT_SLEEVE -> temp >= WARM; // 기온 >= 18
+            case SLEEVELESS -> temp >= HOT; // 기온 >= 25
+            case LONG_SLEEVE -> temp < HOT; // 기온 < 25
+            case KNIT -> temp < WARM; // 기온 < 18
+        };
     }
 
-    // 비/눈 + 신발 필터
+    // OUTER 필터
+    private boolean isValidOuter(String name, double temp) {
+        OuterType type = OuterType.from(name);
+        if (type == null) return false;
+
+        return switch (type) {
+            case CARDIGAN -> temp < HOT && temp >= WARM; // 18 <= 기온 < 25
+            case JACKET -> temp < WARM && temp >= COLD; // 10 <= 기온 < 18
+            case COAT -> temp < WARM && temp >= COLD; // 10 <= 기온 < 18
+            case PADDING -> temp < COOL; // 기온 < 10
+        };
+    }
+
+    // SHOES 필터 (온도 → 날씨 순서)
     private boolean isValidShoes(String name, Weather weather, double temp) {
-        Set<String> candidates = new HashSet<>();
+        ShoesType type = ShoesType.from(name);
+        if (type == null) return false;
 
-        // 1차 선별 : 날씨 기준
+        // 1차: 온도 기준 기본 허용 목록
+        Set<ShoesType> allowed = getShoesByTemp(temp);
+
+        // 2차: 날씨 보정
         switch (weather.getPrecipitationType()) {
-            case RAIN:
-            case SHOWER:
-            case RAIN_SNOW:
-                candidates = new HashSet<>(RAIN_HOT_SHOES);
-                break;
-
-            case SNOW:
-                candidates = new HashSet<>(RAIN_COLD_SHOES);
-                break;
-
-            case NONE:
-            default:
-                candidates = getShoesByTemp(temp); // 2차 선별(기온 기준)
-                break;
+            case RAIN, SHOWER, RAIN_SNOW -> {
+                allowed.add(ShoesType.RAIN_BOOTS);
+                allowed.remove(ShoesType.SANDALS);
+                allowed.remove(ShoesType.SLIPPERS);
+                allowed.remove(ShoesType.FORMAL);
+            }
+            case SNOW -> {
+                allowed.add(ShoesType.WINTER_BOOTS);
+                allowed.remove(ShoesType.SANDALS);
+                allowed.remove(ShoesType.SLIPPERS);
+                allowed.remove(ShoesType.FORMAL);
+            }
+            case NONE -> {
+                allowed.add(ShoesType.SANDALS);
+                allowed.add(ShoesType.FORMAL);
+                allowed.add(ShoesType.BOOTS);
+                allowed.add(ShoesType.SNEAKERS);
+                allowed.add(ShoesType.SLIPPERS);
+            }
         }
-        boolean result = containsKeyword(name, candidates);
 
-        return result;
+        return allowed.contains(type);
     }
 
-    private Set<String> getShoesByTemp(double temp) {
-        Set<String> result = new HashSet<>();
+    private Set<ShoesType> getShoesByTemp(double temp) {
+        Set<ShoesType> result = new HashSet<>();
+        result.add(ShoesType.SNEAKERS); // 항상 허용
 
-        //항상 허용
-        result.add("운동화");
-
-        if (temp >= 20) {
-            result.add("샌들");
-        } else if (temp >= 10) {
-            result.add("워커");
+        if (temp >= HOT) { // 기온 >= 25
+            result.add(ShoesType.SANDALS);
+            result.add(ShoesType.SLIPPERS);
+        } else if (temp >= WARM) { // 기온 >= 18
+            result.add(ShoesType.FORMAL);
+            result.add(ShoesType.BOOTS);
+            result.add(ShoesType.SLIPPERS);
+        } else if (temp >= COOL) { // 기온 >= 10
+            result.add(ShoesType.BOOTS);
+            result.add(ShoesType.FORMAL);
         } else {
-            result.add("워커");
-            result.add("양털부츠");
+            result.add(ShoesType.BOOTS);
+            result.add(ShoesType.WINTER_BOOTS);
         }
         return result;
     }
 
-
-    // 카테고리별 랜덤 선택
+    // 카테고리별 1개 선택 (랜덤)
     private List<Clothes> pickOnePerCategory(Map<ClothesType, List<Clothes>> grouped) {
         List<Clothes> result = new ArrayList<>();
-        Random random = new Random();
 
-        for (List<Clothes> items : grouped.values()) {
+        pickUpperBody(result, grouped, random);
+
+        List<ClothesType> others = List.of(
+                ClothesType.SHOES,
+                ClothesType.OUTER,
+                ClothesType.HAT,
+                ClothesType.BAG
+        );
+        for (ClothesType other : others) {
+            List<Clothes> items = grouped.getOrDefault(other, List.of());
             if (!items.isEmpty()) {
                 result.add(items.get(random.nextInt(items.size())));
             }
         }
+
+        List<Clothes> accessories = grouped.getOrDefault(ClothesType.ACCESSORY, List.of());
+        if (!accessories.isEmpty() && random.nextBoolean()) {
+            result.add(accessories.get(random.nextInt(accessories.size())));
+        }
+
         return result;
     }
 
-    // 원피스 규칙
-    private List<Clothes> applyOnePieceRules(List<Clothes> selected) {
-        Optional<Clothes> onePieceOpt = selected.stream()
-                .filter(this::isOnePiece).findFirst();
+    private void pickUpperBody(
+            List<Clothes> result,
+            Map<ClothesType, List<Clothes>> grouped,
+            Random random
+    ) {
+        List<Clothes> dresses = grouped.getOrDefault(ClothesType.DRESS, List.of());
+        List<Clothes> tops = grouped.getOrDefault(ClothesType.TOP, List.of());
+        List<Clothes> bottoms = grouped.getOrDefault(ClothesType.BOTTOM, List.of());
 
-        if (onePieceOpt.isEmpty()) return selected;
+        boolean hasDress = !dresses.isEmpty();
+        boolean hasTopBottom = !tops.isEmpty() && !bottoms.isEmpty();
 
-        Clothes onePiece = onePieceOpt.get();
-
-        if (isLayeredOnePiece(onePiece)) {
-            return handleLayeredOnePiece(selected);
-        } else {
-            return handleNormalOnePiece(selected);
+        if (hasDress && hasTopBottom) {
+            // 둘 다 가능하면 DRESS 30% / TOP+BOTTOM 70%
+            if (random.nextInt(10) < 3) {
+                pickDress(result, dresses, tops, random);
+            } else {
+                result.add(tops.get(random.nextInt(tops.size())));
+                result.add(bottoms.get(random.nextInt(bottoms.size())));
+            }
+        } else if (hasDress) {
+            pickDress(result, dresses, tops, random);
+        } else if (hasTopBottom) {
+            result.add(tops.get(random.nextInt(tops.size())));
+            result.add(bottoms.get(random.nextInt(bottoms.size())));
         }
     }
 
-    // 일반 원피스
-    private List<Clothes> handleNormalOnePiece(List<Clothes> selected) {
-        return selected.stream()
-                .filter(c -> c.getType() != ClothesType.TOP &&
-                        c.getType() != ClothesType.BOTTOM
-                ).toList();
+    private void pickDress(
+            List<Clothes> result, List<Clothes> dresses, List<Clothes> tops, Random random
+    ) {
+        Clothes dress = dresses.get(random.nextInt(dresses.size()));
+        result.add(dress);
+
+        // 뷔스티에, 나시 원피스면 상의 레이어링 추가
+        DressType dressType = DressType.from(normalize(dress.getName()));
+        if(dressType == DressType.SLEEVELESS && !tops.isEmpty()) {
+            result.add(tops.get(random.nextInt(tops.size())));
+        }
     }
 
-    // 레이어드 원피스
-    private List<Clothes> handleLayeredOnePiece(List<Clothes> selected) {
-        return selected.stream()
-                .filter(c -> {
-                    // 하의 제고
-                    if (c.getType() == ClothesType.BOTTOM) return false;
-
-                    // 상의 일부 허용
-                    if (c.getType() == ClothesType.TOP) {
-                        return containsKeyword(
-                                normalize(c.getName()), ALLOWED_TOP_KEYWORDS
-                        );
-                    }
-                    return true;
-                }).toList();
-    }
-
-    private String resolveImageUrl(BinaryContent binaryContent) {
-        if (binaryContent == null) return null;
-        return binaryContentUrlResolver.resolve(binaryContent.getId());
+    /**
+     * 공통 유틸
+     */
+    // 체감온도 = {현재온도 + (온도 민감도 - 디폴트값) }
+    private double getEffectiveTemp(Weather weather, int sensitivity) {
+        return weather.getTemperatureCurrent() + (sensitivity - 3);
     }
 
     // 문자열 처리
@@ -251,22 +282,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         return name == null ? "" : name.replaceAll("\\s+", "").toLowerCase();
     }
 
-    private boolean containsKeyword(String name, Collection<String> keywords) {
-        return keywords.stream().anyMatch(name::contains);
-    }
-
-    private List<String> merge(List<String>... lists) {
-        return Arrays.stream(lists)
-                .flatMap(Collection::stream)
-                .toList();
-    }
-
-    // 도메인 판별
-    private boolean isOnePiece(Clothes c) {
-        return containsKeyword(normalize(c.getName()), ONE_PIECE_KEYWORDS);
-    }
-
-    private boolean isLayeredOnePiece(Clothes c) {
-        return containsKeyword(normalize(c.getName()), LAYERED_KEYWORDS);
+    private String resolveImageUrl(BinaryContent binaryContent) {
+        if (binaryContent == null) return null;
+        return binaryContentUrlResolver.resolve(binaryContent.getId());
     }
 }

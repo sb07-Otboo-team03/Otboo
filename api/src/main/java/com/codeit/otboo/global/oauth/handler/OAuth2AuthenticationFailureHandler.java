@@ -24,6 +24,6 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
         log.warn("OAuth2 로그인 실패. message={}", exception.getMessage(), exception);
 
         String errorCode = "oauth_failed";
-        response.sendRedirect("/login?error=" + errorCode);
+        response.sendRedirect("/#/auth/login?error" + errorCode);
     }
 }

@@ -21,7 +21,6 @@ public class FeedSyncScheduler {
     private final FeedDocumentService feedDocumentService;
 
     @Scheduled(cron = "0 0 1 * * *")
-    @Transactional(readOnly = true)
     public void syncDailyFeed() {
         try {
             LocalDateTime yesterday = LocalDateTime.now().minusDays(1);

@@ -66,16 +66,15 @@ public class CommentServiceImpl implements CommentService{
         UUID idAfter = request.idAfter();
         int limit = request.limit();
 
-        if (!feedRepository.existsById(feedId)) throw new FeedNotFoundException(feedId);
-
-        Slice<Comment> commentPage = commentRepository.findAllByCursor(feedId, cursor, idAfter, limit);
-
-        List<Comment> content = commentPage.getContent();
-        if (content.isEmpty())
+        long totalCount = feedRepository.findCommentCountByFeedId(feedId)
+                .orElseThrow(() -> new FeedNotFoundException(feedId));
+        if (totalCount == 0L) {
             return new CursorResponse<>(List.of(), null, null,
                     false, 0L, "createdAt", SortDirection.DESCENDING);
+        }
 
-        long totalCount = commentRepository.countTotalElements(feedId);
+        Slice<Comment> commentPage = commentRepository.findAllByCursor(feedId, cursor, idAfter, limit);
+        List<Comment> content = commentPage.getContent();
 
         String nextCursor = null;
         UUID nextIdAfter = null;
