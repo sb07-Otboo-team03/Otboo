@@ -56,7 +56,7 @@ OOTD 피드와 팔로우 등의 소셜 기능을 제공합니다
 | [조성만](https://github.com/BetterCodings) | Backend | 날씨 관리, Spring Batch |
 | [김유미](https://github.com/yuuum0214) | Backend | 의상 속성 정의, 의상 추천 |
 | [박재완](https://github.com/gnara0719) | Backend | 피드 관리, 좋아요 및 댓글 관리 |
-| [장미연](https://github.com/spring7th) | Backend | 팔로우 및 DM, 알림 기능 |
+| [장미연](https://github.com/spring7th) | Backend | 팔로우 및 DM, 알림 기능, Confluent cloud Kafka |
 
 <hr/>
 
