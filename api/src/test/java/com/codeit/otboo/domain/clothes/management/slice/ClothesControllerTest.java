@@ -1,6 +1,5 @@
 package com.codeit.otboo.domain.clothes.management.slice;
 
-import com.codeit.otboo.domain.binarycontent.mapper.BinaryContentMapper;
 import com.codeit.otboo.domain.binarycontent.service.BinaryContentService;
 import com.codeit.otboo.domain.clothes.management.controller.ClothesController;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateRequest;
@@ -58,9 +57,6 @@ public class ClothesControllerTest {
 
     @MockitoBean
     private ClothesService clothesService;
-
-    @MockitoBean
-    private BinaryContentMapper binaryContentMapper;
 
     @MockitoBean
     private ClothesMapper clothesMapper;
