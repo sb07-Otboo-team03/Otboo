@@ -1,7 +1,7 @@
-package com.codeit.otboo.domain.kafka;
+package com.codeit.otboo.global.kafka;
 
 import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
-import com.codeit.otboo.domain.websocket.event.DirectMessageCreatedEvent;
+import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

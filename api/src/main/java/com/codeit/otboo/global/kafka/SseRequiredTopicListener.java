@@ -1,7 +1,7 @@
-package com.codeit.otboo.domain.kafka;
+package com.codeit.otboo.global.kafka;
 
-import com.codeit.otboo.domain.kafka.event.NotificationBatchSseKafkaEvent;
-import com.codeit.otboo.domain.kafka.event.NotificationSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.sse.service.SseService;
 import com.fasterxml.jackson.core.JsonProcessingException;

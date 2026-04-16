@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.websocket.dto;
+package com.codeit.otboo.global.websocket.dto;
 
 import java.util.UUID;
 
