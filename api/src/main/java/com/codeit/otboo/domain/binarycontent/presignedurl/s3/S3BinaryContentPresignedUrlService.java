@@ -3,7 +3,6 @@ package com.codeit.otboo.domain.binarycontent.presignedurl.s3;
 import com.codeit.otboo.domain.binarycontent.presignedurl.BinaryContentPresignedUrlService;
 import com.codeit.otboo.global.properties.StoragePathProperties;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;

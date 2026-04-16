@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.binarycontent.unit.resolver;
 
 import com.codeit.otboo.domain.binarycontent.resolver.s3.S3BinaryContentUrlResolver;
+import com.codeit.otboo.global.properties.StoragePathProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,13 +27,16 @@ public class S3BinaryContentResolverTest {
     @Mock
     private S3Presigner presigner;
 
-    private final String bucket = "test-bucket";
+    private static final String BUCKET = "test-bucket";
+    private static final String PATH = "binary";
 
     private S3BinaryContentUrlResolver resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new S3BinaryContentUrlResolver(presigner, bucket);
+        StoragePathProperties storagePathProperties = new StoragePathProperties(
+                new StoragePathProperties.S3(PATH));
+        resolver = new S3BinaryContentUrlResolver(presigner, BUCKET, storagePathProperties);
     }
 
     @Nested
