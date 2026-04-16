@@ -1,0 +1,209 @@
+package com.codeit.otboo.global.kafka;
+
+import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
+import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
+import com.codeit.otboo.domain.notification.dto.NotificationDto;
+import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.entity.Notification;
+import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
+import com.codeit.otboo.domain.notification.service.NotificationService;
+import com.codeit.otboo.domain.sse.event.ClothesAttributeDefSseEvent;
+import com.codeit.otboo.domain.sse.event.CommentCreatedEvent;
+import com.codeit.otboo.domain.sse.event.DirectMessageSseEvent;
+import com.codeit.otboo.domain.sse.event.FeedCreatedEvent;
+import com.codeit.otboo.domain.sse.event.FeedLikedEvent;
+import com.codeit.otboo.domain.sse.event.FollowSseEvent;
+import com.codeit.otboo.domain.sse.event.UserRoleUpdatedEvent;
+import com.codeit.otboo.domain.sse.event.WeatherSseEvent;
+import com.codeit.otboo.domain.user.entity.User;
+import com.codeit.otboo.domain.user.service.UserService;
+import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+
+@Slf4j
+@RequiredArgsConstructor
+@Component
+public class KafkaProduceRequiredEventListener {
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
+    private final NotificationMapper notificationMapper;
+    private final UserService userService;
+
+    @Async
+    @TransactionalEventListener
+    public void on(DirectMessageCreatedEvent event) {
+
+        DirectMessageResponse directMessageResponse = event.getData();
+        String directMessageKey = makeWebSocketKey(directMessageResponse);
+
+        sendToKafka(event, directMessageKey);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(DirectMessageSseEvent event) {
+        NotificationDto dto = createNotificationDto(
+            event.getUserId(),
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(FollowSseEvent event) {
+        NotificationDto dto = createNotificationDto(
+            event.getUserId(),
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(CommentCreatedEvent event) {
+        NotificationDto dto = createNotificationDto(
+            event.getReceiverId(),
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(FeedLikedEvent event) {
+        NotificationDto dto = createNotificationDto(
+            event.getReceiverId(),
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(UserRoleUpdatedEvent event) {
+        NotificationDto dto = createNotificationDto(
+            event.getReceiverId(),
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationSseKafkaEvent(dto), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(FeedCreatedEvent event) {
+        List<User> users = userService.getAllUserByIds(event.getReceiverIds());
+
+        List<NotificationDto> dtos = createNotificationDtos(
+            users,
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(ClothesAttributeDefSseEvent event) {
+        List<User> users = userService.getAllUsers();
+
+        List<NotificationDto> dtos = createNotificationDtos(
+            users,
+            event.getTitle(),
+            event.getContent()
+        );
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos), null);
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void on(WeatherSseEvent event) {
+        List<NotificationDto> dtos = event.notificationCommands().stream()
+            .map(notificationService::create)
+            .map(notificationMapper::toDto)
+            .toList();
+
+        sendToKafka(new NotificationBatchSseKafkaEvent(dtos), null);
+    }
+
+    private NotificationDto createNotificationDto(UUID userId, String title, String content) {
+        Notification saved = createNotification(userId, title, content);
+        return notificationMapper.toDto(saved);
+    }
+
+    private List<NotificationDto> createNotificationDtos(List<User> users, String title, String content) {
+        return users.stream()
+            .map(user -> Notification.builder()
+                .title(title)
+                .content(content)
+                .level(NotificationLevel.INFO)
+                .receiver(user)
+                .build())
+            .map(notificationService::create)
+            .map(notificationMapper::toDto)
+            .toList();
+    }
+
+    private Notification createNotification(UUID userId, String title, String content) {
+        User user = userService.getUser(userId);
+
+        Notification notification = Notification.builder()
+            .title(title)
+            .content(content)
+            .level(NotificationLevel.INFO)
+            .receiver(user)
+            .build();
+
+        return notificationService.create(notification);
+    }
+
+    private <T> void sendToKafka(T event, String directMessageKey) {
+        try {
+            String message = objectMapper.writeValueAsString(event);
+            String topic = "otboo." + event.getClass().getSimpleName();
+
+            String key = (directMessageKey == null) ? topic : directMessageKey;
+
+            kafkaTemplate.send(topic, key, message);
+        }
+        catch (JsonProcessingException e) {
+            log.error("Failed to send event to Kafka", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String makeWebSocketKey(DirectMessageResponse directMessageResponse) {
+
+        String senderId = directMessageResponse.sender().userId().toString();
+        String receiverId = directMessageResponse.receiver().userId().toString();
+
+        return (senderId.compareTo(receiverId) < 0) ?
+            senderId + "_" + receiverId :
+            receiverId + "_" + senderId;
+    }
+}

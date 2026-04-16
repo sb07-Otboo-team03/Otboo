@@ -1,7 +1,0 @@
-spring:
-  application:
-    name: otboo
-
-  sql:
-    init:
-      mode: never

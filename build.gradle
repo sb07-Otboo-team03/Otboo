@@ -1,63 +1,107 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.11'
-	id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+	id 'org.springframework.boot' version '3.5.11' apply false // 플러그인 버전만 관리
+	id 'io.spring.dependency-management' version '1.1.7' apply false // 플러그인 버전만 관리
 }
 
 group = 'com.codeit'
 version = '0.0.1-SNAPSHOT'
 description = 'otboo'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-repositories {
-	mavenCentral()
-}
-
-test {
-    finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = true
+allprojects {
+    repositories {
+        mavenCentral()
     }
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    testImplementation 'org.springframework.security:spring-security-test'
-    compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.h2database:h2'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    runtimeOnly 'org.postgresql:postgresql'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
 
-    // swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+    group = 'com.codeit'
+    version = '0.0.1-SNAPSHOT'
 
-    // actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.11"
+        }
+    }
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        finalizedBy tasks.named('jacocoTestReport')
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    tasks.named('jacocoTestReport', JacocoReport) {
+        dependsOn tasks.named('test')
+
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+    }
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+def coverageModules = [project(':api'), project(':batch')]
+
+tasks.register('jacocoRootReport', JacocoReport) {
+    def modules = coverageModules
+
+    dependsOn modules.collect { it.tasks.named('test') }
+
+    additionalSourceDirs.setFrom(files(modules.collect { it.sourceSets.main.allSource.srcDirs }))
+    sourceDirectories.setFrom(files(modules.collect { it.sourceSets.main.allSource.srcDirs }))
+
+    classDirectories.setFrom(files(modules.collect { module ->
+        module.sourceSets.main.output.classesDirs.files.collect { dir ->
+            fileTree(dir: dir, excludes: [
+                    '**/Q*.class',
+                    '**/*Application.class',
+                    '**/*Config.class',
+                    '**/*Dto.class',
+                    '**/*Mapper.class',
+                    '**/*Request.class',
+                    '**/*Response.class',
+                    '**/*Exception.class',
+                    '**/KakaoLocalUtil.class',
+                    '**/KmaGridConverter.class',
+                    '**/kafka/**',
+                    '**/sse/**',
+                    '**/websocket/**',
+                    '**/generated/**'
+            ])
+        }
+    }))
+
+    executionData.setFrom(files(modules.collect {
+        it.layout.buildDirectory.file("jacoco/test.exec").get().asFile
+    }.findAll { it.exists() }))
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
 }

@@ -1,0 +1,18 @@
+package com.codeit.otboo.domain.user.exception;
+
+import com.codeit.otboo.global.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+import java.util.Map;
+
+public class UserEmailDuplicateException extends UserException {
+    public UserEmailDuplicateException(String email) {
+        super(ErrorCode.USER_ALREADY_EXISTS_EMAIL,
+                Map.of("userEmail", email),
+                HttpStatus.CONFLICT);
+    }
+
+    public UserEmailDuplicateException() {
+        super(ErrorCode.USER_ALREADY_EXISTS_EMAIL, HttpStatus.CONFLICT);
+    }
+}

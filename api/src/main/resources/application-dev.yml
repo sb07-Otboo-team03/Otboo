@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/otboo
+    username: otboo
+    password: otboo123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+logging:
+  level:
+    org.springframework.retry: debug
+    org.springframework.web.socket: debug
+    org.springframework.web.messaging: debug
+    org.springframework.security: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.basic: trace
+    com.codeit.otboo: debug
+    org.apache.kafka: warn
+    org.apache.kafka.clients: warn
+    org.springframework.kafka.listener: warn
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+otboo:
+  jwt:
+    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    access-token-expiration: 900000
+    refresh-token-expiration: 1209600000
+    issuer: codeit
+  account:
+    email: admin@codeit.com
+    name: admin
+    password: admin

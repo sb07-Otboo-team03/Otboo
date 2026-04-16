@@ -1,0 +1,92 @@
+# docker-compose-prod.yml
+services:
+  app:
+    image: otboo:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: otboo
+    ports:
+      - "8081:80"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+
+      - SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
+      - SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+      - SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_EXPIRATION=${ACCESS_TOKEN_EXPIRATION}
+      - REFRESH_TOKEN_EXPIRATION=${REFRESH_TOKEN_EXPIRATION}
+      - ISSUER=${ISSUER}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KMA_API_KEY=${KMA_API_KEY}
+
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      - NAVER_MAIL_ID=${NAVER_MAIL_ID}
+      - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
+
+      - KAFKA_SCHEMA_REGISTRY_URL=${KAFKA_SCHEMA_REGISTRY_URL}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_NAME=${ADMIN_NAME}
+
+    restart: on-failure
+    depends_on:
+      - db
+      - es
+
+  db:
+    image: postgres:15
+    container_name: otboo-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 데이터 유지
+      - db-data:/var/lib/postgresql/data
+      # schema.sql 자동 실행 (컨테이너 시작 시)
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+  es:
+    build:
+      context: .
+      dockerfile: elasticsearch/elasticsearch.Dockerfile
+    container_name: otboo-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=${SPRING_ELASTICSEARCH_JAVA_OPTS}
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+volumes:
+  db-data:
+    driver: local
+  es-data:
+    driver: local
