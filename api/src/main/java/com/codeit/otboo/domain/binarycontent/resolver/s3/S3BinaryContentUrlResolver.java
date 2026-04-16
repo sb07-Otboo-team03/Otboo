@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.binarycontent.resolver.s3;
 
 import com.codeit.otboo.domain.binarycontent.resolver.BinaryContentUrlResolver;
+import com.codeit.otboo.global.properties.StoragePathProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,12 +19,11 @@ import java.util.UUID;
 public class S3BinaryContentUrlResolver implements BinaryContentUrlResolver {
     private final S3Presigner presigner;
     private final String bucket;
-
-    @Value("${otboo.storage.s3.path}")
-    private String path;
+    private final StoragePathProperties storagePathProperties;
 
     @Override
     public String resolve(UUID binaryContentId) {
+        String path = storagePathProperties.s3().path();
         GetObjectRequest objectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(path + "/" + binaryContentId)

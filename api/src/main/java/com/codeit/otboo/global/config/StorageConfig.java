@@ -1,15 +1,16 @@
 package com.codeit.otboo.global.config;
 
+import com.codeit.otboo.global.properties.StoragePathProperties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-import java.nio.file.Path;
-
 @Configuration
+@EnableConfigurationProperties(StoragePathProperties.class)
 public class StorageConfig {
     // S3 Presigned URL 생성을 위한 Presigner Bean 등록
     @Bean

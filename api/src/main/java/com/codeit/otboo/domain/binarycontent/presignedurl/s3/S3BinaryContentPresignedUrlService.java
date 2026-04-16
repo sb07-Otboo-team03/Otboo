@@ -1,8 +1,8 @@
 package com.codeit.otboo.domain.binarycontent.presignedurl.s3;
 
 import com.codeit.otboo.domain.binarycontent.presignedurl.BinaryContentPresignedUrlService;
+import com.codeit.otboo.global.properties.StoragePathProperties;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -18,12 +18,11 @@ import java.util.UUID;
 public class S3BinaryContentPresignedUrlService implements BinaryContentPresignedUrlService {
     private final S3Presigner presigner;
     private final String bucket;
-
-    @Value("${otboo.storage.s3.path}")
-    private String path;
+    private final StoragePathProperties storagePathProperties;
 
     @Override
     public String createPresignedUploadUrl(UUID binaryContentId, String contentType) {
+        String path = storagePathProperties.s3().path();
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(path + "/" + binaryContentId)

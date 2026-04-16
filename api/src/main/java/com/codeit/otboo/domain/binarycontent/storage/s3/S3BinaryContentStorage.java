@@ -1,6 +1,7 @@
 package com.codeit.otboo.domain.binarycontent.storage.s3;
 
 import com.codeit.otboo.domain.binarycontent.storage.BinaryContentStorage;
+import com.codeit.otboo.global.properties.StoragePathProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,11 +21,10 @@ import java.util.UUID;
 public class S3BinaryContentStorage implements BinaryContentStorage {
     private final S3Client s3Client;
     private final String bucket;
-
-    @Value("${otboo.storage.s3.path}")
-    private String path;
+    private final StoragePathProperties storagePathProperties;
 
     private String key(UUID binaryId) {
+        String path = storagePathProperties.s3().path();
         return path + "/" + binaryId;
     }
 
