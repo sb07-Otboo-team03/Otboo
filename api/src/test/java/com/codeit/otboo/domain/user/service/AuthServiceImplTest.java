@@ -270,7 +270,6 @@ class AuthServiceImplTest {
             then(jwtProvider).shouldHaveNoMoreInteractions();
         }
 
-        // NOTE & TODO: 계정 잠금 기능은 아직 만들지 않았지만,
         // 이미 존재하는 유저가, 잠금된 경우 처리,
         @DisplayName("잠김 계정은 로그인할 수 없다")
         @Test

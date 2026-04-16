@@ -3,12 +3,13 @@ name: CI - Test and Update Badge
 on:
   push:
     branches:
+      - main
       - dev
       - 'feat/**'
   pull_request:
     branches:
       - dev
-      - 'feat/**'
+      - main
 
 jobs:
   test-and-badge:
@@ -33,3 +34,27 @@ jobs:
 
       - name: Build and Test with Gradle
         run: ./gradlew clean test jacocoRootReport
+
+      # 배지 생성 케이스
+      # main 브랜치에 직접 push 했을 때
+      # 다른 브랜치에서 작업한 뒤 PR을 merge해서 결과적으로 main에 새 commit이 생겼을 때
+      - name: Generate JaCoCo Badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: build/reports/jacoco/jacocoRootReport/jacocoRootReport.csv
+          generate-branches-badge: true
+          generate-summary: true
+
+      - name: Commit and push badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [[ `git status --porcelain` ]]; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add .
+            git commit -m "Update JaCoCo badge"
+            git push
+          fi
+
+
