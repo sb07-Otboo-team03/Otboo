@@ -46,9 +46,6 @@ public class S3BinaryContentResolverTest {
         @DisplayName("성공: 유효한 id 가 들어오면 presigned URL 을 생성하여 반환한다")
         void success_get_image_url() throws Exception{
             // given
-            String path = "binary/";
-            ReflectionTestUtils.setField(resolver, "path", path);
-
             UUID binaryContentId = UUID.randomUUID();
             String expectedUrl = "https://presigned-url.com";
 
