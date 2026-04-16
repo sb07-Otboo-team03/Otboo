@@ -8,12 +8,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 public class ScraperImplTest {
@@ -25,7 +29,7 @@ public class ScraperImplTest {
 
     @Nested
     @DisplayName("스크랩")
-    class scrap{
+    class scrap {
         @Test
         @DisplayName("성공: 정상적인 url이 들어오고 Document에 OG태그가 있을 경우 옷 이름과, 이미지 url이 정상 반환된다")
         void scrap_success() {
@@ -43,6 +47,33 @@ public class ScraperImplTest {
             // then
             assertThat(result.name()).isEqualTo("테스트 상품");
             assertThat(result.imageUrl()).isEqualTo("https://image.jpg");
+        }
+
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = {
+                "   "
+        })
+        @DisplayName("og:title이 null 이거나 공백이면 document의 title값이 상품명이 된다")
+        void scrap_img_name_is_null(String ogTitle) {
+            // given
+            String url = "https://example.com";
+            Document document = new Document(url);
+            String documentTitle = "이미지 상품페이지 타이틀";
+            if (ogTitle != null) {
+                document.head().append("<meta property='og:title' content='" + ogTitle + "' />");
+            }
+            document.head().append("<meta property='og:image' content='https://image.jpg' />");
+            document.title(documentTitle);
+
+            given(documentFetcher.fetch(url)).willReturn(document);
+
+            // when
+            ClothesUrlResponse result = scraper.scrap(url);
+
+            assertThat(result.name()).isEqualTo(documentTitle);
+            assertThat(result.imageUrl()).isEqualTo("https://image.jpg");
+            then(documentFetcher).should().fetch(url);
         }
     }
 }
