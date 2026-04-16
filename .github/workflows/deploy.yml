@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: [ "feat/test-release6" ] #NOTE: release-test4에 배포
+    branches: [ "release" ]
     paths:
       - 'api/**'
       - 'common/**'
