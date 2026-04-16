@@ -6,9 +6,9 @@ import java.util.List;
 public enum TopType {
 
     SHORT_SLEEVE(List.of("반팔")),
-    LONG_SLEEVE(List.of("긴팔")),
-    KNIT(List.of("니트")),
-    SWEATSHIRT(List.of("맨투맨")),
+    LONG_SLEEVE(List.of("긴팔", "긴소매", "롱슬리브", "롱탑", "LONG SLEEVE")),
+    KNIT(List.of("니트", "카디건", "가디건")),
+    SWEATSHIRT(List.of("맨투맨", "스웨트")),
     HOODIE(List.of("후드")),
     TURTLENECK(List.of("목폴라", "목티")),
     SLEEVELESS(List.of("나시", "민소매"));
