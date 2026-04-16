@@ -90,7 +90,9 @@ tasks.register('jacocoRootReport', JacocoReport) {
                     '**/kafka/**',
                     '**/sse/**',
                     '**/websocket/**',
-                    '**/generated/**'
+                    '**/generated/**',
+                    '**/binarycontent/**/mock/**',
+                    '**/clothes/management/fetcher/**'
             ])
         }
     }))

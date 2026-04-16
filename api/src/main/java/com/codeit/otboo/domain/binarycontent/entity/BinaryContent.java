@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.binarycontent.entity;
 
-import com.codeit.otboo.domain.BaseEntity;
+import com.codeit.otboo.domain.BaseUpdatableEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "binary_contents")
-public class BinaryContent extends BaseEntity {
+public class BinaryContent extends BaseUpdatableEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
