@@ -68,13 +68,23 @@ class WeatherHistoryBatchConfigTest {
     }
 
     @Test
-    @DisplayName("어제 날씨 데이터를 yesterday_hourly_weather에 저장하고 Weather 원본은 삭제한다")
-    void deleteYesterdayWeatherJob_success() throws Exception {
+    @DisplayName("weather 테이블에서 오늘 이전 데이터는 삭제되고 오늘 데이터만 남는다")
+    void deleteYesterdayWeatherJob_deletesOldWeatherData() throws Exception {
         // given
         LocalDate today = LocalDate.of(2026, 4, 6);
         LocalDate yesterday = today.minusDays(1);
+        LocalDate twoDaysAgo = today.minusDays(2);
 
-        Weather yesterdayWeather1 = createWeather(
+        Weather twoDaysAgoWeather = createWeather(
+                twoDaysAgo.atStartOfDay(),
+                twoDaysAgo.atTime(23, 0),
+                60,
+                127,
+                10.1,
+                50.0
+        );
+
+        Weather yesterdayWeather = createWeather(
                 yesterday.atStartOfDay(),
                 yesterday.atTime(9, 0),
                 60,
@@ -83,15 +93,6 @@ class WeatherHistoryBatchConfigTest {
                 55.0
         );
 
-        Weather yesterdayWeather2 = createWeather(
-                yesterday.atStartOfDay(),
-                yesterday.atTime(10, 0),
-                60,
-                127,
-                13.1,
-                60.0
-        );
-
         Weather todayWeather = createWeather(
                 today.atStartOfDay(),
                 today.atTime(9, 0),
@@ -101,7 +102,7 @@ class WeatherHistoryBatchConfigTest {
                 65.0
         );
 
-        weatherRepository.saveAll(List.of(yesterdayWeather1, yesterdayWeather2, todayWeather));
+        weatherRepository.saveAll(List.of(twoDaysAgoWeather, yesterdayWeather, todayWeather));
 
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("requestedAt", LocalDateTime.now().toString())
@@ -112,22 +113,6 @@ class WeatherHistoryBatchConfigTest {
 
         // then
         assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-
-        List<YesterdayHourlyWeather> results = yesterdayHourlyWeatherRepository.findAll();
-        assertThat(results).hasSize(2);
-        assertThat(results)
-                .extracting(
-                        YesterdayHourlyWeather::getX,
-                        YesterdayHourlyWeather::getY,
-                        YesterdayHourlyWeather::getDate,
-                        YesterdayHourlyWeather::getHour,
-                        YesterdayHourlyWeather::getTemperature,
-                        YesterdayHourlyWeather::getHumidity
-                )
-                .containsExactlyInAnyOrder(
-                        tuple(60, 127, yesterday, LocalTime.of(9, 0), 12.3, 55.0),
-                        tuple(60, 127, yesterday, LocalTime.of(10, 0), 13.1, 60.0)
-                );
 
         List<Weather> remainingWeathers = weatherRepository.findAll();
         assertThat(remainingWeathers).hasSize(1);
@@ -135,21 +120,32 @@ class WeatherHistoryBatchConfigTest {
     }
 
     @Test
-    @DisplayName("어제 날씨 데이터가 없어도 배치는 정상 완료된다")
-    void deleteYesterdayWeatherJob_success_whenNoYesterdayData() throws Exception {
+    @DisplayName("yesterday_hourly_weather 테이블에서는 어제 이전 데이터만 삭제되고 어제 데이터는 남는다")
+    void deleteYesterdayWeatherJob_deletesOnlyBeforeYesterdayFromYesterdayTable() throws Exception {
         // given
         LocalDate today = LocalDate.of(2026, 4, 6);
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate twoDaysAgo = today.minusDays(2);
 
-        Weather todayWeather = createWeather(
-                today.atStartOfDay(),
-                today.atTime(9, 0),
+        YesterdayHourlyWeather oldData = createYesterdayHourlyWeather(
                 60,
                 127,
-                15.2,
-                65.0
+                twoDaysAgo,
+                LocalTime.of(9, 0),
+                11.1,
+                50.0
         );
 
-        weatherRepository.save(todayWeather);
+        YesterdayHourlyWeather yesterdayData = createYesterdayHourlyWeather(
+                60,
+                127,
+                yesterday,
+                LocalTime.of(10, 0),
+                13.3,
+                60.0
+        );
+
+        yesterdayHourlyWeatherRepository.saveAll(List.of(oldData, yesterdayData));
 
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("requestedAt", LocalDateTime.now().toString())
@@ -160,50 +156,43 @@ class WeatherHistoryBatchConfigTest {
 
         // then
         assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(yesterdayHourlyWeatherRepository.findAll()).isEmpty();
-        assertThat(weatherRepository.findAll()).hasSize(1);
+
+        List<YesterdayHourlyWeather> remaining = yesterdayHourlyWeatherRepository.findAll();
+        assertThat(remaining).hasSize(1);
+        assertThat(remaining.get(0).getDate()).isEqualTo(yesterday);
+        assertThat(remaining.get(0).getHour()).isEqualTo(LocalTime.of(10, 0));
     }
 
     @Test
-    @DisplayName("어제 시각에 해당하는 날씨 데이터만 YesterdayHourlyWeather로 이관한다")
-    void migrateYesterdayWeather_onlyYesterdayForecastAt() throws Exception {
+    @DisplayName("삭제 대상 데이터가 없어도 배치는 정상 완료된다")
+    void deleteYesterdayWeatherJob_completesWhenNoDeleteTargetExists() throws Exception {
         // given
         LocalDate today = LocalDate.of(2026, 4, 6);
         LocalDate yesterday = today.minusDays(1);
 
-        // 저장되어야 하는 데이터: forecastAt이 어제
-        weatherRepository.save(createWeather(
-                yesterday.atStartOfDay(),
-                yesterday.atTime(0, 0),
-                57, 126, 5.0, 65.0
-        ));
-        weatherRepository.save(createWeather(
-                yesterday.atStartOfDay(),
-                yesterday.atTime(23, 0),
-                57, 126, 7.0, 70.0
-        ));
+        Weather todayWeather = createWeather(
+                today.atStartOfDay(),
+                today.atTime(9, 0),
+                60,
+                127,
+                15.2,
+                65.0
+        );
 
-        // 저장되면 안 되는 데이터 1: forecastedAt은 어제지만 forecastAt은 오늘
-        weatherRepository.save(createWeather(
-                yesterday.atStartOfDay(),
-                today.atTime(0, 0),
-                57, 126, 8.0, 80.0
-        ));
-        weatherRepository.save(createWeather(
-                yesterday.atStartOfDay(),
-                today.atTime(1, 0),
-                57, 126, 9.0, 85.0
-        ));
+        YesterdayHourlyWeather yesterdayData = createYesterdayHourlyWeather(
+                60,
+                127,
+                yesterday,
+                LocalTime.of(9, 0),
+                13.0,
+                60.0
+        );
 
-        // 저장되면 안 되는 데이터 2: forecastAt이 그제
-        weatherRepository.save(createWeather(
-                yesterday.minusDays(1).atStartOfDay(),
-                yesterday.minusDays(1).atTime(23, 0),
-                57, 126, 3.0, 60.0
-        ));
+        weatherRepository.save(todayWeather);
+        yesterdayHourlyWeatherRepository.save(yesterdayData);
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("requestedAt", "2026-04-06T00:00:00")
+                .addString("requestedAt", LocalDateTime.now().toString())
                 .toJobParameters();
 
         // when
@@ -211,32 +200,8 @@ class WeatherHistoryBatchConfigTest {
 
         // then
         assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-
-        List<YesterdayHourlyWeather> results = yesterdayHourlyWeatherRepository.findAll();
-
-        assertThat(results).hasSize(2);
-
-        assertThat(results)
-                .extracting(
-                        YesterdayHourlyWeather::getX,
-                        YesterdayHourlyWeather::getY,
-                        YesterdayHourlyWeather::getDate,
-                        YesterdayHourlyWeather::getHour,
-                        YesterdayHourlyWeather::getTemperature,
-                        YesterdayHourlyWeather::getHumidity
-                )
-                .containsExactlyInAnyOrder(
-                        tuple(57, 126, yesterday, LocalTime.of(0, 0), 5.0, 65.0),
-                        tuple(57, 126, yesterday, LocalTime.of(23, 0), 7.0, 70.0)
-                );
-
-        assertThat(results)
-                .extracting(YesterdayHourlyWeather::getDate)
-                .containsOnly(yesterday);
-
-        assertThat(results)
-                .extracting(YesterdayHourlyWeather::getHour)
-                .doesNotContain(LocalTime.of(1, 0));
+        assertThat(weatherRepository.findAll()).hasSize(1);
+        assertThat(yesterdayHourlyWeatherRepository.findAll()).hasSize(1);
     }
 
     private Weather createWeather(
@@ -262,6 +227,24 @@ class WeatherHistoryBatchConfigTest {
                 0.0,
                 20.0,
                 humidityCurrent
+        );
+    }
+
+    private YesterdayHourlyWeather createYesterdayHourlyWeather(
+            Integer x,
+            Integer y,
+            LocalDate date,
+            LocalTime hour,
+            Double temperature,
+            Double humidity
+    ) {
+        return new YesterdayHourlyWeather(
+                x,
+                y,
+                date,
+                hour,
+                temperature,
+                humidity
         );
     }
 }

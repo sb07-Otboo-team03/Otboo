@@ -90,7 +90,9 @@ tasks.register('jacocoRootReport', JacocoReport) {
                     '**/kafka/**',
                     '**/sse/**',
                     '**/websocket/**',
-                    '**/generated/**'
+                    '**/generated/**',
+                    '**/binarycontent/**/mock/**',
+                    '**/clothes/management/fetcher/**'
             ])
         }
     }))
@@ -102,6 +104,6 @@ tasks.register('jacocoRootReport', JacocoReport) {
     reports {
         xml.required = true
         html.required = true
-        csv.required = false
+        csv.required = true
     }
 }

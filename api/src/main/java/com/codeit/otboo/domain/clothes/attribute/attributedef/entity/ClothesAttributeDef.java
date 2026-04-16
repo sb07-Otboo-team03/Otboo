@@ -1,6 +1,6 @@
 package com.codeit.otboo.domain.clothes.attribute.attributedef.entity;
 
-import com.codeit.otboo.domain.BaseEntity;
+import com.codeit.otboo.domain.BaseUpdatableEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ClothesAttributeDef extends BaseEntity {
+public class ClothesAttributeDef extends BaseUpdatableEntity {
 
     @Column(length = 30)
     private String name;
