@@ -17,6 +17,7 @@ import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCreateReque
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesCursorPageRequest;
 import com.codeit.otboo.domain.clothes.management.dto.request.ClothesUpdateRequest;
 import com.codeit.otboo.domain.clothes.management.dto.response.ClothesResponse;
+import com.codeit.otboo.domain.clothes.management.dto.response.ClothesUrlResponse;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.exception.ClothesNotFoundException;
@@ -716,6 +717,26 @@ public class ClothesServiceImplTest {
             assertThat(result).isTrue();
             then(clothesRepository).should(times(1))
                     .existsByIdAndOwnerId(clothes.getId(), owner.getId());
+        }
+    }
+
+    @Nested
+    @DisplayName("url로 옷 정보 불러오기")
+    class GetClothesInfoByUrl{
+        @Test
+        @DisplayName("성공: url 이 들어오면 scraper 의 scrap 메소드가 호출된다.")
+        void success_get_clothes_info_by_url(){
+            // given
+            String url = "http://image-url.com/13482017";
+            ClothesUrlResponse response = new ClothesUrlResponse("테스트이미지", "http://image-url.com/test.png");
+            given(scraper.scrap(url)).willReturn(response);
+
+            // when
+            ClothesUrlResponse result = clothesService.getClothesInfoByUrl(url);
+
+            // then
+            assertThat(result).isNotNull();
+            then(scraper).should(times(1)).scrap(url);
         }
     }
 }
