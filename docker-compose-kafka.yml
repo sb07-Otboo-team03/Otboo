@@ -1,0 +1,80 @@
+version: "3.8"  # compose 포맷 버전 (필수는 아니지만 관례적으로 유지)
+
+services:
+  kafka:
+    image: apache/kafka:3.7.1   # 공식 Kafka 이미지 (태그 안정성 높음)
+    container_name: kafka_broker
+    hostname: kafka             # 컨테이너 내부 DNS 이름 (다른 컨테이너에서 kafka로 접근)
+
+    ports:
+      - "${KAFKA_PORT}:${KAFKA_PORT}"
+      # 호스트 → 컨테이너 포트 매핑
+      # Spring Boot는 localhost:${KAFKA_PORT}로 접속
+
+    environment:
+      # ===== KRaft (Zookeeper 없는 모드) 필수 설정 =====
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # 단일 노드에서 broker + controller 역할 동시에 수행
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
+      # controller quorum 구성 (단일 노드라 자기 자신만)
+
+      # ===== Listener 설정 (가장 중요) =====
+      KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
+      # Kafka가 실제 바인딩할 주소
+
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_PORT}
+      # ❗ 클라이언트(Spring)가 접속할 때 전달받는 주소
+      # 잘못 설정하면 "연결은 되는데 메시지 실패" 발생
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # listener별 프로토콜 (로컬은 인증 없이 PLAINTEXT)
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # ===== 토픽/파티션 설정 =====
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # 토픽 없으면 자동 생성 (개발 단계에서만 추천)
+
+      KAFKA_NUM_PARTITIONS: ${KAFKA_NUM_PARTITIONS}
+      # 기본 파티션 수
+
+      # ===== 단일 브로커 필수 설정 =====
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # replication을 1로 안 하면 브로커가 안 뜸
+
+      # ===== KRaft 클러스터 식별자 =====
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      # 최초 생성 후 고정값 유지 필요
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+      # Kafka 로그/데이터 저장 (컨테이너 재시작 시 유지)
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka_ui
+
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+      # UI 접속 포트 (Spring Boot 8080과 충돌 방지)
+
+    depends_on:
+      - kafka
+      # kafka 먼저 실행
+
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      # UI에서 보일 클러스터 이름
+
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:${KAFKA_PORT}
+      # ❗ 중요: 컨테이너 내부 주소
+      # localhost 쓰면 안됨 (컨테이너 내부라서)
+
+volumes:
+  kafka_data:
+  # Docker volume (Kafka 데이터 영속화)
