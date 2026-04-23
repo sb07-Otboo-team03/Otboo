@@ -24,16 +24,28 @@ spring:
 
 logging:
   level:
-    org.springframework.retry: debug
-    org.springframework.web.socket: debug
-    org.springframework.web.messaging: debug
-    org.springframework.security: debug
-    org.hibernate.SQL: debug
-    org.hibernate.type.descriptor.sql.basic: trace
+    root: info
+
+    # 애플리케이션
     com.codeit.otboo: debug
+
+    # SQL 확인용 (필수)
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql: off
+
+    # Kafka
     org.apache.kafka: warn
-    org.apache.kafka.clients: warn
-    org.springframework.kafka.listener: warn
+    org.springframework.kafka: warn
+
+    # Security (평소 off)
+    org.springframework.security: warn
+
+    # WebSocket / Messaging (평소 off)
+    org.springframework.web.socket: warn
+    org.springframework.web.messaging: warn
+
+    # Retry
+    org.springframework.retry: info
 
 management:
   endpoint:
