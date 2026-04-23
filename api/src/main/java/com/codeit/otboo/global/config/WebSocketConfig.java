@@ -1,6 +1,5 @@
-package com.codeit.otboo.global.websocket.config;
+package com.codeit.otboo.global.config;
 
-import com.codeit.otboo.domain.user.entity.Role;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
