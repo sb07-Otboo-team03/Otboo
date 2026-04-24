@@ -4,6 +4,8 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.service.NotificationEventService;
 import com.codeit.otboo.domain.sse.event.*;
+import com.codeit.otboo.global.kafka.event.MultipleNotificationSseKafkaEvent;
+import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
 import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
 import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +17,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -47,7 +51,7 @@ public class NotificationEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(DirectMessageSseEvent event) {
-        NotificationDto dto = notificationEventService.createSingleNotification(
+        NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getUserId(),
                 event.getTitle(),
                 event.getContent()
@@ -55,7 +59,7 @@ public class NotificationEventHandler {
 
         sendToKafka(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(dto),
+                new NotificationSseKafkaEvent(notificationDto),
                 null
         );
     }
@@ -63,7 +67,7 @@ public class NotificationEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FollowSseEvent event) {
-        NotificationDto dto = notificationEventService.createSingleNotification(
+        NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getUserId(),
                 event.getTitle(),
                 event.getContent()
@@ -71,7 +75,7 @@ public class NotificationEventHandler {
 
         sendToKafka(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(dto),
+                new NotificationSseKafkaEvent(notificationDto),
                 null
         );
     }
@@ -79,7 +83,7 @@ public class NotificationEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(CommentCreatedEvent event) {
-        NotificationDto dto = notificationEventService.createSingleNotification(
+        NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
@@ -87,7 +91,7 @@ public class NotificationEventHandler {
 
         sendToKafka(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(dto),
+                new NotificationSseKafkaEvent(notificationDto),
                 null
         );
     }
@@ -95,7 +99,7 @@ public class NotificationEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FeedLikedEvent event) {
-        NotificationDto dto = notificationEventService.createSingleNotification(
+        NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
@@ -103,7 +107,7 @@ public class NotificationEventHandler {
 
         sendToKafka(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(dto),
+                new NotificationSseKafkaEvent(notificationDto),
                 null
         );
     }
@@ -111,7 +115,7 @@ public class NotificationEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(UserRoleUpdatedEvent event) {
-        NotificationDto dto = notificationEventService.createSingleNotification(
+        NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
                 event.getContent()
@@ -119,7 +123,50 @@ public class NotificationEventHandler {
 
         sendToKafka(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(dto),
+                new NotificationSseKafkaEvent(notificationDto),
+                null
+        );
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(FeedCreatedEvent event) {
+        List<NotificationDto> notificationDtos = notificationEventService.createMultipleNotifications(
+                event.getReceiverIds(),
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(
+                KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+                new MultipleNotificationSseKafkaEvent(notificationDtos),
+                null
+        );
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(ClothesAttributeDefSseEvent event) {
+        List<NotificationDto> notificationDtos = notificationEventService.createMultipleNotificationAllByReceivers(
+                event.getTitle(),
+                event.getContent()
+        );
+
+        sendToKafka(
+                KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+                new MultipleNotificationSseKafkaEvent(notificationDtos),
+                null
+        );
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(WeatherSseEvent event) {
+        List<NotificationDto> notificationDtos = notificationEventService.createNotificationsFromCommands(event.notificationCommands());
+
+        sendToKafka(
+                KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+                new NotificationBatchSseKafkaEvent(notificationDtos),
                 null
         );
     }
