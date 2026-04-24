@@ -20,18 +20,33 @@ public class WebSocketRequiredTopicListener {
 
     @KafkaListener(topics = KafkaTopics.REALTIME_DIRECT_MESSAGE, groupId = "otboo-websocket-${app.instance-id}")
     public void onDirectMessageCreatedEvent(String kafkaEvent) {
-        try {
-            DirectMessageCreatedEvent event = objectMapper.readValue(kafkaEvent,
-                DirectMessageCreatedEvent.class);
+        DirectMessageCreatedEvent event = deserialize(
+                kafkaEvent,
+                DirectMessageCreatedEvent.class
+        );
 
-            DirectMessageResponse directMessageResponse = event.getData();
-            String directMessageKey = DirectMessageKeyGenerator.generate(directMessageResponse);
-
-            String destination = String.format("/sub/direct-messages_%s", directMessageKey);
-            messagingTemplate.convertAndSend(destination, directMessageResponse);
+        if (event == null) {
+            return;
         }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+
+        DirectMessageResponse directMessageResponse = event.getData();
+        String directMessageKey = DirectMessageKeyGenerator.generate(directMessageResponse);
+
+        String destination = String.format("/sub/direct-messages_%s", directMessageKey);
+        messagingTemplate.convertAndSend(destination, directMessageResponse);
+    }
+
+    private <T> T deserialize(String payload, Class<T> type) {
+        try {
+            return objectMapper.readValue(payload, type);
+        } catch (JsonProcessingException e) {
+            log.error(
+                    "카프카 역직렬화 실패. targetType={}, payload={}",
+                    type.getSimpleName(),
+                    payload,
+                    e
+            );
+            return null;
         }
     }
 }
