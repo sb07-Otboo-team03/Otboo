@@ -11,7 +11,7 @@ public interface NotificationEventService {
 
     List<NotificationDto> createMultipleNotifications(List<UUID> receiverIds, String title, String content);
 
-    List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content, String type);
+    List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content);
 
     List<NotificationDto> createNotificationsFromCommands(List<NotificationCreateCommand> commands);
 }

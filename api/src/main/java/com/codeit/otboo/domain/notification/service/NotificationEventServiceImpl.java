@@ -46,7 +46,7 @@ public class NotificationEventServiceImpl implements NotificationEventService { 
     // 전체 유저 알림 처리
     @Override
     @Transactional
-    public List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content, String type) {
+    public List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content) {
         return userService.getAllUsers().stream()
                 .map(user -> createSingleNotification(user.getId(), title, content))
                 .toList();
