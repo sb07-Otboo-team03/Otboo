@@ -28,7 +28,10 @@ public class SseRequiredTopicListener {
         );
     }
 
-    @KafkaListener(topics = KafkaTopics.REALTIME_NOTIFICATION, groupId = "sse-${random.uuid}")
+    @KafkaListener(
+            topics = KafkaTopics.REALTIME_NOTIFICATION,
+            groupId = "otboo-sse-${app.instance-id}"
+    )
     public void onNotificationSseKafkaEvent(String kafkaEvent) {
         try {
             NotificationSseKafkaEvent event =
@@ -41,7 +44,10 @@ public class SseRequiredTopicListener {
         }
     }
 
-    @KafkaListener(topics = KafkaTopics.REALTIME_NOTIFICATION_BATCH, groupId = "sse-${random.uuid}")
+    @KafkaListener(
+            topics = KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+            groupId = "otboo-sse-${app.instance-id}"
+    )
     public void onNotificationBatchSseKafkaEvent(String kafkaEvent) {
         try {
             NotificationBatchSseKafkaEvent event =

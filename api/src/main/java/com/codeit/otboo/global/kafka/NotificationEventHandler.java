@@ -8,11 +8,8 @@ import com.codeit.otboo.global.kafka.event.MultipleNotificationSseKafkaEvent;
 import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
 import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
 import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -25,9 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationEventHandler {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper;
     private final NotificationEventService notificationEventService;
+    private final KafkaEventPublisher kafkaEventPublisher;
 
     /**
      * WebSocket 실시간 채팅 전달용 이벤트
@@ -38,7 +34,7 @@ public class NotificationEventHandler {
         DirectMessageResponse directMessageResponse = event.getData();
         String directMessageKey = DirectMessageKeyGenerator.generate(directMessageResponse);
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_DIRECT_MESSAGE,
                 event,
                 directMessageKey
@@ -57,10 +53,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto),
-                null
+                new NotificationSseKafkaEvent(notificationDto)
         );
     }
 
@@ -73,10 +68,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto),
-                null
+                new NotificationSseKafkaEvent(notificationDto)
         );
     }
 
@@ -89,10 +83,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto),
-                null
+                new NotificationSseKafkaEvent(notificationDto)
         );
     }
 
@@ -105,10 +98,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto),
-                null
+                new NotificationSseKafkaEvent(notificationDto)
         );
     }
 
@@ -121,10 +113,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto),
-                null
+                new NotificationSseKafkaEvent(notificationDto)
         );
     }
 
@@ -137,10 +128,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION_BATCH,
-                new MultipleNotificationSseKafkaEvent(notificationDtos),
-                null
+                new MultipleNotificationSseKafkaEvent(notificationDtos)
         );
     }
 
@@ -152,10 +142,9 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION_BATCH,
-                new MultipleNotificationSseKafkaEvent(notificationDtos),
-                null
+                new MultipleNotificationSseKafkaEvent(notificationDtos)
         );
     }
 
@@ -164,30 +153,9 @@ public class NotificationEventHandler {
     public void on(WeatherSseEvent event) {
         List<NotificationDto> notificationDtos = notificationEventService.createNotificationsFromCommands(event.notificationCommands());
 
-        sendToKafka(
+        kafkaEventPublisher.publish(
                 KafkaTopics.REALTIME_NOTIFICATION_BATCH,
-                new NotificationBatchSseKafkaEvent(notificationDtos),
-                null
+                new NotificationBatchSseKafkaEvent(notificationDtos)
         );
-    }
-
-    /**
-     * 임시 Kafka publish 메서드
-     * 다음 단계에서 KafkaEventPublisher로 분리 예정
-     */
-    private void sendToKafka(String topic, Object event, String key) {
-        try {
-            String message = objectMapper.writeValueAsString(event);
-
-            if (key == null) {
-                kafkaTemplate.send(topic, message);
-                return;
-            }
-
-            kafkaTemplate.send(topic, key, message);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to send event to Kafka. topic={}, key={}", topic, key, e);
-            throw new RuntimeException(e);
-        }
     }
 }
