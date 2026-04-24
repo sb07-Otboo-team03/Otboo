@@ -129,7 +129,7 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+                KafkaTopics.REALTIME_NOTIFICATION,
                 new MultipleNotificationSseKafkaEvent(notificationDtos)
         );
     }
@@ -143,7 +143,7 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION_BATCH,
+                KafkaTopics.REALTIME_NOTIFICATION,
                 new MultipleNotificationSseKafkaEvent(notificationDtos)
         );
     }
