@@ -18,7 +18,7 @@ public class WebSocketRequiredTopicListener {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "otboo.DirectMessageCreatedEvent", groupId = "websocket-${random.uuid}")
+    @KafkaListener(topics = KafkaTopics.REALTIME_DIRECT_MESSAGE, groupId = "websocket-${random.uuid}")
     public void onDirectMessageCreatedEvent(String kafkaEvent) {
         try {
             DirectMessageCreatedEvent event = objectMapper.readValue(kafkaEvent,
