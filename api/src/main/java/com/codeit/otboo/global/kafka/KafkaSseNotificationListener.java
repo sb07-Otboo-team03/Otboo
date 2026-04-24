@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class SseRequiredTopicListener {
+public class KafkaSseNotificationListener {
 
     private final SseService sseService;
     private final ObjectMapper objectMapper;
