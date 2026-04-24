@@ -22,6 +22,24 @@ spring:
   elasticsearch:
     uris: http://localhost:9200
 
+  spring:
+    kafka:
+      bootstrap-servers: localhost:9092
+
+      producer:
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        acks: all
+        retries: 3
+
+      consumer:
+        auto-offset-reset: earliest
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+      listener:
+        ack-mode: record
+
 logging:
   level:
     root: info

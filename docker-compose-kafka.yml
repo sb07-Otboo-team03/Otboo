@@ -1,59 +1,71 @@
-version: "3.8"  # compose 포맷 버전 (필수는 아니지만 관례적으로 유지)
+version: "3.8"  # compose 포맷 버전
 
 services:
   kafka:
-    image: apache/kafka:3.7.1   # 공식 Kafka 이미지 (태그 안정성 높음)
+    image: apache/kafka:3.7.1  # 공식 Kafka 이미지
     container_name: kafka_broker
-    hostname: kafka             # 컨테이너 내부 DNS 이름 (다른 컨테이너에서 kafka로 접근)
+    hostname: kafka  # 컨테이너 내부 DNS 이름
 
     ports:
       - "${KAFKA_PORT}:${KAFKA_PORT}"
       # 호스트 → 컨테이너 포트 매핑
-      # Spring Boot는 localhost:${KAFKA_PORT}로 접속
+      # 로컬 Spring Boot는 localhost:${KAFKA_PORT}로 접속
 
     environment:
-      # ===== KRaft (Zookeeper 없는 모드) 필수 설정 =====
+      # ===== KRaft 기본 설정 =====
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      # 단일 노드에서 broker + controller 역할 동시에 수행
+      # 단일 노드에서 broker와 controller 역할을 함께 수행
 
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
-      # controller quorum 구성 (단일 노드라 자기 자신만)
+      # 단일 노드 KRaft controller quorum 설정
 
-      # ===== Listener 설정 (가장 중요) =====
-      KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
-      # Kafka가 실제 바인딩할 주소
+      # ===== Listener 설정 =====
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:${KAFKA_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
+      # Kafka가 실제로 바인딩할 주소
+      # INTERNAL: Docker 네트워크 내부 통신용
+      # EXTERNAL: 로컬 PC에서 접근하는 Spring Boot용
+      # CONTROLLER: KRaft controller 통신용
 
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_PORT}
-      # ❗ 클라이언트(Spring)가 접속할 때 전달받는 주소
-      # 잘못 설정하면 "연결은 되는데 메시지 실패" 발생
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:${KAFKA_PORT}
+      # Kafka가 클라이언트에게 알려줄 접속 주소
+      # Docker 컨테이너 내부 클라이언트는 kafka:29092 사용
+      # 로컬 Spring Boot는 localhost:${KAFKA_PORT} 사용
 
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      # listener별 프로토콜 (로컬은 인증 없이 PLAINTEXT)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # listener 이름별 보안 프로토콜 매핑
+      # 로컬 개발 환경이므로 모두 PLAINTEXT 사용
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      # broker 간 통신에 사용할 listener
+      # 단일 브로커여도 Kafka 설정상 필요
 
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # controller 역할에 사용할 listener
 
       # ===== 토픽/파티션 설정 =====
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      # 토픽 없으면 자동 생성 (개발 단계에서만 추천)
+      # 토픽이 없으면 자동 생성
+      # 개발 환경에서는 편하지만 운영 환경에서는 명시 생성 권장
 
       KAFKA_NUM_PARTITIONS: ${KAFKA_NUM_PARTITIONS}
-      # 기본 파티션 수
+      # 자동 생성 토픽의 기본 파티션 수
 
       # ===== 단일 브로커 필수 설정 =====
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      # replication을 1로 안 하면 브로커가 안 뜸
+      # 단일 브로커 환경에서는 replication 관련 값을 1로 설정해야 정상 기동 가능
 
       # ===== KRaft 클러스터 식별자 =====
       CLUSTER_ID: ${KAFKA_CLUSTER_ID}
-      # 최초 생성 후 고정값 유지 필요
+      # Kafka 스토리지 포맷에 사용되는 클러스터 ID
+      # 최초 생성 후에는 동일한 volume을 쓰는 동안 고정해야 함
 
     volumes:
       - kafka_data:/var/lib/kafka/data
-      # Kafka 로그/데이터 저장 (컨테이너 재시작 시 유지)
+      # Kafka 로그와 메타데이터 저장
+      # 컨테이너를 재시작해도 데이터 유지
 
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
@@ -61,20 +73,22 @@ services:
 
     ports:
       - "${KAFKA_UI_PORT}:8080"
-      # UI 접속 포트 (Spring Boot 8080과 충돌 방지)
+      # 브라우저에서 Kafka UI에 접근할 포트
+      # 예: localhost:${KAFKA_UI_PORT}
 
     depends_on:
       - kafka
-      # kafka 먼저 실행
+      # kafka 컨테이너를 먼저 시작
 
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      # UI에서 보일 클러스터 이름
+      # Kafka UI에 표시될 클러스터 이름
 
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:${KAFKA_PORT}
-      # ❗ 중요: 컨테이너 내부 주소
-      # localhost 쓰면 안됨 (컨테이너 내부라서)
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      # Kafka UI는 Docker 컨테이너 내부에서 Kafka에 접근함
+      # 따라서 localhost가 아니라 Docker DNS 이름인 kafka 사용
+      # INTERNAL listener의 advertised 주소와 맞춰 kafka:29092 사용
 
 volumes:
   kafka_data:
-  # Docker volume (Kafka 데이터 영속화)
+  # Kafka 데이터 영속화를 위한 Docker volume
