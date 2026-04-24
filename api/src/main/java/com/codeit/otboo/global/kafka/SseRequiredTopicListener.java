@@ -33,15 +33,14 @@ public class SseRequiredTopicListener {
             groupId = "otboo-sse-${app.instance-id}"
     )
     public void onNotificationSseKafkaEvent(String kafkaEvent) {
-        try {
-            NotificationSseKafkaEvent event =
-                    objectMapper.readValue(kafkaEvent, NotificationSseKafkaEvent.class);
+        NotificationSseKafkaEvent event = deserialize(
+                kafkaEvent,
+                NotificationSseKafkaEvent.class
+        );
 
-            sendSseEvent(event.notification());
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        if (event == null) return;
+
+        sendSseEvent(event.notification());
     }
 
     @KafkaListener(
@@ -49,14 +48,27 @@ public class SseRequiredTopicListener {
             groupId = "otboo-sse-${app.instance-id}"
     )
     public void onNotificationBatchSseKafkaEvent(String kafkaEvent) {
-        try {
-            NotificationBatchSseKafkaEvent event =
-                    objectMapper.readValue(kafkaEvent, NotificationBatchSseKafkaEvent.class);
+        NotificationBatchSseKafkaEvent event = deserialize(
+                kafkaEvent,
+                NotificationBatchSseKafkaEvent.class
+        );
 
-            event.notifications().forEach(this::sendSseEvent);
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        if (event == null) return;
+
+        event.notifications().forEach(this::sendSseEvent);
+    }
+
+    private <T> T deserialize(String payload, Class<T> type) {
+        try {
+            return objectMapper.readValue(payload, type);
+        } catch (JsonProcessingException e) {
+            log.error(
+                    "카프카 역직렬화 실패. targetType={}, payload={}",
+                    type.getSimpleName(),
+                    payload,
+                    e
+            );
+            return null;
         }
     }
 }
