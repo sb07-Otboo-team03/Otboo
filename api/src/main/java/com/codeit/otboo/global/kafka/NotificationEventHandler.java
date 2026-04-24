@@ -54,8 +54,9 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto)
+                KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                new NotificationSseKafkaEvent(notificationDto),
+                notificationDto.receiverId().toString()
         );
     }
 
@@ -69,8 +70,9 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto)
+                KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                new NotificationSseKafkaEvent(notificationDto),
+                notificationDto.receiverId().toString()
         );
     }
 
@@ -84,8 +86,9 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto)
+                KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                new NotificationSseKafkaEvent(notificationDto),
+                notificationDto.receiverId().toString()
         );
     }
 
@@ -99,8 +102,9 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto)
+                KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                new NotificationSseKafkaEvent(notificationDto),
+                notificationDto.receiverId().toString()
         );
     }
 
@@ -114,8 +118,9 @@ public class NotificationEventHandler {
         );
 
         kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new NotificationSseKafkaEvent(notificationDto)
+                KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                new NotificationSseKafkaEvent(notificationDto),
+                notificationDto.receiverId().toString()
         );
     }
 
@@ -128,10 +133,16 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new MultipleNotificationSseKafkaEvent(notificationDtos)
-        );
+        notificationDtos
+                .forEach(
+                        dto -> {
+                            kafkaEventPublisher.publish(
+                                    KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                                    new NotificationSseKafkaEvent(dto),
+                                    dto.receiverId().toString()
+                            );
+                        }
+                );
     }
 
     @Async
@@ -142,10 +153,16 @@ public class NotificationEventHandler {
                 event.getContent()
         );
 
-        kafkaEventPublisher.publish(
-                KafkaTopics.REALTIME_NOTIFICATION,
-                new MultipleNotificationSseKafkaEvent(notificationDtos)
-        );
+        notificationDtos
+                .forEach(
+                        dto -> {
+                            kafkaEventPublisher.publish(
+                                    KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
+                                    new NotificationSseKafkaEvent(dto),
+                                    dto.receiverId().toString()
+                            );
+                        }
+                );
     }
 
     @Async

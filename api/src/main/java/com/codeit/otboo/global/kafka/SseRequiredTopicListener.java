@@ -29,7 +29,7 @@ public class SseRequiredTopicListener {
     }
 
     @KafkaListener(
-            topics = KafkaTopics.REALTIME_NOTIFICATION,
+            topics = KafkaTopics.REALTIME_NOTIFICATION_SINGLE,
             groupId = "otboo-sse-${app.instance-id}"
     )
     public void onNotificationSseKafkaEvent(String kafkaEvent) {
